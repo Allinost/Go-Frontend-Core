@@ -1,0 +1,61 @@
+:root,
+[data-theme='light'] {
+  --nk-color-primary-50: #eff6ff;
+  --nk-color-primary-100: #dbeafe;
+  --nk-color-primary-200: #bfdbfe;
+  --nk-color-primary-300: #93c5fd;
+  --nk-color-primary-400: #60a5fa;
+  --nk-color-primary-500: #3b82f6;
+  --nk-color-primary-600: #2563eb;
+  --nk-color-primary-700: #1d4ed8;
+  --nk-color-primary-800: #1e40af;
+  --nk-color-primary-900: #1e3a8a;
+
+  --nk-color-neutral-0: #ffffff;
+  --nk-color-neutral-50: #fafafa;
+  --nk-color-neutral-100: #f5f5f5;
+  --nk-color-neutral-200: #e5e5e5;
+  --nk-color-neutral-300: #d4d4d4;
+  --nk-color-neutral-400: #a3a3a3;
+  --nk-color-neutral-500: #737373;
+  --nk-color-neutral-600: #525252;
+  --nk-color-neutral-700: #404040;
+  --nk-color-neutral-800: #262626;
+  --nk-color-neutral-900: #171717;
+  --nk-color-neutral-1000: #0a0a0a;
+
+  --nk-color-accent: #8b5cf6;
+  --nk-color-accent-light: #a78bfa;
+  --nk-color-accent-dark: #7c3aed;
+  --nk-color-accent-gradient: linear-gradient(135deg, #8b5cf6, #ec4899);
+
+  --nk-color-success: #22c55e;
+  --nk-color-warning: #f59e0b;
+  --nk-color-error: #ef4444;
+  --nk-color-info: #3b82f6;
+
+  --nk-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --nk-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --nk-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --nk-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+[data-theme='dark'] {
+  --nk-color-neutral-0: #0a0a0a;
+  --nk-color-neutral-50: #171717;
+  --nk-color-neutral-100: #262626;
+  --nk-color-neutral-200: #404040;
+  --nk-color-neutral-300: #525252;
+  --nk-color-neutral-400: #737373;
+  --nk-color-neutral-500: #a3a3a3;
+  --nk-color-neutral-600: #d4d4d4;
+  --nk-color-neutral-700: #e5e5e5;
+  --nk-color-neutral-800: #f5f5f5;
+  --nk-color-neutral-900: #fafafa;
+  --nk-color-neutral-1000: #ffffff;
+
+  --nk-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --nk-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --nk-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --nk-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}

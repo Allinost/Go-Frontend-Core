@@ -1,0 +1,91 @@
+$nk-color-primary-50:   var(--nk-color-primary-50);
+$nk-color-primary-100:  var(--nk-color-primary-100);
+$nk-color-primary-200:  var(--nk-color-primary-200);
+$nk-color-primary-300:  var(--nk-color-primary-300);
+$nk-color-primary-400:  var(--nk-color-primary-400);
+$nk-color-primary-500:  var(--nk-color-primary-500);
+$nk-color-primary-600:  var(--nk-color-primary-600);
+$nk-color-primary-700:  var(--nk-color-primary-700);
+$nk-color-primary-800:  var(--nk-color-primary-800);
+$nk-color-primary-900:  var(--nk-color-primary-900);
+
+$nk-color-neutral-0:    var(--nk-color-neutral-0);
+$nk-color-neutral-50:   var(--nk-color-neutral-50);
+$nk-color-neutral-100:  var(--nk-color-neutral-100);
+$nk-color-neutral-200:  var(--nk-color-neutral-200);
+$nk-color-neutral-300:  var(--nk-color-neutral-300);
+$nk-color-neutral-400:  var(--nk-color-neutral-400);
+$nk-color-neutral-500:  var(--nk-color-neutral-500);
+$nk-color-neutral-600:  var(--nk-color-neutral-600);
+$nk-color-neutral-700:  var(--nk-color-neutral-700);
+$nk-color-neutral-800:  var(--nk-color-neutral-800);
+$nk-color-neutral-900:  var(--nk-color-neutral-900);
+$nk-color-neutral-1000: var(--nk-color-neutral-1000);
+
+$nk-color-accent: var(--nk-color-accent);
+$nk-color-accent-light: var(--nk-color-accent-light);
+$nk-color-accent-dark: var(--nk-color-accent-dark);
+$nk-color-accent-gradient: var(--nk-color-accent-gradient);
+
+$nk-color-success: var(--nk-color-success);
+$nk-color-warning: var(--nk-color-warning);
+$nk-color-error:   var(--nk-color-error);
+$nk-color-info:    var(--nk-color-info);
+
+$nk-font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+$nk-font-family-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
+
+$nk-font-size-xs:   10px;
+$nk-font-size-sm:   12px;
+$nk-font-size-base: 14px;
+$nk-font-size-lg:   16px;
+$nk-font-size-xl:   20px;
+$nk-font-size-2xl:  24px;
+$nk-font-size-3xl:  32px;
+
+$nk-font-weight-regular: 400;
+$nk-font-weight-medium:  500;
+$nk-font-weight-semibold: 600;
+$nk-font-weight-bold:    700;
+
+$nk-line-height-tight:   1.2;
+$nk-line-height-normal:  1.5;
+$nk-line-height-relaxed: 1.75;
+
+$nk-spacing-xs:  4px;
+$nk-spacing-sm:  8px;
+$nk-spacing-md:  12px;
+$nk-spacing-lg:  16px;
+$nk-spacing-xl:  24px;
+$nk-spacing-2xl: 32px;
+$nk-spacing-3xl: 48px;
+
+$nk-radius-none: 0;
+$nk-radius-sm:   4px;
+$nk-radius-md:   8px;
+$nk-radius-lg:   12px;
+$nk-radius-xl:   16px;
+$nk-radius-full: 9999px;
+
+$nk-shadow-sm: var(--nk-shadow-sm);
+$nk-shadow-md: var(--nk-shadow-md);
+$nk-shadow-lg: var(--nk-shadow-lg);
+$nk-shadow-xl: var(--nk-shadow-xl);
+
+$nk-z-dropdown: 1000;
+$nk-z-sticky:   1020;
+$nk-z-fixed:    1030;
+$nk-z-modal:    1040;
+$nk-z-popover:  1050;
+$nk-z-tooltip:  1060;
+$nk-z-toast:    1070;
+
+$nk-opacity-disabled: 0.38;
+$nk-opacity-secondary: 0.6;
+$nk-opacity-medium: 0.74;
+$nk-opacity-high: 0.87;
+
+$nk-duration-fast:  150ms;
+$nk-duration-normal: 250ms;
+$nk-duration-slow:  400ms;
+$nk-easing-ease: cubic-bezier(0.25, 0.1, 0.25, 1);

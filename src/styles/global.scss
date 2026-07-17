@@ -1,0 +1,29 @@
+@use './tokens' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: $nk-font-family-sans;
+  font-size: $nk-font-size-base;
+  line-height: $nk-line-height-normal;
+  color: $nk-color-neutral-900;
+  background: $nk-color-neutral-50;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
