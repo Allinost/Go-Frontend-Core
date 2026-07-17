@@ -58,7 +58,7 @@ const routes: RouteRecordRaw[] = [
         path: 'modules/zzz/goodser',
         name: 'Goodser',
         component: () => import('@/views/modules/zzz/goodser/index.vue'),
-        meta: { title: '商品管理' },
+        meta: { title: 'Goodser' },
       },
       {
         path: 'modules/migrate',

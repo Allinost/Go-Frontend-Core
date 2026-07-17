@@ -6,6 +6,9 @@
     <div class="admin-header__right">
       <NkAvatar :text="authStore.username" size="sm" />
       <span class="admin-header__username">{{ authStore.username }}</span>
+      <NkButton size="sm" variant="ghost" @click="appStore.toggleTheme()">
+        <NkIcon :name="appStore.theme === 'light' ? 'moon' : 'sun'" />
+      </NkButton>
       <NkButton size="sm" variant="ghost" @click="handleLogout">退出</NkButton>
     </div>
   </header>
@@ -15,11 +18,13 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import { useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 
 const breadcrumbs = computed(() => {
   const items: { label: string; to?: string }[] = []

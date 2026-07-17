@@ -1,7 +1,7 @@
 <template>
   <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': collapsed }">
     <div class="admin-sidebar__logo">
-      <span class="admin-sidebar__logo-text">{{ collapsed ? 'G' : 'Go 管理后台' }}</span>
+      <span class="admin-sidebar__logo-text">{{ collapsed ? 'M' : 'Monitor Controller' }}</span>
     </div>
     <nav class="admin-sidebar__nav">
       <div
@@ -82,12 +82,12 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
     label: '业务模块',
     icon: 'search',
     children: [
-      { label: '商品管理', path: '/modules/zzz/goodser' },
+      { label: 'Goodser', path: '/modules/zzz/goodser' },
     ],
   },
   {
     label: '运维管理',
-    icon: 'settings',
+    icon: 'file',
     children: [
       { label: '加密工具', path: '/modules/crypto' },
       { label: '任务调度', path: '/modules/schedule' },
