@@ -14,10 +14,14 @@ export interface ScanTarget {
   updated_at?: string
 }
 
+export interface ScanTargetListData {
+  targets: ScanTarget[]
+}
+
 export function listScanTargets(params?: {
   storage_name?: string
   enabled_only?: boolean
-}): Promise<ApiResponse<ScanTarget[]>> {
+}): Promise<ApiResponse<ScanTargetListData>> {
   return getResponse('/ops/scan-targets', params)
 }
 

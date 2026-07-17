@@ -59,3 +59,20 @@ export interface BackupRestoreRequest {
 export interface CreateMigrationRequest {
   name: string
 }
+
+export interface SchemaDumpResult {
+  tables: TableSchema[]
+}
+
+export interface TransferRequest {
+  tables: string[]
+  target_name: string
+  target_db_type: string
+  create_table?: boolean
+}
+
+export interface TransferResult {
+  table_count: number
+  row_count: number
+  errors: string[]
+}

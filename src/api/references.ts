@@ -20,7 +20,7 @@ export interface ReferenceStats {
 }
 
 export interface ReferenceListData {
-  references: ReferenceItem[]
+  records: ReferenceItem[]
   offset: number
   limit: number
   total: number

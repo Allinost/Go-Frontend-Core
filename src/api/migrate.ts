@@ -7,9 +7,12 @@ import type {
   MigrateResult,
   MigrateApplyResult,
   TableSchema,
+  SchemaDumpResult,
   DumpRequest,
   CreateBackupRequest,
   BackupRestoreRequest,
+  TransferRequest,
+  TransferResult,
 } from '@/types'
 
 export function getTables(): Promise<ApiResponse<{ tables: string[] }>> {
@@ -91,4 +94,12 @@ export function applyMigrations(): Promise<ApiResponse<MigrateApplyResult>> {
 
 export function createMigration(name: string): Promise<ApiResponse<{ file: string }>> {
   return postResponse('/migrate/schema/create', { name })
+}
+
+export function schemaDump(): Promise<ApiResponse<SchemaDumpResult>> {
+  return getResponse('/migrate/schema/dump')
+}
+
+export function transferData(data: TransferRequest): Promise<ApiResponse<TransferResult>> {
+  return postResponse('/migrate/transfer', data)
 }

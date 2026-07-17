@@ -38,7 +38,7 @@
 
         <NkLoading v-if="loadingFiles" />
 
-        <div v-else-if="!files.length" class="storage-mgmt__empty">
+        <div v-else-if="!dirList.length && !fileList.length" class="storage-mgmt__empty">
           <NkEmpty description="暂无文件" />
         </div>
 
@@ -57,7 +57,20 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="file in files" :key="file.path" :class="{ 'storage-mgmt__row--selected': isSelected(file) }">
+              <tr v-for="dir in dirList" :key="dir" class="storage-mgmt__row--dir">
+                <td></td>
+                <td>
+                  <div class="storage-mgmt__file-cell">
+                    <NkIcon name="folder" size="sm" class="storage-mgmt__file-icon" />
+                    <span class="storage-mgmt__file-link" @click="enterDirByName(dir)">{{ dir }}/</span>
+                  </div>
+                </td>
+                <td>-</td>
+                <td><NkTag size="xs" variant="outline">目录</NkTag></td>
+                <td>-</td>
+                <td><span class="storage-mgmt__dir-hint">点击进入</span></td>
+              </tr>
+              <tr v-for="file in fileList" :key="file.path" :class="{ 'storage-mgmt__row--selected': isSelected(file) }">
                 <td>
                   <input
                     type="checkbox"
@@ -67,28 +80,20 @@
                 </td>
                 <td>
                   <div class="storage-mgmt__file-cell">
-                    <NkIcon :name="isDir(file) ? 'folder' : 'file'" size="sm" class="storage-mgmt__file-icon" />
-                    <span
-                      v-if="isDir(file)"
-                      class="storage-mgmt__file-link"
-                      @click="enterDir(file)"
-                    >{{ file.name }}/</span>
-                    <span v-else :title="file.name">{{ file.name }}</span>
+                    <NkIcon name="file" size="sm" class="storage-mgmt__file-icon" />
+                    <span :title="file.name">{{ file.name }}</span>
                   </div>
                 </td>
-                <td>{{ isDir(file) ? '-' : formatSize(file.size) }}</td>
+                <td>{{ formatSize(file.size) }}</td>
                 <td>
-                  <NkTag v-if="file.content_type && !isDir(file)" size="xs" variant="outline">{{ file.content_type.split('/')[1] || file.content_type }}</NkTag>
+                  <NkTag v-if="file.content_type" size="xs" variant="outline">{{ file.content_type.split('/')[1] || file.content_type }}</NkTag>
                 </td>
                 <td>{{ formatDate(file.last_modified) }}</td>
                 <td>
-                  <template v-if="!isDir(file)">
-                    <NkButton size="xs" variant="ghost" @click="showFileInfo(file)">详情</NkButton>
-                    <NkButton size="xs" variant="ghost" @click="copyUrl(file)">复制 URL</NkButton>
-                    <NkButton size="xs" variant="ghost" @click="downloadFileAction(file)">下载</NkButton>
-                    <NkButton size="xs" variant="ghost" type="danger" @click="confirmDeleteFile(file)">删除</NkButton>
-                  </template>
-                  <span v-else class="storage-mgmt__dir-hint">双击进入</span>
+                  <NkButton size="xs" variant="ghost" @click="showFileInfo(file)">详情</NkButton>
+                  <NkButton size="xs" variant="ghost" @click="copyUrl(file)">复制 URL</NkButton>
+                  <NkButton size="xs" variant="ghost" @click="downloadFileAction(file)">下载</NkButton>
+                  <NkButton size="xs" variant="ghost" type="danger" @click="confirmDeleteFile(file)">删除</NkButton>
                 </td>
               </tr>
             </tbody>
@@ -534,7 +539,7 @@ import type { ReferenceItem, ReferenceStats, ReferenceListData } from '@/api/ref
 import {
   listScanTargets, createScanTarget, updateScanTarget, deleteScanTarget,
 } from '@/api/scanTargets'
-import type { ScanTarget } from '@/api/scanTargets'
+import type { ScanTarget, ScanTargetListData } from '@/api/scanTargets'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 
 const activeTab = ref('browser')
@@ -559,7 +564,8 @@ function onTabChange(value: string | number) {
 // ---- File Browser ----
 const prefixInput = ref('')
 const currentPrefix = ref('')
-const files = ref<RustFSFile[]>([])
+const dirList = ref<string[]>([])
+const fileList = ref<RustFSFile[]>([])
 const loadingFiles = ref(false)
 const totalFiles = ref(0)
 const currentPage = ref(1)
@@ -569,10 +575,6 @@ const pathParts = computed(() => {
   if (!currentPrefix.value) return []
   return currentPrefix.value.split('/').filter(Boolean)
 })
-
-function isDir(file: RustFSFile): boolean {
-  return file.content_type === 'directory' || (file.size === 0 && !file.name.includes('.'))
-}
 
 function formatSize(bytes?: number): string {
   if (!bytes) return '0 B'
@@ -595,7 +597,8 @@ async function loadFiles() {
   try {
     const offset = (currentPage.value - 1) * pageSize.value
     const res = await listFiles(currentPrefix.value, offset, pageSize.value)
-    files.value = res.data.files
+    dirList.value = res.data.dirs || []
+    fileList.value = res.data.files || []
     totalFiles.value = res.data.total
   } catch (err: any) {
     NKMessage.error(err.message || '加载文件列表失败')
@@ -617,8 +620,9 @@ function navigateToPrefixDirect(prefix: string) {
   loadFiles()
 }
 
-function enterDir(file: RustFSFile) {
-  const prefix = currentPrefix.value ? `${currentPrefix.value}/${file.name}` : file.name
+function enterDirByName(dirName: string) {
+  const cleanName = dirName.replace(/\/$/, '')
+  const prefix = currentPrefix.value ? `${currentPrefix.value}/${cleanName}` : cleanName
   currentPrefix.value = prefix
   prefixInput.value = prefix
   currentPage.value = 1
@@ -641,13 +645,13 @@ function isSelected(file: RustFSFile): boolean {
   return selectedFilesSet.value.has(file.path)
 }
 
-const allSelected = computed(() => files.value.length > 0 && files.value.every((f) => isSelected(f)))
+const allSelected = computed(() => fileList.value.length > 0 && fileList.value.every((f) => isSelected(f)))
 
 function toggleSelectAll() {
   if (allSelected.value) {
     selectedFilesSet.value.clear()
   } else {
-    selectedFilesSet.value = new Set(files.value.map((f) => f.path))
+    selectedFilesSet.value = new Set(fileList.value.map((f) => f.path))
   }
 }
 
@@ -658,7 +662,7 @@ function toggleSelectFile(file: RustFSFile) {
   selectedFilesSet.value = s
 }
 
-const selectedFiles = computed(() => files.value.filter((f) => selectedFilesSet.value.has(f.path)))
+const selectedFiles = computed(() => fileList.value.filter((f) => selectedFilesSet.value.has(f.path)))
 
 // ---- Upload ----
 const showUploadDialog = ref(false)
@@ -931,7 +935,7 @@ async function searchReferences() {
     if (refQuery.table_name) params.table_name = refQuery.table_name
     if (refQuery.record_id) params.record_id = refQuery.record_id
     const res = await queryReferences(params)
-    refList.value = res.data.references
+    refList.value = res.data.records || []
     refTotal.value = res.data.total
   } catch (err: any) {
     NKMessage.error(err.message || '查询引用失败')
@@ -998,7 +1002,7 @@ async function loadTargets() {
   targetsLoading.value = true
   try {
     const res = await listScanTargets()
-    targets.value = res.data
+    targets.value = res.data.targets
   } catch (err: any) {
     NKMessage.error(err.message || '加载扫描目标失败')
   } finally {

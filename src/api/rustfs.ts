@@ -11,7 +11,8 @@ export interface RustFSFile {
 }
 
 export interface FileListData {
-  files: RustFSFile[]
+  dirs: string[] | null
+  files: RustFSFile[] | null
   offset: number
   limit: number
   total: number
@@ -56,10 +57,16 @@ export interface ScanResult {
   all_referenced: string[]
 }
 
+export interface PrefixStat {
+  prefix: string
+  count: number
+  size: number
+}
+
 export interface BucketStats {
   total_files: number
   total_size: number
-  by_prefix: Record<string, number>
+  prefix_stats: PrefixStat[]
 }
 
 export function listFiles(prefix: string = '', offset: number = 0, limit: number = 50): Promise<ApiResponse<FileListData>> {
