@@ -5,21 +5,41 @@
     </div>
     <nav class="admin-sidebar__nav">
       <div
-        v-for="item in filteredMenus"
+        v-for="item in topItems"
         :key="item.path"
         class="admin-sidebar__item"
-        :class="{
-          'admin-sidebar__item--active': isActive(item.path),
-          'admin-sidebar__item--collapsed': collapsed,
-        }"
+        :class="{ 'admin-sidebar__item--active': isActive(item.path), 'admin-sidebar__item--collapsed': collapsed }"
         @click="navigate(item)"
       >
         <NkIcon v-if="item.icon" :name="item.icon" size="sm" />
         <span v-show="!collapsed" class="admin-sidebar__item-label">{{ item.label }}</span>
       </div>
+
+      <div v-for="group in filteredGroups" :key="group.label" class="admin-sidebar__group">
+        <div
+          class="admin-sidebar__group-header"
+          :class="{ 'admin-sidebar__item--collapsed': collapsed }"
+          @click="toggleGroup(group.label)"
+        >
+          <NkIcon v-if="group.icon" :name="group.icon" size="sm" />
+          <span v-show="!collapsed" class="admin-sidebar__item-label">{{ group.label }}</span>
+          <NkIcon v-show="!collapsed" :name="expandedGroups[group.label] ? 'arrow-up' : 'arrow-down'" size="xs" class="admin-sidebar__group-arrow" />
+        </div>
+        <div v-show="!collapsed && expandedGroups[group.label]" class="admin-sidebar__group-children">
+          <div
+            v-for="child in group.children"
+            :key="child.path"
+            class="admin-sidebar__item admin-sidebar__item--child"
+            :class="{ 'admin-sidebar__item--active': isActive(child.path) }"
+            @click="navigate(child)"
+          >
+            <span class="admin-sidebar__item-label">{{ child.label }}</span>
+          </div>
+        </div>
+      </div>
     </nav>
     <div class="admin-sidebar__footer">
-      <div class="admin-sidebar__item" @click="toggle">
+      <div class="admin-sidebar__item" :class="{ 'admin-sidebar__item--collapsed': collapsed }" @click="toggle">
         <NkIcon :name="collapsed ? 'arrow-right' : 'arrow-left'" size="sm" />
         <span v-show="!collapsed" class="admin-sidebar__item-label">折叠</span>
       </div>
@@ -28,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -36,20 +56,46 @@ import { useAuthStore } from '@/stores/auth'
 interface MenuItem {
   label: string
   path: string
-  icon: string
   requiresAdmin?: boolean
 }
 
-const menus: MenuItem[] = [
+interface MenuGroup {
+  label: string
+  icon: string
+  children: MenuItem[]
+}
+
+const topItems: (MenuItem & { icon: string })[] = [
   { label: '仪表盘', path: '/dashboard', icon: 'home' },
-  { label: '用户管理', path: '/users', icon: 'user', requiresAdmin: true },
-  { label: '角色权限', path: '/roles', icon: 'shield', requiresAdmin: true },
-  { label: '加密工具', path: '/modules/crypto', icon: 'lock' },
-  { label: '商品管理', path: '/modules/zzz/goodser', icon: 'search' },
-  { label: '任务调度', path: '/modules/schedule', icon: 'clock' },
-  { label: '文件存储', path: '/storage', icon: 'folder' },
-  { label: '网络工具', path: '/modules/net', icon: 'globe' },
-  { label: '数据库迁移', path: '/modules/migrate', icon: 'database' },
+]
+
+const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
+  {
+    label: '用户管理',
+    icon: 'user',
+    children: [
+      { label: '用户管理', path: '/users', requiresAdmin: true },
+      { label: '角色权限', path: '/roles', requiresAdmin: true },
+    ],
+  },
+  {
+    label: '业务模块',
+    icon: 'search',
+    children: [
+      { label: '商品管理', path: '/modules/zzz/goodser' },
+    ],
+  },
+  {
+    label: '运维管理',
+    icon: 'settings',
+    children: [
+      { label: '加密工具', path: '/modules/crypto' },
+      { label: '任务调度', path: '/modules/schedule' },
+      { label: '文件存储', path: '/storage' },
+      { label: '网络工具', path: '/modules/net' },
+      { label: '数据库迁移', path: '/modules/migrate' },
+    ],
+  },
 ]
 
 const router = useRouter()
@@ -59,9 +105,10 @@ const authStore = useAuthStore()
 
 const collapsed = computed(() => appStore.sidebarCollapsed)
 
-const filteredMenus = computed(() =>
-  menus.filter((item) => {
-    if (item.requiresAdmin && !authStore.isAdmin) return false
+const filteredGroups = computed(() =>
+  menuGroups.filter((g) => {
+    if (g.requiresAdmin && !authStore.isAdmin) return false
+    if (g.children.every((c) => c.requiresAdmin && !authStore.isAdmin)) return false
     return true
   }),
 )
@@ -76,6 +123,18 @@ function navigate(item: MenuItem) {
 
 function toggle() {
   appStore.toggleSidebar()
+}
+
+const expandedGroups = reactive<Record<string, boolean>>(
+  Object.fromEntries(menuGroups.map((g) => [g.label, true])),
+)
+
+function toggleGroup(label: string) {
+  expandedGroups[label] = !expandedGroups[label]
+}
+
+function isGroupActive(group: MenuGroup): boolean {
+  return group.children.some((c) => isActive(c.path))
 }
 </script>
 
@@ -148,10 +207,46 @@ function toggle() {
       justify-content: center;
       padding: $nk-spacing-sm;
     }
+
+    &--child {
+      padding-left: $nk-spacing-xl;
+      font-size: $nk-font-size-sm;
+    }
   }
 
   &__item-label {
     font-size: $nk-font-size-base;
+  }
+
+  &__group {
+    margin-top: $nk-spacing-xs;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      gap: $nk-spacing-sm;
+      padding: $nk-spacing-sm $nk-spacing-md;
+      border-radius: $nk-radius-md;
+      cursor: pointer;
+      color: $nk-color-neutral-600;
+      transition: all $nk-duration-fast;
+      margin-bottom: 2px;
+
+      &:hover {
+        background: $nk-color-neutral-100;
+        color: $nk-color-neutral-900;
+      }
+    }
+
+    &-arrow {
+      margin-left: auto;
+      transition: transform $nk-duration-fast;
+    }
+
+    &-children {
+      overflow: hidden;
+      transition: max-height $nk-duration-normal;
+    }
   }
 }
 </style>
