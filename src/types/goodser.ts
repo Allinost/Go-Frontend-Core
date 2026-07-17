@@ -286,6 +286,7 @@ export interface UploadImageResp {
 export interface PaginatedResp<T> {
   items: T[]
   has_more: boolean
+  total: number
 }
 
 export interface SyncAllResp {

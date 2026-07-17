@@ -8,30 +8,6 @@
     <NkTabs v-model="activeTab" :items="tabs" />
 
     <div class="goodser__content">
-      <!-- ==================== 库存目录 Tab ==================== -->
-      <div v-if="activeTab === 'inventories'" class="goodser__tab">
-        <div class="goodser__tab-header">
-          <span class="goodser__count">共 {{ inventories.length }} 个目录</span>
-          <NkButton size="sm" @click="openCreateInventory">新建目录</NkButton>
-        </div>
-        <NkLoading v-if="loadingInventories" />
-        <div v-else-if="!inventories.length" class="goodser__empty">
-          <NkEmpty description="暂无库存目录，点击上方按钮新建" />
-        </div>
-        <div v-else class="goodser__inventory-grid">
-          <NkCard v-for="inv in inventories" :key="inv._id" class="goodser__inv-card" @click="selectInventory(inv)">
-            <div class="goodser__inv-info">
-              <div class="goodser__inv-name">{{ inv.name }}</div>
-              <div class="goodser__inv-meta">排序: {{ inv.sort_order }} · {{ formatDate(inv.created_at) }}</div>
-            </div>
-            <div class="goodser__inv-actions" @click.stop>
-              <NkButton size="xs" variant="ghost" @click="openRenameInventory(inv)">重命名</NkButton>
-              <NkButton size="xs" variant="ghost" type="danger" @click="openDeleteInventory(inv)">删除</NkButton>
-            </div>
-          </NkCard>
-        </div>
-      </div>
-
       <!-- ==================== 商品列表 Tab ==================== -->
       <div v-if="activeTab === 'products'" class="goodser__tab">
         <div class="goodser__product-toolbar">
@@ -64,6 +40,7 @@
 
         <div class="goodser__sort-row">
           <span class="goodser__count">共 {{ productTotal }} 件商品</span>
+          <span v-if="productTotal > 0" class="goodser__count">第 {{ productPage }} / {{ productTotalPages }} 页</span>
           <div class="goodser__sort-chips">
             <span
               v-for="chip in sortChips"
@@ -99,8 +76,14 @@
           </NkCard>
         </div>
 
-        <div v-if="productHasMore" class="goodser__load-more">
-          <NkButton variant="ghost" :loading="loadingProducts" @click="loadMoreProducts">加载更多</NkButton>
+        <div class="goodser__pagination">
+          <NkButton size="sm" variant="ghost" :disabled="productPage <= 1" @click="goToPage(productPage - 1)">上一页</NkButton>
+          <div class="goodser__page-jump">
+            <NkInput v-model="jumpPage" type="number" size="xs" style="width:60px" :min="1" :max="productTotalPages" @keyup.enter="handleJumpPage" />
+            <NkButton size="xs" variant="ghost" :disabled="!jumpPage" @click="handleJumpPage">跳转</NkButton>
+          </div>
+          <span class="goodser__page-info">{{ productPage }} / {{ productTotalPages }}</span>
+          <NkButton size="sm" variant="ghost" :disabled="productPage >= productTotalPages" @click="goToPage(productPage + 1)">下一页</NkButton>
         </div>
       </div>
 
@@ -166,6 +149,30 @@
               <span v-if="log.order_no">单号: {{ log.order_no }}</span>
               <span>{{ log.items?.length || 0 }} 件商品</span>
               <span v-if="log.remark">{{ log.remark }}</span>
+            </div>
+          </NkCard>
+        </div>
+      </div>
+
+      <!-- ==================== 库存目录 Tab ==================== -->
+      <div v-if="activeTab === 'inventories'" class="goodser__tab">
+        <div class="goodser__tab-header">
+          <span class="goodser__count">共 {{ inventories.length }} 个目录</span>
+          <NkButton size="sm" @click="openCreateInventory">新建目录</NkButton>
+        </div>
+        <NkLoading v-if="loadingInventories" />
+        <div v-else-if="!inventories.length" class="goodser__empty">
+          <NkEmpty description="暂无库存目录，点击上方按钮新建" />
+        </div>
+        <div v-else class="goodser__inventory-grid">
+          <NkCard v-for="inv in inventories" :key="inv._id" class="goodser__inv-card" @click="selectInventory(inv)">
+            <div class="goodser__inv-info">
+              <div class="goodser__inv-name">{{ inv.name }}</div>
+              <div class="goodser__inv-meta">排序: {{ inv.sort_order }} · {{ formatDate(inv.created_at) }}</div>
+            </div>
+            <div class="goodser__inv-actions" @click.stop>
+              <NkButton size="xs" variant="ghost" @click="openRenameInventory(inv)">重命名</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="openDeleteInventory(inv)">删除</NkButton>
             </div>
           </NkCard>
         </div>
@@ -600,12 +607,12 @@ import type {
 } from '@/types/goodser'
 
 // ---- Tabs ----
-const activeTab = ref('inventories')
+const activeTab = ref('products')
 const tabs = [
-  { label: '库存目录', value: 'inventories' },
   { label: '商品列表', value: 'products' },
   { label: '出库订单', value: 'orders' },
   { label: '入库记录', value: 'logs' },
+  { label: '库存目录', value: 'inventories' },
 ]
 
 // ---- Shared ----
@@ -719,6 +726,7 @@ const productFilterTag = ref('')
 const productPage = ref(1)
 const productHasMore = ref(false)
 const productTotal = ref(0)
+const jumpPage = ref<number | null>(null)
 const showProductFilter = ref(false)
 const showProductForm = ref(false)
 const showProductDetail = ref(false)
@@ -807,6 +815,15 @@ function onInventoryChange() {
 async function searchProducts() {
   if (!currentInventoryId.value) return
   productPage.value = 1
+  await goToPage(1)
+}
+
+const pageSize = 20
+const productTotalPages = computed(() => Math.ceil(productTotal.value / pageSize) || 1)
+
+async function goToPage(page: number) {
+  if (!currentInventoryId.value || page < 1) return
+  productPage.value = page
   loadingProducts.value = true
   try {
     const hasFilters = hasProductFilter.value || !!productSortBy.value || !!productQuery.value
@@ -819,57 +836,30 @@ async function searchProducts() {
         main_zone: productFilterZone.value || undefined,
         status_code: productFilterStatus.value || undefined,
         tag_id: productFilterTag.value || undefined,
-        page: 1,
-        page_size: 20,
+        page,
+        page_size: pageSize,
       })
-      products.value = res.data || []
-      productHasMore.value = (res.data?.length || 0) >= 20
-    } else {
-      const res = await loadProducts({ inventory_id: currentInventoryId.value, page: 1, page_size: 20 })
       products.value = res.data?.items || []
       productHasMore.value = res.data?.has_more || false
+      productTotal.value = res.data?.total || 0
+    } else {
+      const res = await loadProducts({ inventory_id: currentInventoryId.value, page, page_size: pageSize })
+      products.value = res.data?.items || []
+      productHasMore.value = res.data?.has_more || false
+      productTotal.value = res.data?.total || 0
     }
-    productTotal.value = products.value.length
   } catch (err: any) {
-    NKMessage.error(err.message || '查询商品失败')
+    NKMessage.error(err.message || '加载失败')
   } finally {
     loadingProducts.value = false
   }
 }
 
-async function loadMoreProducts() {
-  if (!currentInventoryId.value || !productHasMore.value) return
-  productPage.value++
-  loadingProducts.value = true
-  try {
-    const hasFilters = hasProductFilter.value || !!productSortBy.value || !!productQuery.value
-    if (hasFilters) {
-      const res = await queryProducts({
-        inventory_id: currentInventoryId.value,
-        keyword: productQuery.value || undefined,
-        sort_by: productSortBy.value || undefined,
-        sort_order: productSortOrder.value,
-        main_zone: productFilterZone.value || undefined,
-        status_code: productFilterStatus.value || undefined,
-        tag_id: productFilterTag.value || undefined,
-        page: productPage.value,
-        page_size: 20,
-      })
-      if (res.data) {
-        products.value.push(...res.data)
-        productHasMore.value = res.data.length >= 20
-      }
-    } else {
-      const res = await loadProducts({ inventory_id: currentInventoryId.value, page: productPage.value, page_size: 20 })
-      if (res.data?.items) {
-        products.value.push(...res.data.items)
-        productHasMore.value = res.data.has_more || false
-      }
-    }
-  } catch (err: any) {
-    NKMessage.error(err.message || '加载更多失败')
-  } finally {
-    loadingProducts.value = false
+function handleJumpPage() {
+  const p = Number(jumpPage.value)
+  if (p >= 1 && p <= productTotalPages.value) {
+    goToPage(p)
+    jumpPage.value = null
   }
 }
 
@@ -1036,7 +1026,7 @@ async function searchOrderProducts() {
       keyword: orderProductQuery.value.trim(),
       page_size: 10,
     })
-    orderSearchResults.value = res.data || []
+    orderSearchResults.value = res.data?.items || []
   } catch {
     orderSearchResults.value = []
   }
@@ -1246,7 +1236,7 @@ async function doInboundSearch() {
       keyword: inboundSearchQuery.value.trim(),
       page_size: 20,
     })
-    inboundSearchResults.value = (res.data || []).map((p) => ({ ...p, _importQty: 0 }))
+    inboundSearchResults.value = (res.data?.items || []).map((p) => ({ ...p, _importQty: 0 }))
   } catch {
     inboundSearchResults.value = []
   }
@@ -1422,6 +1412,7 @@ onMounted(async () => {
   await fetchStatusCodes()
   if (inventories.value.length) {
     currentInventoryId.value = inventories.value[0]._id
+    searchProducts()
   }
 })
 </script>
@@ -1612,9 +1603,23 @@ onMounted(async () => {
     margin-top: 4px;
   }
 
-  &__load-more {
-    text-align: center;
+  &__pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: $nk-spacing-md;
     padding: $nk-spacing-lg;
+  }
+
+  &__page-jump {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__page-info {
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-600;
   }
 
   // ---- Filter Dialog ----

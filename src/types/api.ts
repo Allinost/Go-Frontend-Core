@@ -28,10 +28,10 @@ export interface UserInfo {
   email?: string
   avatar_url?: string
   phone?: string
-  status: 'active' | 'inactive' | 'suspended'
-  roles: string[]
-  created_at: string
-  updated_at: string
+  status?: 'active' | 'inactive' | 'suspended'
+  roles?: string[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface LoginRequest {
@@ -52,9 +52,23 @@ export interface UpdateUserRequest {
   phone?: string
 }
 
+export interface RoleModel {
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Permission {
+  id: number
+  name: string
+  resource: string
+  action: string
+  created_at: string
+}
+
 export interface RoleAssignRequest {
   user_id: number
-  role: 'admin' | 'user'
+  role: string
 }
 
 export interface RefreshRequest {

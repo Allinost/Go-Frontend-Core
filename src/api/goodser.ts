@@ -33,7 +33,7 @@ export function loadProducts(data: PaginatedReq) {
 }
 
 export function queryProducts(data: QueryProductsReq) {
-  return postResponse<Product[]>('zzz-goodser/legacy/queryProducts', data)
+  return postResponse<PaginatedResp<Product>>('zzz-goodser/legacy/queryProducts', data)
 }
 
 export function createProduct(data: CreateProductReq) {

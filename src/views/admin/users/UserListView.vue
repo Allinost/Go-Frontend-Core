@@ -30,16 +30,19 @@
             <td>{{ user.email || '-' }}</td>
             <td>
               <NkTag
+                v-if="user.status"
                 :type="user.status === 'active' ? 'success' : user.status === 'inactive' ? 'warning' : 'danger'"
                 size="sm"
               >
                 {{ statusLabel(user.status) }}
               </NkTag>
+              <span v-else class="user-table__no-status">-</span>
             </td>
             <td>
               <NkTag v-for="role in user.roles" :key="role" size="sm" type="info" style="margin-right: 4px">
                 {{ role }}
               </NkTag>
+              <span v-if="!user.roles?.length" class="user-table__no-role">-</span>
             </td>
             <td>{{ formatDate(user.created_at) }}</td>
             <td>
@@ -216,6 +219,11 @@ onMounted(loadUsers)
   &__empty {
     text-align: center;
     padding: $nk-spacing-3xl;
+  }
+
+  &__no-role,
+  &__no-status {
+    color: $nk-color-neutral-400;
   }
 }
 </style>

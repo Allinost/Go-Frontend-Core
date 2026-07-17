@@ -16,7 +16,7 @@
             </div>
             <div class="crypto-page__field">
               <label>待加密数据</label>
-              <textarea v-model="encryptForm.data" class="crypto-page__textarea" placeholder="请输入要加密的数据" rows="5"></textarea>
+              <NkTextarea v-model="encryptForm.data" placeholder="请输入要加密的数据" :rows="5" />
             </div>
             <div class="crypto-page__field">
               <label>或上传文件</label>
@@ -30,7 +30,7 @@
             <div v-if="encryptResult" class="crypto-page__result">
               <label>加密结果</label>
               <div class="crypto-page__result-box">
-                <textarea readonly :value="encryptResult" class="crypto-page__textarea" rows="4"></textarea>
+                <NkTextarea :model-value="encryptResult" readonly :rows="4" />
                 <NkButton size="sm" variant="ghost" @click="copyText(encryptResult)">复制</NkButton>
               </div>
             </div>
@@ -49,7 +49,7 @@
             </div>
             <div class="crypto-page__field">
               <label>待解密数据</label>
-              <textarea v-model="decryptForm.data" class="crypto-page__textarea" placeholder="请输入要解密的数据" rows="5"></textarea>
+              <NkTextarea v-model="decryptForm.data" placeholder="请输入要解密的数据" :rows="5" />
             </div>
             <div class="crypto-page__field">
               <label>或上传文件</label>
@@ -63,7 +63,7 @@
             <div v-if="decryptResult" class="crypto-page__result">
               <label>解密结果</label>
               <div class="crypto-page__result-box">
-                <textarea readonly :value="decryptResult" class="crypto-page__textarea" rows="4"></textarea>
+                <NkTextarea :model-value="decryptResult" readonly :rows="4" />
                 <NkButton size="sm" variant="ghost" @click="copyText(decryptResult)">复制</NkButton>
               </div>
             </div>
@@ -86,7 +86,7 @@
             </div>
             <div class="crypto-page__field">
               <label>待压缩数据</label>
-              <textarea v-model="compressForm.data" class="crypto-page__textarea" placeholder="请输入要压缩的数据" rows="5"></textarea>
+              <NkTextarea v-model="compressForm.data" placeholder="请输入要压缩的数据" :rows="5" />
             </div>
             <div class="crypto-page__field">
               <label>或上传文件</label>
@@ -96,7 +96,7 @@
             <div v-if="compressResult" class="crypto-page__result">
               <label>压缩结果 (Hex)</label>
               <div class="crypto-page__result-box">
-                <textarea readonly :value="compressResult" class="crypto-page__textarea" rows="4"></textarea>
+                <NkTextarea :model-value="compressResult" readonly :rows="4" />
                 <NkButton size="sm" variant="ghost" @click="copyText(compressResult)">复制</NkButton>
               </div>
             </div>
@@ -111,7 +111,7 @@
           <div class="crypto-page__form">
             <div class="crypto-page__field">
               <label>Hex 数据</label>
-              <textarea v-model="decompressForm.data" class="crypto-page__textarea" placeholder="请输入 Hex 格式的压缩数据" rows="5"></textarea>
+              <NkTextarea v-model="decompressForm.data" placeholder="请输入 Hex 格式的压缩数据" :rows="5" />
             </div>
             <div class="crypto-page__field">
               <label>或上传文件</label>
@@ -121,7 +121,7 @@
             <div v-if="decompressResult" class="crypto-page__result">
               <label>解压结果</label>
               <div class="crypto-page__result-box">
-                <textarea readonly :value="decompressResult" class="crypto-page__textarea" rows="4"></textarea>
+                <NkTextarea :model-value="decompressResult" readonly :rows="4" />
                 <NkButton size="sm" variant="ghost" @click="copyText(decompressResult)">复制</NkButton>
               </div>
             </div>
@@ -140,7 +140,7 @@
             </div>
             <div class="crypto-page__field">
               <label>待哈希数据</label>
-              <textarea v-model="hashForm.data" class="crypto-page__textarea" placeholder="请输入要哈希的数据" rows="5"></textarea>
+              <NkTextarea v-model="hashForm.data" placeholder="请输入要哈希的数据" :rows="5" />
             </div>
             <div class="crypto-page__field">
               <label>或上传文件</label>
@@ -150,7 +150,7 @@
             <div v-if="hashResult" class="crypto-page__result">
               <label>哈希结果</label>
               <div class="crypto-page__result-box">
-                <textarea readonly :value="hashResult.algo + ': ' + hashResult.result" class="crypto-page__textarea" rows="2"></textarea>
+                <NkTextarea :model-value="hashResult.algo + ': ' + hashResult.result" readonly :rows="2" />
                 <NkButton size="sm" variant="ghost" @click="copyText(hashResult.result)">复制</NkButton>
               </div>
             </div>
@@ -347,29 +347,6 @@ function copyText(text: string) {
       font-size: $nk-font-size-sm;
       font-weight: $nk-font-weight-medium;
       color: $nk-color-neutral-600;
-    }
-  }
-
-  &__textarea {
-    width: 100%;
-    padding: $nk-spacing-sm $nk-spacing-md;
-    border: 1px solid $nk-color-neutral-200;
-    border-radius: $nk-radius-md;
-    font-family: $nk-font-family-mono;
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-800;
-    background: $nk-color-neutral-0;
-    resize: vertical;
-    outline: none;
-    transition: border-color $nk-duration-fast;
-    line-height: 1.6;
-
-    &:focus {
-      border-color: $nk-color-primary-500;
-    }
-
-    &::placeholder {
-      color: $nk-color-neutral-400;
     }
   }
 

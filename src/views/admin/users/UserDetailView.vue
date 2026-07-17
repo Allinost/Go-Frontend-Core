@@ -32,18 +32,21 @@
         </div>
         <div class="user-detail__field">
           <label>状态</label>
-            <NkTag
+          <NkTag
+            v-if="user.status"
             :type="user.status === 'active' ? 'success' : user.status === 'inactive' ? 'warning' : 'danger'"
           >
             {{ statusLabel(user.status) }}
           </NkTag>
+          <span v-else>-</span>
         </div>
         <div class="user-detail__field">
           <label>角色</label>
           <div class="user-detail__roles">
-            <NkTag v-for="role in user.roles" :key="role" type="info" style="margin-right: 4px">
+            <NkTag v-for="role in user.roles || []" :key="role" type="info" style="margin-right: 4px">
               {{ role }}
             </NkTag>
+            <span v-if="!user.roles?.length" class="user-detail__no-role">-</span>
             <NkButton v-if="isAdmin" size="sm" variant="ghost" @click="showRoleDialog = true">分配角色</NkButton>
           </div>
         </div>
@@ -79,7 +82,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getUser, updateUser, assignRole } from '@/api/auth'
+import { getUser, updateUser } from '@/api/auth'
+import { assignRole } from '@/api/role'
 import { useAuthStore } from '@/stores/auth'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import type { UserInfo } from '@/types/api'
@@ -164,7 +168,7 @@ const roleOptions = [
 async function handleAssignRole() {
   assigningRole.value = true
   try {
-    await assignRole({ user_id: userId.value, role: roleForm.role as 'user' | 'admin' })
+    await assignRole(userId.value, roleForm.role)
     NKMessage.success('角色分配成功')
     showRoleDialog.value = false
     loadUser()
@@ -220,6 +224,10 @@ onMounted(loadUser)
     display: flex;
     align-items: center;
     gap: $nk-spacing-xs;
+  }
+
+  &__no-role {
+    color: $nk-color-neutral-400;
   }
 
   &__actions {

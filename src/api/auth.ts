@@ -6,7 +6,6 @@ import type {
   LoginRequest,
   RegisterRequest,
   UpdateUserRequest,
-  RoleAssignRequest,
   PaginatedData,
 } from '@/types/api'
 
@@ -38,12 +37,23 @@ export function changePassword(oldPassword: string, newPassword: string): Promis
   return putResponse('/auth/password', { old_password: oldPassword, new_password: newPassword })
 }
 
-export function listUsers(params?: {
+export async function listUsers(params?: {
   page?: number
   page_size?: number
   search?: string
 }): Promise<ApiResponse<PaginatedData<UserInfo>>> {
-  return getResponse('/auth/users', params)
+  const res = await getResponse<Record<string, any>>('/auth/users', params)
+  const raw = res.data
+  const items: UserInfo[] = raw.list || raw.items || raw.data || raw.records || []
+  return {
+    ...res,
+    data: {
+      data: items,
+      total: raw.total ?? items.length,
+      page: raw.page ?? raw.page_num ?? 1,
+      size: raw.size ?? raw.page_size ?? items.length,
+    },
+  }
 }
 
 export function getUser(id: number): Promise<ApiResponse<UserInfo>> {
@@ -58,6 +68,4 @@ export function deleteUser(id: number): Promise<ApiResponse<void>> {
   return deleteResponse(`/auth/users/${id}`)
 }
 
-export function assignRole(data: RoleAssignRequest): Promise<ApiResponse<void>> {
-  return postResponse('/auth/roles/assign', data)
-}
+
