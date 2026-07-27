@@ -83,6 +83,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
     icon: 'search',
     children: [
       { label: 'Goodser', path: '/modules/zzz/goodser' },
+      { label: 'ShopChecker', path: '/modules/zzz/shopchecker/products' },
     ],
   },
   {
@@ -94,6 +95,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
       { label: '文件存储', path: '/storage' },
       { label: '网络工具', path: '/modules/net' },
       { label: '数据库迁移', path: '/modules/migrate' },
+      { label: 'Webhook', path: '/webhook' },
     ],
   },
 ]

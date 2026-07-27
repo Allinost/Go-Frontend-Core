@@ -18,7 +18,8 @@
               </div>
             </div>
           </template>
-          <NkLoading :loading="loadingTables">
+          <NkLoading v-if="loadingTables" />
+          <div v-else>
             <div v-if="tables.length" class="migrate-module__table-list">
               <div
                 v-for="table in tables"
@@ -32,7 +33,7 @@
               </div>
             </div>
             <NkEmpty v-else description="未找到数据表" />
-          </NkLoading>
+          </div>
         </NkCard>
 
         <NkCard class="migrate-module__card">
@@ -102,7 +103,8 @@
           <NkButton size="sm" @click="openCreateBackup">创建备份</NkButton>
         </div>
 
-        <NkLoading :loading="loadingBackups">
+        <NkLoading v-if="loadingBackups" />
+        <div v-else>
           <div v-if="backups.length" class="migrate-module__backup-list">
             <NkCard
               v-for="backup in backups"
@@ -129,7 +131,7 @@
             </NkCard>
           </div>
           <NkEmpty v-else description="暂无备份" />
-        </NkLoading>
+        </div>
 
         <NkDialog v-model:visible="showCreateDialog" title="创建备份" :width="520">
           <div class="migrate-module__dialog-form">
@@ -190,7 +192,8 @@
         </div>
 
         <NkCard>
-          <NkLoading :loading="loadingMigrations">
+          <NkLoading v-if="loadingMigrations" />
+          <div v-else>
             <table v-if="migrations.length" class="migrate-module__table">
               <thead>
                 <tr>
@@ -216,7 +219,7 @@
               </tbody>
             </table>
             <NkEmpty v-else description="暂无迁移记录" />
-          </NkLoading>
+          </div>
         </NkCard>
 
         <NkDialog v-model:visible="showCreateMigrationDialog" title="创建迁移" :width="420">
@@ -297,7 +300,7 @@ async function loadTables() {
   loadingTables.value = true
   try {
     const res = await getTables()
-    tables.value = res.data.tables
+    tables.value = res.data.tables ?? []
   } catch (err: any) {
     NKMessage.error(err.message || '加载表列表失败')
   } finally {
@@ -395,7 +398,7 @@ async function loadBackups() {
   loadingBackups.value = true
   try {
     const res = await listBackups()
-    backups.value = res.data.backups
+    backups.value = res.data.backups ?? []
   } catch (err: any) {
     NKMessage.error(err.message || '加载备份列表失败')
   } finally {
@@ -491,7 +494,7 @@ async function loadMigrations() {
   loadingMigrations.value = true
   try {
     const res = await listSchemaMigrations()
-    migrations.value = res.data
+    migrations.value = res.data ?? []
   } catch (err: any) {
     NKMessage.error(err.message || '加载迁移列表失败')
   } finally {

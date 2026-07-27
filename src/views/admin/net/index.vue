@@ -5,7 +5,8 @@
     <NkTabs v-model="activeTab" :items="tabs" @change="onTabChange" />
 
     <div class="net-module__content">
-      <NkLoading :loading="loading">
+      <NkLoading v-if="loading" />
+      <div v-else>
         <!-- HTTP 请求 -->
         <div v-if="activeTab === 'http-request'">
           <NkCard>
@@ -181,7 +182,7 @@
             </div>
           </NkCard>
         </div>
-      </NkLoading>
+      </div>
     </div>
   </div>
 </template>

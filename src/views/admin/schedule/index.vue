@@ -26,7 +26,8 @@
         </NkSelect>
       </div>
 
-      <NkLoading :loading="loading">
+      <NkLoading v-if="loading" />
+      <div v-else>
         <table class="schedule__table" v-if="filteredTasks.length > 0">
           <thead>
             <tr>
@@ -67,7 +68,7 @@
           </tbody>
         </table>
         <NkEmpty v-else description="暂无任务" />
-      </NkLoading>
+      </div>
     </NkCard>
 
     <NkDialog v-model:visible="formDialog.visible" :title="formDialog.isEdit ? '编辑任务' : '新建任务'" width="560px">
@@ -118,7 +119,8 @@
     </NkDialog>
 
     <NkDialog v-model:visible="logDialog.visible" title="执行日志" width="800px">
-      <NkLoading :loading="logDialog.loading">
+      <NkLoading v-if="logDialog.loading" />
+      <div v-else>
         <table class="schedule__table" v-if="logDialog.logs.length > 0">
           <thead>
             <tr>
@@ -146,7 +148,7 @@
           </tbody>
         </table>
         <NkEmpty v-else description="暂无执行日志" />
-      </NkLoading>
+      </div>
     </NkDialog>
 
     <NkPagination
