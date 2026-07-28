@@ -100,8 +100,12 @@ const platformOptions = [
 const intervalOptions = [
   { label: '30 分钟', value: '30m' },
   { label: '1 小时', value: '1h' },
+  { label: '2 小时', value: '2h' },
+  { label: '3 小时', value: '3h' },
+  { label: '4 小时', value: '4h' },
   { label: '6 小时', value: '6h' },
   { label: '1 天', value: '1d' },
+  { label: '7 天', value: '7d' },
 ]
 
 const webhookOptions = ref<{ label: string; value: string }[]>([])

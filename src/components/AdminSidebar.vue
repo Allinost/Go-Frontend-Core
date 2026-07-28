@@ -76,6 +76,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
     children: [
       { label: '用户管理', path: '/users', requiresAdmin: true },
       { label: '角色权限', path: '/roles', requiresAdmin: true },
+      { label: '第三方登录', path: '/users/login3rd' },
     ],
   },
   {
@@ -116,7 +117,7 @@ const filteredGroups = computed(() =>
 )
 
 function isActive(path: string): boolean {
-  return route.path.startsWith(path)
+  return route.path === path
 }
 
 function navigate(item: MenuItem) {

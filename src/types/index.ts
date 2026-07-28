@@ -1,3 +1,4 @@
 export * from './api'
 export * from './migrate'
 export * from './webhook'
+export * from './login3rd'

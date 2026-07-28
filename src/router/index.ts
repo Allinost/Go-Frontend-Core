@@ -31,6 +31,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '用户管理', requiresAdmin: true },
       },
       {
+        path: 'users/login3rd',
+        name: 'Login3rd',
+        component: () => import('@/views/admin/login3rd/index.vue'),
+        meta: { title: '第三方登录管理' },
+      },
+      {
+        path: 'users/login3rd/remote/:id',
+        name: 'Login3rdRemote',
+        component: () => import('@/views/admin/login3rd/RemoteLoginView.vue'),
+        meta: { title: '远程登录' },
+      },
+      {
         path: 'users/:id',
         name: 'UserDetail',
         component: () => import('@/views/admin/users/UserDetailView.vue'),
@@ -126,7 +138,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/webhook/ConfigEditView.vue'),
         meta: { title: '编辑 Webhook 配置' },
       },
-    ],
+      ],
   },
 ]
 
