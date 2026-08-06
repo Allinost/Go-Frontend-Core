@@ -95,6 +95,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
       { label: '任务调度', path: '/modules/schedule' },
       { label: '文件存储', path: '/storage' },
       { label: '网络工具', path: '/modules/net' },
+      { label: '服务导航', path: '/modules/servicenav' },
       { label: '数据库迁移', path: '/modules/migrate' },
       { label: 'Webhook', path: '/webhook' },
     ],

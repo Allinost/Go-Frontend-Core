@@ -109,6 +109,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '网络工具' },
       },
       {
+        path: 'modules/servicenav',
+        name: 'ServiceNav',
+        component: () => import('@/views/admin/servicenav/index.vue'),
+        meta: { title: '服务导航' },
+      },
+      {
         path: 'storage',
         name: 'Storage',
         component: () => import('@/views/admin/storage/index.vue'),
