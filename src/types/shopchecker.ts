@@ -1,12 +1,13 @@
 export interface Product {
   _id: string
   name: string
-  platform: 'jd' | 'taobao' | 'pdd'
+  platform: 'jd' | 'jdm' | 'taobao' | 'pdd' | 'qixian'
   url: string
   image_url?: string
-  target_price?: number
-  price_drop_ratio?: number
+  target_price: number
+  price_drop_ratio: number
   last_price: number
+  last_stock_status: 'in_stock' | 'out_of_stock' | 'unknown'
   last_checked_at?: string
   next_check_at?: string
   check_interval: string
@@ -15,16 +16,18 @@ export interface Product {
   enabled: boolean
   remark?: string
   created_at: string
+  updated_at: string
 }
 
 export interface PriceRecord {
   id: number
   product_id: string
   price: number
-  original_price?: number
-  title?: string
+  original_price: number
+  title: string
+  stock_status: 'in_stock' | 'out_of_stock' | 'unknown'
   is_notified: boolean
-  error_msg?: string
+  error_msg: string
   created_at: string
 }
 
@@ -32,10 +35,13 @@ export interface NotificationLog {
   id: number
   product_id: string
   price_record_id: number
-  webhook_ids: string[]
   old_price: number
   new_price: number
+  old_stock_status: string
+  new_stock_status: string
+  notify_type: 'price_drop' | 'target_reached' | 'stock_restore' | 'login_expired'
   result_summary: 'all_success' | 'partial' | 'all_failed'
+  webhook_ids: string[]
   created_at: string
 }
 

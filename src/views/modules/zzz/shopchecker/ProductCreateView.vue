@@ -87,6 +87,8 @@ const form = reactive({
 
 const platformOptions = [
   { label: '京东', value: 'jd' },
+  { label: '京东移动版', value: 'jdm' },
+  { label: '七鲜', value: 'qixian' },
   { label: '淘宝', value: 'taobao' },
   { label: '拼多多', value: 'pdd' },
 ]
@@ -98,6 +100,7 @@ const intervalOptions = [
   { label: '3 小时', value: '3h' },
   { label: '4 小时', value: '4h' },
   { label: '6 小时', value: '6h' },
+  { label: '12 小时', value: '12h' },
   { label: '1 天', value: '1d' },
   { label: '7 天', value: '7d' },
 ]

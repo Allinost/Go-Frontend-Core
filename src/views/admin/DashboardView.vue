@@ -4,51 +4,59 @@
 
     <NkLoading v-if="loading" />
     <div v-else>
-      <div v-if="services.length > 0" class="dashboard__nav">
-        <a
+      <NkRow v-if="services.length > 0" class="dashboard__nav" :gutter="[16, 16]" align="stretch">
+        <NkCol
           v-for="item in services"
           :key="item._id"
-          class="dashboard__nav-card"
-          :href="item.address || undefined"
-          target="_blank"
-          rel="noopener noreferrer"
+          :xs="24"
+          :sm="12"
+          :md="8"
+          :lg="6"
+          :xl="6"
         >
-          <div class="dashboard__nav-card-top">
-            <span class="dashboard__nav-name">{{ item.name }}</span>
-            <div class="dashboard__nav-types">
-              <NkTag v-for="t in item.types" :key="t" size="sm" variant="outline" type="info">
-                {{ t }}
-              </NkTag>
+          <a
+            class="dashboard__nav-card"
+            :href="item.address || undefined"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div class="dashboard__nav-card-top">
+              <span class="dashboard__nav-name">{{ item.name }}</span>
+              <div class="dashboard__nav-types">
+                <NkTag v-for="t in item.types" :key="t" size="sm" variant="outline" type="info">
+                  {{ t }}
+                </NkTag>
+              </div>
             </div>
-          </div>
-          <div class="dashboard__nav-address">
-            <span v-if="item.address" class="dashboard__nav-link">{{ item.address }}</span>
-            <span v-else class="dashboard__nav-empty">-</span>
-          </div>
-          <div class="dashboard__nav-ports">
-            <a
-              v-if="item.intranet_port != null"
-              class="dashboard__nav-port"
-              :href="intranetHref(item)"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              内网 {{ item.intranet_port }}
-            </a>
-            <span v-else class="dashboard__nav-port dashboard__nav-empty">内网 -</span>
-            <a
-              v-if="item.easytier_port != null"
-              class="dashboard__nav-port dashboard__nav-port--right"
-              :href="easytierHref(item)"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              EasyTier {{ item.easytier_port }}
-            </a>
-            <span v-else class="dashboard__nav-port dashboard__nav-port--right dashboard__nav-empty">EasyTier -</span>
-          </div>
-        </a>
-      </div>
+            <div class="dashboard__nav-address">
+              <span v-if="item.address" class="dashboard__nav-link">{{ item.address }}</span>
+              <span v-else class="dashboard__nav-empty">-</span>
+            </div>
+            <div class="dashboard__nav-ports">
+              <a
+                v-if="item.intranet_port != null"
+                class="dashboard__nav-port"
+                :href="intranetHref(item)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                内网 {{ item.intranet_port }}
+              </a>
+              <span v-else class="dashboard__nav-port dashboard__nav-empty">内网 -</span>
+              <a
+                v-if="item.easytier_port != null"
+                class="dashboard__nav-port dashboard__nav-port--right"
+                :href="easytierHref(item)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                EasyTier {{ item.easytier_port }}
+              </a>
+              <span v-else class="dashboard__nav-port dashboard__nav-port--right dashboard__nav-empty">EasyTier -</span>
+            </div>
+          </a>
+        </NkCol>
+      </NkRow>
       <NkEmpty v-else description="暂无可用服务" />
     </div>
 
@@ -109,9 +117,6 @@ onMounted(fetchServices)
   }
 
   &__nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: $nk-spacing-lg;
     margin-bottom: $nk-spacing-xl;
   }
 
@@ -119,6 +124,7 @@ onMounted(fetchServices)
     display: flex;
     flex-direction: column;
     gap: $nk-spacing-sm;
+    height: 100%;
     padding: $nk-spacing-lg;
     background: $nk-color-neutral-0;
     border: 1px solid $nk-color-neutral-200;

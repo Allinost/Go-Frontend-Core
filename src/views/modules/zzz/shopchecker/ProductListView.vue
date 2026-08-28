@@ -23,6 +23,7 @@
             <th>商品名</th>
             <th>平台</th>
             <th>最新价格</th>
+            <th>库存</th>
             <th>目标价</th>
             <th>降价比例</th>
             <th>检查周期</th>
@@ -38,7 +39,8 @@
               <router-link :to="`/modules/zzz/shopchecker/products/${item._id}`" class="sc-table__link">{{ item.name }}</router-link>
             </td>
             <td><NkTag size="sm">{{ platformLabel(item.platform) }}</NkTag></td>
-            <td>{{ item.last_price ? `¥${item.last_price}` : '-' }}</td>
+            <td>{{ item.last_price ? `¥${item.last_price.toFixed(2)}` : '-' }}</td>
+            <td><NkTag size="sm" :type="stockStatusType(item.last_stock_status)">{{ stockStatusLabel(item.last_stock_status) }}</NkTag></td>
             <td>{{ item.target_price ? `¥${item.target_price}` : '-' }}</td>
             <td>{{ item.price_drop_ratio ? `${item.price_drop_ratio}%` : '-' }}</td>
             <td>{{ item.cron_expr || item.check_interval }}</td>
@@ -94,6 +96,8 @@ const filters = reactive({
 
 const platformOptions = [
   { label: '京东', value: 'jd' },
+  { label: '京东移动版', value: 'jdm' },
+  { label: '七鲜', value: 'qixian' },
   { label: '淘宝', value: 'taobao' },
   { label: '拼多多', value: 'pdd' },
 ]
@@ -129,8 +133,18 @@ function resetFilters() {
 }
 
 function platformLabel(platform: string): string {
-  const map: Record<string, string> = { jd: '京东', taobao: '淘宝', pdd: '拼多多' }
+  const map: Record<string, string> = { jd: '京东', jdm: '京东移动版', qixian: '七鲜', taobao: '淘宝', pdd: '拼多多' }
   return map[platform] || platform
+}
+
+function stockStatusLabel(status: string): string {
+  const map: Record<string, string> = { in_stock: '有货', out_of_stock: '无货', unknown: '未知' }
+  return map[status] || '未知'
+}
+
+function stockStatusType(status: string): string {
+  const map: Record<string, string> = { in_stock: 'success', out_of_stock: 'danger', unknown: 'info' }
+  return map[status] || 'info'
 }
 
 function formatTime(t?: string): string {

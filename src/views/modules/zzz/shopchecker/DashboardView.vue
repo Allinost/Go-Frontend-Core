@@ -81,7 +81,7 @@ async function loadDashboard() {
 }
 
 function platformLabel(platform: string): string {
-  const map: Record<string, string> = { jd: '京东', taobao: '淘宝', pdd: '拼多多' }
+  const map: Record<string, string> = { jd: '京东', jdm: '京东移动版', qixian: '七鲜', taobao: '淘宝', pdd: '拼多多' }
   return map[platform] || platform
 }
 

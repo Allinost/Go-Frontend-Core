@@ -67,6 +67,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '任务调度' },
       },
       {
+        path: 'modules/zzz/ia',
+        name: 'IA',
+        component: () => import('@/views/modules/zzz/ia/index.vue'),
+        meta: { title: '投资分析' },
+      },
+      {
         path: 'modules/zzz/goodser',
         name: 'Goodser',
         component: () => import('@/views/modules/zzz/goodser/index.vue'),

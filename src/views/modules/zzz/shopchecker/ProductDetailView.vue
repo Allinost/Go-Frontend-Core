@@ -26,7 +26,11 @@
         </div>
         <div class="sc-detail__info-item">
           <span class="sc-detail__info-label">最新价格</span>
-          <span class="sc-detail__info-value">{{ product?.last_price ? `¥${product.last_price}` : '-' }}</span>
+          <span class="sc-detail__info-value">{{ product?.last_price ? `¥${product.last_price.toFixed(2)}` : '-' }}</span>
+        </div>
+        <div class="sc-detail__info-item">
+          <span class="sc-detail__info-label">库存状态</span>
+          <span class="sc-detail__info-value"><NkTag size="sm" :type="stockStatusType(product?.last_stock_status)">{{ stockStatusLabel(product?.last_stock_status) }}</NkTag></span>
         </div>
         <div class="sc-detail__info-item">
           <span class="sc-detail__info-label">目标价</span>
@@ -77,6 +81,7 @@
           <tr>
             <th>价格</th>
             <th>原价</th>
+            <th>库存</th>
             <th>标题</th>
             <th>已通知</th>
             <th>错误信息</th>
@@ -85,8 +90,9 @@
         </thead>
         <tbody>
           <tr v-for="r in priceRecords" :key="r.id" :class="{ 'sc-table__row--notified': r.is_notified }">
-            <td>{{ r.price ? `¥${r.price}` : '-' }}</td>
-            <td>{{ r.original_price ? `¥${r.original_price}` : '-' }}</td>
+            <td>{{ r.price ? `¥${r.price.toFixed(2)}` : '-' }}</td>
+            <td>{{ r.original_price ? `¥${r.original_price.toFixed(2)}` : '-' }}</td>
+            <td><NkTag size="sm" :type="stockStatusType(r.stock_status)">{{ stockStatusLabel(r.stock_status) }}</NkTag></td>
             <td class="sc-table__ellipsis" :title="r.title">{{ r.title || '-' }}</td>
             <td>
               <NkTag size="sm" :type="r.is_notified ? 'danger' : 'info'">{{ r.is_notified ? '已通知' : '未通知' }}</NkTag>
@@ -95,7 +101,7 @@
             <td>{{ formatTime(r.created_at) }}</td>
           </tr>
           <tr v-if="!priceRecords.length && !priceLoading">
-            <td colspan="6" class="sc-table__empty"><NkEmpty description="暂无价格记录" /></td>
+            <td colspan="7" class="sc-table__empty"><NkEmpty description="暂无价格记录" /></td>
           </tr>
         </tbody>
       </table>
@@ -110,6 +116,7 @@
       <table v-else class="sc-table">
         <thead>
           <tr>
+            <th>通知类型</th>
             <th>旧价格</th>
             <th>新价格</th>
             <th>Webhook</th>
@@ -119,8 +126,9 @@
         </thead>
         <tbody>
           <tr v-for="n in notifLogs" :key="n.id">
-            <td>{{ n.old_price ? `¥${n.old_price}` : '-' }}</td>
-            <td>{{ n.new_price ? `¥${n.new_price}` : '-' }}</td>
+            <td><NkTag size="sm" :type="notifyTypeType(n.notify_type)">{{ notifyTypeLabel(n.notify_type) }}</NkTag></td>
+            <td>{{ n.old_price ? `¥${n.old_price.toFixed(2)}` : '-' }}</td>
+            <td>{{ n.new_price ? `¥${n.new_price.toFixed(2)}` : '-' }}</td>
             <td class="sc-table__ellipsis" :title="n.webhook_ids?.join(', ')">{{ n.webhook_ids?.join(', ') || '-' }}</td>
             <td>
               <NkTag size="sm" :type="resultType(n.result_summary)">{{ resultLabel(n.result_summary) }}</NkTag>
@@ -217,8 +225,28 @@ async function loadNotifLogs() {
 }
 
 function platformLabel(platform?: string): string {
-  const map: Record<string, string> = { jd: '京东', taobao: '淘宝', pdd: '拼多多' }
+  const map: Record<string, string> = { jd: '京东', jdm: '京东移动版', qixian: '七鲜', taobao: '淘宝', pdd: '拼多多' }
   return platform ? map[platform] || platform : '-'
+}
+
+function stockStatusLabel(status?: string): string {
+  const map: Record<string, string> = { in_stock: '有货', out_of_stock: '无货', unknown: '未知' }
+  return status ? map[status] || '未知' : '未知'
+}
+
+function stockStatusType(status?: string): string {
+  const map: Record<string, string> = { in_stock: 'success', out_of_stock: 'danger', unknown: 'info' }
+  return status ? map[status] || 'info' : 'info'
+}
+
+function notifyTypeLabel(type?: string): string {
+  const map: Record<string, string> = { price_drop: '降价通知', target_reached: '目标价', stock_restore: '补货通知', login_expired: '登录失效' }
+  return type ? map[type] || type : '-'
+}
+
+function notifyTypeType(type?: string): string {
+  const map: Record<string, string> = { price_drop: 'success', target_reached: 'primary', stock_restore: 'warning', login_expired: 'danger' }
+  return type ? map[type] || 'info' : 'info'
 }
 
 function resultType(summary?: string): string {
