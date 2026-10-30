@@ -12,6 +12,12 @@ export interface ServiceItem {
   account?: string
   password_hint?: string
   remark?: string
+  project_id?: number | null
+  container_id?: number | null
+  access_point_id?: number | null
+  project_key?: string
+  project_name?: string
+  container_name?: string
   created_at: string
   updated_at: string
 }
@@ -35,6 +41,7 @@ export interface ListServicesParams {
   page_size?: number
   keyword?: string
   type?: string
+  project_id?: number
   sort_by?: 'name' | 'created_at'
   sort_order?: 'asc' | 'desc'
 }
@@ -49,6 +56,9 @@ export interface CreateServiceRequest {
   account?: string
   password_hint?: string
   remark?: string
+  project_id?: number | null
+  container_id?: number | null
+  access_point_id?: number | null
 }
 
 export interface UpdateServiceRequest {
@@ -63,6 +73,26 @@ export interface UpdateServiceRequest {
   account?: string
   password_hint?: string
   remark?: string
+  project_id?: number | null
+  clear_project?: boolean
+  container_id?: number | null
+  clear_container?: boolean
+  access_point_id?: number | null
+  clear_access_point?: boolean
+}
+
+export interface ImportFromProjectsRequest {
+  project_ids?: number[]
+  types?: string[]
+  update_existing?: boolean
+}
+
+export interface ImportFromProjectsResponse {
+  projects: number
+  access_points: number
+  created: number
+  updated: number
+  skipped: number
 }
 
 export interface CreateTypeRequest {
@@ -95,6 +125,12 @@ export function updateService(id: string, data: UpdateServiceRequest): Promise<A
 
 export function deleteService(id: string): Promise<ApiResponse<void>> {
   return deleteResponse(`/servicenav/services/${encodeURIComponent(id)}`)
+}
+
+export function importFromProjects(
+  data: ImportFromProjectsRequest,
+): Promise<ApiResponse<ImportFromProjectsResponse>> {
+  return postResponse('/servicenav/import', data)
 }
 
 export function listTypes(): Promise<ApiResponse<ServiceType[]>> {

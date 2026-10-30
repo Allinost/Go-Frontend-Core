@@ -44,6 +44,7 @@
           @change="onSearch"
         />
         <div class="servicenav__toolbar-spacer" />
+        <NkButton size="sm" @click="openImportDialog">从项目导入</NkButton>
         <NkButton size="sm" type="primary" @click="openCreateDialog">新建服务</NkButton>
       </div>
 
@@ -60,6 +61,7 @@
               <tr>
                 <th>名称</th>
                 <th>类型</th>
+                <th>关联项目</th>
                 <th>协议</th>
                 <th>访问地址</th>
                 <th>内网端口</th>
@@ -80,6 +82,15 @@
                     </NkTag>
                     <span v-if="!item.types?.length" class="servicenav__cell-placeholder">-</span>
                   </div>
+                </td>
+                <td>
+                  <template v-if="item.project_id">
+                    <a class="servicenav__link" @click="openProject(item.project_id)">
+                      {{ item.project_name || item.project_key }}
+                    </a>
+                    <div v-if="item.container_name" class="servicenav__cell-placeholder">{{ item.container_name }}</div>
+                  </template>
+                  <span v-else class="servicenav__cell-placeholder">-</span>
                 </td>
                 <td>
                   <NkTag size="sm" :type="protocolTagType(item)">{{ protocolDisplay(item) }}</NkTag>
@@ -179,6 +190,27 @@
           />
         </div>
         <div class="servicenav__form-row">
+          <label class="servicenav__form-label">关联项目（可选）</label>
+          <NkSelect
+            v-model="serviceForm.project_id"
+            :options="projectOptions"
+            clearable
+            filterable
+            placeholder="关联到 developmentManager 项目"
+            @change="onProjectChange"
+          />
+        </div>
+        <div v-if="serviceForm.project_id" class="servicenav__form-row">
+          <label class="servicenav__form-label">关联容器（可选）</label>
+          <NkSelect
+            v-model="serviceForm.container_id"
+            :options="containerOptions"
+            clearable
+            filterable
+            placeholder="选择项目下的容器"
+          />
+        </div>
+        <div class="servicenav__form-row">
           <label class="servicenav__form-label">传输协议</label>
           <input
             v-model="serviceForm.protocol"
@@ -230,6 +262,60 @@
       </template>
     </NkDialog>
 
+    <!-- 从项目导入导航 -->
+    <NkDialog v-model:visible="importDialog.visible" title="从项目导入导航" :width="760">
+      <div class="servicenav__import-note">
+        仅导入 <strong>后端基座 / 前端基座 / 容器项目 / 前端模板</strong> 类型项目下已登记且访问地址非空的网络接入点。
+        模块（backend_module / frontend_module）不导入——模块挂载在基座上运行。
+      </div>
+      <div class="servicenav__form-row">
+        <label class="servicenav__form-label">附加类型（可选）</label>
+        <NkSelect
+          v-model="importForm.types"
+          :options="typeOptions"
+          multiple
+          filterable
+          placeholder="导入条目统一附加的服务类型"
+        />
+      </div>
+      <div class="servicenav__form-row">
+        <label class="servicenav__form-label">已导入条目</label>
+        <NkSwitch v-model="importForm.updateExisting" size="sm" />
+        <span class="servicenav__import-hint">{{ importForm.updateExisting ? '按接入点更新名称/协议/地址' : '已存在则跳过' }}</span>
+      </div>
+
+      <div class="servicenav__import-projects">
+        <div class="servicenav__import-projects-header">
+          <span>可导入项目（{{ importProjects.length }}）</span>
+          <div class="servicenav__import-projects-actions">
+            <NkButton size="sm" variant="ghost" @click="selectAllImportProjects(true)">全选</NkButton>
+            <NkButton size="sm" variant="ghost" @click="selectAllImportProjects(false)">清空</NkButton>
+          </div>
+        </div>
+        <div v-if="importProjects.length === 0" class="servicenav__cell-placeholder">暂无可导入项目</div>
+        <label v-for="p in importProjects" :key="p.id" class="servicenav__import-item">
+          <input
+            type="checkbox"
+            :checked="importForm.projectIds.includes(p.id)"
+            @change="toggleImportProject(p.id)"
+          />
+          <span class="servicenav__import-item-name">{{ p.name }}</span>
+          <span class="servicenav__cell-placeholder">{{ p.project_key }}</span>
+          <NkTag size="sm" variant="outline" type="info">{{ projectTypeLabel(p.type) }}</NkTag>
+        </label>
+      </div>
+
+      <div v-if="importResult" class="servicenav__import-result">
+        导入完成：项目 {{ importResult.projects }} 个，接入点 {{ importResult.access_points }} 个，
+        新增 <strong>{{ importResult.created }}</strong>，更新 <strong>{{ importResult.updated }}</strong>，跳过 <strong>{{ importResult.skipped }}</strong>。
+      </div>
+
+      <template #footer>
+        <NkButton variant="ghost" @click="importDialog.visible = false">关闭</NkButton>
+        <NkButton type="primary" :loading="importLoading" @click="submitImport">开始导入</NkButton>
+      </template>
+    </NkDialog>
+
     <!-- 类型创建/编辑弹窗 -->
     <NkDialog v-model:visible="typeDialog.visible" :title="typeDialog.isEdit ? '编辑类型' : '新建类型'" :width="440">
       <div class="servicenav__form">
@@ -269,6 +355,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import {
   listServices,
@@ -279,8 +366,18 @@ import {
   createType,
   updateType,
   deleteType,
+  importFromProjects,
 } from '@/api/servicenav'
-import type { ServiceItem, ServiceType, CreateServiceRequest } from '@/api/servicenav'
+import type {
+  ServiceItem,
+  ServiceType,
+  CreateServiceRequest,
+  ImportFromProjectsResponse,
+} from '@/api/servicenav'
+import { listProjects, listContainers } from '@/api/developmentManager'
+import type { Project, Container } from '@/types/developmentManager'
+
+const router = useRouter()
 
 const activeTab = ref<'services' | 'types'>('services')
 const tabs = [
@@ -373,6 +470,8 @@ const serviceForm = reactive({
   account: '',
   password_hint: '',
   remark: '',
+  project_id: null as number | null,
+  container_id: null as number | null,
 })
 const intranetEnabled = ref(false)
 const serviceNameError = ref('')
@@ -389,8 +488,128 @@ function resetServiceForm() {
   serviceForm.account = ''
   serviceForm.password_hint = ''
   serviceForm.remark = ''
+  serviceForm.project_id = null
+  serviceForm.container_id = null
+  containers.value = []
   intranetEnabled.value = false
   serviceNameError.value = ''
+}
+
+// ---------- 项目 / 容器关联 ----------
+const allProjects = ref<Project[]>([])
+const containers = ref<Container[]>([])
+
+const projectTypeLabels: Record<string, string> = {
+  base: '后端基座',
+  template: '前端模板',
+  backend_module: '后端模块',
+  frontend_module: '前端模块',
+  frontend_base: '前端基座',
+  container_project: '容器项目',
+}
+function projectTypeLabel(type: string): string {
+  return projectTypeLabels[type] || type
+}
+
+const projectOptions = computed(() =>
+  allProjects.value
+    .filter((p) => !p.deleted)
+    .map((p) => ({ label: `${p.name}（${projectTypeLabel(p.type)}）`, value: p.id })),
+)
+const containerOptions = computed(() =>
+  containers.value.map((c) => ({ label: c.container_name, value: c.id })),
+)
+
+async function loadProjectOptions() {
+  try {
+    const res = await listProjects({ page: 1, page_size: 100 })
+    allProjects.value = res.data.items || []
+  } catch {
+    allProjects.value = []
+  }
+}
+
+async function loadContainers(projectId: number) {
+  try {
+    const res = await listContainers(projectId)
+    containers.value = res.data || []
+  } catch {
+    containers.value = []
+  }
+}
+
+async function onProjectChange() {
+  serviceForm.container_id = null
+  containers.value = []
+  if (serviceForm.project_id) {
+    await loadContainers(serviceForm.project_id)
+  }
+}
+
+function openProject(projectId?: number | null) {
+  if (!projectId) return
+  router.push(`/modules/zzz/developmentmanager/${projectId}`)
+}
+
+// ---------- 从项目导入 ----------
+const IMPORTABLE_TYPES = ['base', 'frontend_base', 'container_project', 'template']
+const importDialog = reactive({ visible: false })
+const importLoading = ref(false)
+const importResult = ref<ImportFromProjectsResponse | null>(null)
+const importForm = reactive({
+  types: [] as string[],
+  updateExisting: false,
+  projectIds: [] as number[],
+})
+
+const importProjects = computed(() =>
+  allProjects.value.filter((p) => !p.deleted && IMPORTABLE_TYPES.includes(p.type)),
+)
+
+async function openImportDialog() {
+  importResult.value = null
+  importForm.types = []
+  importForm.updateExisting = false
+  if (!allProjects.value.length) {
+    await loadProjectOptions()
+  }
+  importForm.projectIds = importProjects.value.map((p) => p.id)
+  importDialog.visible = true
+}
+
+function toggleImportProject(id: number) {
+  const idx = importForm.projectIds.indexOf(id)
+  if (idx >= 0) importForm.projectIds.splice(idx, 1)
+  else importForm.projectIds.push(id)
+}
+
+function selectAllImportProjects(all: boolean) {
+  importForm.projectIds = all ? importProjects.value.map((p) => p.id) : []
+}
+
+async function submitImport() {
+  if (!importForm.projectIds.length) {
+    NKMessage.warning('请至少选择一个项目')
+    return
+  }
+  importLoading.value = true
+  try {
+    const res = await importFromProjects({
+      project_ids: importForm.projectIds,
+      types: importForm.types,
+      update_existing: importForm.updateExisting,
+    })
+    importResult.value = res.data
+    NKMessage.success(
+      `导入完成：新增 ${res.data.created}，更新 ${res.data.updated}，跳过 ${res.data.skipped}`,
+    )
+    fetchServices()
+    loadProjectOptions()
+  } catch (e: any) {
+    NKMessage.error(e.message || '导入失败')
+  } finally {
+    importLoading.value = false
+  }
 }
 
 function openCreateDialog() {
@@ -413,6 +632,12 @@ function openEditDialog(item: ServiceItem) {
   serviceForm.account = item.account || ''
   serviceForm.password_hint = item.password_hint || ''
   serviceForm.remark = item.remark || ''
+  serviceForm.project_id = item.project_id ?? null
+  serviceForm.container_id = item.container_id ?? null
+  containers.value = []
+  if (serviceForm.project_id) {
+    loadContainers(serviceForm.project_id)
+  }
   intranetEnabled.value = item.intranet_port != null
   serviceNameError.value = ''
   serviceDialog.visible = true
@@ -444,6 +669,15 @@ function buildServicePayload() {
   const et = serviceForm.easytier_port === '' ? null : Number(serviceForm.easytier_port)
   payload.easytier_port = et
   if (et === null) payload.clear_easytier_port = true
+
+  payload.project_id = serviceForm.project_id || null
+  payload.container_id = serviceForm.container_id || null
+  if (!serviceForm.project_id) {
+    payload.clear_project = true
+    payload.clear_container = true
+  } else if (!serviceForm.container_id) {
+    payload.clear_container = true
+  }
   return payload
 }
 
@@ -638,6 +872,7 @@ function formatDate(dateStr: string): string {
 onMounted(() => {
   fetchTypes()
   fetchServices()
+  loadProjectOptions()
 })
 </script>
 
@@ -820,6 +1055,75 @@ onMounted(() => {
     &::placeholder {
       color: $nk-color-neutral-400;
     }
+  }
+
+  &__import-note {
+    padding: $nk-spacing-sm $nk-spacing-md;
+    margin-bottom: $nk-spacing-md;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-600;
+    background: $nk-color-primary-50;
+    border: 1px solid $nk-color-primary-200;
+    border-radius: $nk-radius-sm;
+    line-height: $nk-line-height-relaxed;
+  }
+
+  &__import-hint {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+    margin-left: $nk-spacing-sm;
+  }
+
+  &__import-projects {
+    margin-top: $nk-spacing-md;
+    border: 1px solid $nk-color-neutral-200;
+    border-radius: $nk-radius-md;
+    padding: $nk-spacing-sm $nk-spacing-md;
+    max-height: 300px;
+    overflow-y: auto;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: $nk-font-size-sm;
+      color: $nk-color-neutral-700;
+      margin-bottom: $nk-spacing-xs;
+    }
+
+    &-actions {
+      display: flex;
+      gap: 4px;
+    }
+  }
+
+  &__import-item {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: 6px 0;
+    border-bottom: 1px solid $nk-color-neutral-100;
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &-name {
+      font-size: $nk-font-size-sm;
+      color: $nk-color-neutral-900;
+      font-weight: $nk-font-weight-medium;
+    }
+  }
+
+  &__import-result {
+    margin-top: $nk-spacing-md;
+    padding: $nk-spacing-sm $nk-spacing-md;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+    background: $nk-color-neutral-50;
+    border: 1px solid $nk-color-neutral-200;
+    border-radius: $nk-radius-sm;
   }
 }
 </style>
