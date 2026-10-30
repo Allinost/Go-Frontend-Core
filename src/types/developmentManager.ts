@@ -251,3 +251,11 @@ export interface ScanImportResp {
   created: number
   updated: number
 }
+
+export interface ExpandAssetResp {
+  asset_id?: number
+  scanned: number
+  created: number
+  skipped: number
+  failed: number
+}

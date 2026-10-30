@@ -3,12 +3,16 @@
     <div class="dm-card">
       <div class="dm-card__header">
         <span class="dm-card__title">归类资产（{{ total }}）</span>
-        <NkButton size="sm" @click="openAsset">登记资产</NkButton>
+        <div class="dm-actions">
+          <NkButton size="sm" variant="ghost" :loading="expandingAll" @click="expandAll">展开全部目录</NkButton>
+          <NkButton size="sm" @click="openAsset">登记资产</NkButton>
+        </div>
       </div>
       <div class="dm-filters" style="margin-bottom: 12px">
         <NkSelect v-model="filters.category" placeholder="类别" :options="categoryOptions" clearable size="sm" style="width: 140px" />
         <NkButton size="sm" @click="search">筛选</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
+        <span class="dm-muted">目录型资产（格式 dir）可展开为文件级索引，重复展开自动跳过</span>
       </div>
 
       <NkLoading v-if="loading" />
@@ -22,7 +26,7 @@
             <th>版本</th>
             <th>大小</th>
             <th>备注</th>
-            <th style="width: 90px">操作</th>
+            <th style="width: 150px">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -35,6 +39,13 @@
             <td class="dm-muted">{{ a.size ? formatSize(a.size) : '-' }}</td>
             <td class="dm-muted">{{ a.note || '-' }}</td>
             <td>
+              <NkButton
+                v-if="a.format === 'dir'"
+                size="sm"
+                variant="ghost"
+                :loading="expandingId === a.id"
+                @click="expandDir(a)"
+              >展开</NkButton>
               <NkButton size="sm" variant="ghost" type="danger" @click="askConfirm(`确定删除资产 ${a.title} 吗？`, () => doDelete(a))">删除</NkButton>
             </td>
           </tr>
@@ -83,7 +94,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { NKMessage } from '@nkui/vue/src/utils/message'
-import { listAssets, createAsset, deleteAsset } from '@/api/developmentManager'
+import { listAssets, createAsset, deleteAsset, expandAsset, expandAllAssets } from '@/api/developmentManager'
 import type { Project, ProjectAsset } from '@/types/developmentManager'
 
 const props = defineProps<{ project: Project }>()
@@ -180,6 +191,38 @@ async function doDelete(a: ProjectAsset) {
   await deleteAsset(props.project.id, a.id)
   NKMessage.success('资产已删除')
   await loadAssets()
+}
+
+// ---------- 目录展开 ----------
+const expandingId = ref<number | null>(null)
+const expandingAll = ref(false)
+
+async function expandDir(a: ProjectAsset) {
+  expandingId.value = a.id
+  try {
+    const res = await expandAsset(props.project.id, { asset_id: a.id })
+    const r = res.data
+    NKMessage.success(`展开完成：扫描 ${r.scanned}，新增 ${r.created}，跳过 ${r.skipped}，失败 ${r.failed}`)
+    await loadAssets()
+  } catch (err: any) {
+    NKMessage.error(err.message || '目录展开失败')
+  } finally {
+    expandingId.value = null
+  }
+}
+
+async function expandAll() {
+  expandingAll.value = true
+  try {
+    const res = await expandAllAssets(props.project.id)
+    const r = res.data
+    NKMessage.success(`全部展开完成：扫描 ${r.scanned}，新增 ${r.created}，跳过 ${r.skipped}，失败 ${r.failed}`)
+    await loadAssets()
+  } catch (err: any) {
+    NKMessage.error(err.message || '目录展开失败')
+  } finally {
+    expandingAll.value = false
+  }
 }
 
 const confirmVisible = ref(false)

@@ -17,6 +17,7 @@ import type {
   RequirementVersion,
   Generation,
   ScanImportResp,
+  ExpandAssetResp,
   PaginatedResp,
 } from '@/types/developmentManager'
 
@@ -75,6 +76,14 @@ export function createAsset(projectId: number | string, data: Record<string, any
 
 export function deleteAsset(projectId: number | string, assetId: number | string) {
   return deleteResponse<any>(`${BASE}/projects/${projectId}/assets/${assetId}`)
+}
+
+export function expandAsset(projectId: number | string, data: { asset_id: number }) {
+  return postResponse<ExpandAssetResp>(`${BASE}/projects/${projectId}/assets/expand`, data)
+}
+
+export function expandAllAssets(projectId: number | string) {
+  return postResponse<ExpandAssetResp>(`${BASE}/projects/${projectId}/assets/expand-all`)
 }
 
 // ---------- 部署资产：容器 ----------
