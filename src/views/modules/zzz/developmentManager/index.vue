@@ -202,6 +202,7 @@ const typeOptions = [
   { label: '后端模块', value: 'backend_module' },
   { label: '前端模块', value: 'frontend_module' },
   { label: '前端基座', value: 'frontend_base' },
+  { label: '容器项目', value: 'container_project' },
 ]
 const statusOptions = [
   { label: '启用', value: 'active' },

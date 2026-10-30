@@ -115,6 +115,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '项目详情' },
       },
       {
+        path: 'modules/zzz/containers',
+        name: 'ContainerManagement',
+        component: () => import('@/views/modules/zzz/developmentManager/ContainerManagementView.vue'),
+        meta: { title: '容器管理' },
+      },
+      {
         path: 'modules/migrate',
         name: 'Migrate',
         component: () => import('@/views/admin/migrate/index.vue'),

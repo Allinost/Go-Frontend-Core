@@ -93,6 +93,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
     label: '运维管理',
     icon: 'file',
     children: [
+      { label: '容器管理', path: '/modules/zzz/containers' },
       { label: '加密工具', path: '/modules/crypto' },
       { label: '任务调度', path: '/modules/schedule' },
       { label: '文件存储', path: '/storage' },

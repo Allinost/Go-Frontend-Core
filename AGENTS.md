@@ -50,6 +50,7 @@ src/
   - API 封装：`src/api/developmentManager.ts`
   - 类型：`src/types/developmentManager.ts`
   - 页面：`src/views/modules/zzz/developmentManager/`（项目列表 + 概览/部署/数据字典/需求/生成/资产）
+  - 容器管理（运维管理菜单）：`/modules/zzz/containers`，管理 `container_project` 类型项目并直达部署 Tab
 
 ## 开发规范
 - 所有组件使用 `<script setup lang="ts">`

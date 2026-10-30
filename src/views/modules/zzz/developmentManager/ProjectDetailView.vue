@@ -72,12 +72,18 @@ const tabs = [
   { label: '资产', value: 'assets' },
 ]
 
+const tabParam = String(route.query.tab || '')
+if (tabParam && tabs.some((t) => t.value === tabParam)) {
+  activeTab.value = tabParam
+}
+
 const typeLabels: Record<string, string> = {
   base: '后端基座',
   template: '前端模板',
   backend_module: '后端模块',
   frontend_module: '前端模块',
   frontend_base: '前端基座',
+  container_project: '容器项目',
 }
 
 function typeLabel(type: string): string {
