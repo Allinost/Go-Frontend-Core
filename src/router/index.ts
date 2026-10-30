@@ -103,6 +103,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '编辑商品' },
       },
       {
+        path: 'modules/zzz/developmentmanager',
+        name: 'DevelopmentManager',
+        component: () => import('@/views/modules/zzz/developmentManager/index.vue'),
+        meta: { title: '项目开发管理' },
+      },
+      {
+        path: 'modules/zzz/developmentmanager/:id',
+        name: 'DevelopmentManagerDetail',
+        component: () => import('@/views/modules/zzz/developmentManager/ProjectDetailView.vue'),
+        meta: { title: '项目详情' },
+      },
+      {
         path: 'modules/migrate',
         name: 'Migrate',
         component: () => import('@/views/admin/migrate/index.vue'),

@@ -83,6 +83,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
     label: '业务模块',
     icon: 'search',
     children: [
+      { label: '项目开发管理', path: '/modules/zzz/developmentmanager' },
       { label: '投资分析', path: '/modules/zzz/ia' },
       { label: 'Goodser', path: '/modules/zzz/goodser' },
       { label: 'ShopChecker', path: '/modules/zzz/shopchecker/products' },

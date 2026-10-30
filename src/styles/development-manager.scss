@@ -1,0 +1,253 @@
+// 项目开发管理模块通用样式（dm- 前缀，跨子页面复用）
+
+.dm-page {
+  display: flex;
+  flex-direction: column;
+  gap: $nk-spacing-lg;
+}
+
+.dm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $nk-spacing-md;
+}
+
+.dm-title {
+  font-size: $nk-font-size-xl;
+  font-weight: $nk-font-weight-semibold;
+  color: $nk-color-neutral-900;
+}
+
+.dm-subtitle {
+  font-size: $nk-font-size-sm;
+  color: $nk-color-neutral-500;
+}
+
+.dm-actions {
+  display: flex;
+  align-items: center;
+  gap: $nk-spacing-sm;
+}
+
+.dm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $nk-spacing-md;
+}
+
+.dm-stat-card {
+  background: $nk-color-neutral-0;
+  border: 1px solid $nk-color-neutral-200;
+  border-radius: $nk-radius-md;
+  padding: $nk-spacing-md;
+}
+
+.dm-stat-label {
+  font-size: $nk-font-size-sm;
+  color: $nk-color-neutral-500;
+  margin-bottom: $nk-spacing-xs;
+}
+
+.dm-stat-value {
+  font-size: $nk-font-size-xl;
+  font-weight: $nk-font-weight-semibold;
+  color: $nk-color-primary-600;
+}
+
+.dm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $nk-spacing-sm;
+}
+
+.dm-card {
+  background: $nk-color-neutral-0;
+  border: 1px solid $nk-color-neutral-200;
+  border-radius: $nk-radius-md;
+  padding: $nk-spacing-md;
+}
+
+.dm-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $nk-spacing-sm;
+  margin-bottom: $nk-spacing-md;
+}
+
+.dm-card__title {
+  font-size: $nk-font-size-base;
+  font-weight: $nk-font-weight-semibold;
+  color: $nk-color-neutral-900;
+}
+
+.dm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $nk-font-size-sm;
+
+  th,
+  td {
+    padding: $nk-spacing-sm $nk-spacing-md;
+    border-bottom: 1px solid $nk-color-neutral-200;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: $nk-color-neutral-50;
+    color: $nk-color-neutral-600;
+    font-weight: $nk-font-weight-medium;
+    white-space: nowrap;
+  }
+
+  tr:hover td {
+    background: $nk-color-neutral-50;
+  }
+}
+
+.dm-table__empty {
+  text-align: center;
+  padding: $nk-spacing-xl;
+  color: $nk-color-neutral-400;
+}
+
+.dm-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $nk-spacing-md;
+}
+
+.dm-muted {
+  color: $nk-color-neutral-500;
+  font-size: $nk-font-size-sm;
+}
+
+.dm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $nk-spacing-md;
+}
+
+.dm-form-item {
+  display: flex;
+  flex-direction: column;
+  gap: $nk-spacing-xs;
+}
+
+.dm-form-item--full {
+  grid-column: 1 / -1;
+}
+
+.dm-form-label {
+  font-size: $nk-font-size-sm;
+  color: $nk-color-neutral-600;
+}
+
+.dm-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $nk-spacing-xs;
+}
+
+.dm-section {
+  display: flex;
+  flex-direction: column;
+  gap: $nk-spacing-sm;
+}
+
+.dm-section + .dm-section {
+  margin-top: $nk-spacing-lg;
+}
+
+.dm-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $nk-spacing-sm;
+}
+
+.dm-section__title {
+  font-size: $nk-font-size-base;
+  font-weight: $nk-font-weight-semibold;
+}
+
+.dm-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $nk-spacing-xs;
+  border-bottom: 1px solid $nk-color-neutral-200;
+  margin-bottom: $nk-spacing-md;
+}
+
+.dm-subtab {
+  padding: $nk-spacing-sm $nk-spacing-md;
+  cursor: pointer;
+  color: $nk-color-neutral-600;
+  border-bottom: 2px solid transparent;
+  font-size: $nk-font-size-sm;
+
+  &--active {
+    color: $nk-color-primary-600;
+    border-bottom-color: $nk-color-primary-500;
+    font-weight: $nk-font-weight-medium;
+  }
+}
+
+.dm-code {
+  font-family: $nk-font-family-mono;
+  font-size: $nk-font-size-xs;
+  background: $nk-color-neutral-100;
+  padding: 2px 6px;
+  border-radius: $nk-radius-sm;
+  word-break: break-all;
+}
+
+.dm-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: $nk-font-family-mono;
+  font-size: $nk-font-size-xs;
+  background: $nk-color-neutral-50;
+  border: 1px solid $nk-color-neutral-200;
+  border-radius: $nk-radius-md;
+  padding: $nk-spacing-md;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.dm-split {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: $nk-spacing-md;
+  align-items: start;
+}
+
+.dm-link {
+  color: $nk-color-primary-600;
+  cursor: pointer;
+}
+
+.dm-link:hover {
+  text-decoration: underline;
+}
+
+.dm-error {
+  color: #b91c1c;
+}
+
+.dm-success {
+  color: #15803d;
+}
+
+@media (max-width: 900px) {
+  .dm-split {
+    grid-template-columns: 1fr;
+  }
+
+  .dm-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

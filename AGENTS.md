@@ -32,7 +32,10 @@ src/
 │   │   ├── net/                   # 网络工具
 │   │   └── schedule/              # 任务调度
 │   └── modules/               # 业务模块
-│       └── zzz/goodser/        # 商品管理模块
+│       └── zzz/
+│           ├── goodser/              # 商品管理模块
+│           ├── developmentManager/   # 项目开发管理（列表 + 详情六 Tab）
+│           └── ...
 ├── App.vue
 └── main.ts
 ```
@@ -41,6 +44,12 @@ src/
 - `npm run dev` - 启动开发服务器 (端口 3000)
 - `npm run build` - 构建生产版本
 - `npm run preview` - 预览构建结果
+
+## 已接入模块
+- `developmentManager`（项目开发管理）：`/modules/zzz/developmentmanager`
+  - API 封装：`src/api/developmentManager.ts`
+  - 类型：`src/types/developmentManager.ts`
+  - 页面：`src/views/modules/zzz/developmentManager/`（项目列表 + 概览/部署/数据字典/需求/生成/资产）
 
 ## 开发规范
 - 所有组件使用 `<script setup lang="ts">`
