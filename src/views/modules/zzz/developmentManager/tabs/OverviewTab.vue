@@ -71,7 +71,7 @@
       </table>
     </div>
 
-    <NkDialog v-model:visible="formVisible" title="新增项目关联" :width="520">
+    <NkDialog v-model:visible="formVisible" title="新增项目关联" width="520">
       <div class="dm-form-grid">
         <div class="dm-form-item dm-form-item--full">
           <span class="dm-form-label">关联类型 *</span>
@@ -92,7 +92,7 @@
       </template>
     </NkDialog>
 
-    <NkDialog v-model:visible="deleteVisible" title="删除关联" :width="420">
+    <NkDialog v-model:visible="deleteVisible" title="删除关联" width="420">
       <p>确定删除该关联吗？</p>
       <template #footer>
         <NkButton variant="ghost" @click="deleteVisible = false">取消</NkButton>

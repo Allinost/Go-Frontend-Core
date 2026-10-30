@@ -57,7 +57,7 @@
             <th>仓库位置</th>
             <th>默认分支</th>
             <th>技术栈</th>
-            <th style="width: 170px">操作</th>
+            <th style="width: 210px">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -100,7 +100,7 @@
       </div>
     </div>
 
-    <NkDialog v-model:visible="formVisible" :title="editing ? '编辑项目' : '新建项目'" :width="640">
+    <NkDialog v-model:visible="formVisible" :title="editing ? '编辑项目' : '新建项目'" width="640">
       <div class="dm-form-grid">
         <div class="dm-form-item">
           <span class="dm-form-label">唯一键 *</span>
@@ -145,7 +145,7 @@
       </template>
     </NkDialog>
 
-    <NkDialog v-model:visible="deleteVisible" title="删除项目" :width="460">
+    <NkDialog v-model:visible="deleteVisible" title="删除项目" width="460">
       <p>确定要删除项目 <strong>{{ deleting?.name }}</strong> 吗？</p>
       <p class="dm-muted">删除为软删除，会同时标记该项目的关联与资产；若存在其他项目依赖，需要强制删除。</p>
       <label class="dm-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 8px">

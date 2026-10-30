@@ -79,7 +79,7 @@
     </div>
 
     <!-- 触发生成 -->
-    <NkDialog v-model:visible="generateVisible" title="触发生成" :width="560">
+    <NkDialog v-model:visible="generateVisible" title="触发生成" width="560">
       <div class="dm-form-grid">
         <div class="dm-form-item">
           <span class="dm-form-label">生成类型 *</span>
@@ -107,7 +107,7 @@
     </NkDialog>
 
     <!-- 任务详情 -->
-    <NkDialog v-model:visible="detailVisible" :title="`生成任务 #${current?.id || ''}`" :width="720">
+    <NkDialog v-model:visible="detailVisible" :title="`生成任务 #${current?.id || ''}`" width="720">
       <template v-if="current">
         <div class="dm-form-grid">
           <div class="dm-form-item"><span class="dm-form-label">类型 / 状态</span><span>{{ kindLabel(current.kind) }} · {{ statusLabel(current.status) }}</span></div>

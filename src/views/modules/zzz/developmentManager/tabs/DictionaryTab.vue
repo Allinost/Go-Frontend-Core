@@ -92,7 +92,7 @@
     </div>
 
     <!-- 表表单 -->
-    <NkDialog v-model:visible="tableVisible" :title="editingTable ? '编辑数据表' : '登记数据表'" :width="620">
+    <NkDialog v-model:visible="tableVisible" :title="editingTable ? '编辑数据表' : '登记数据表'" width="620">
       <div class="dm-form-grid">
         <div class="dm-form-item"><span class="dm-form-label">表名 *</span><NkInput v-model="tableForm.table_name" size="sm" placeholder="zzz_xxx_table" /></div>
         <div class="dm-form-item"><span class="dm-form-label">库名（空=当前库）</span><NkInput v-model="tableForm.table_schema" size="sm" /></div>
@@ -115,7 +115,7 @@
     </NkDialog>
 
     <!-- 字段表单 -->
-    <NkDialog v-model:visible="columnVisible" :title="editingColumn ? '编辑字段' : '新增字段'" :width="620">
+    <NkDialog v-model:visible="columnVisible" :title="editingColumn ? '编辑字段' : '新增字段'" width="620">
       <div class="dm-form-grid">
         <div class="dm-form-item"><span class="dm-form-label">字段名 *</span><NkInput v-model="columnForm.column_name" size="sm" /></div>
         <div class="dm-form-item"><span class="dm-form-label">类型 *</span><NkInput v-model="columnForm.data_type" size="sm" placeholder="bigint / varchar(64)" /></div>
@@ -143,7 +143,7 @@
       </template>
     </NkDialog>
 
-    <NkDialog v-model:visible="confirmVisible" title="确认操作" :width="420">
+    <NkDialog v-model:visible="confirmVisible" title="确认操作" width="420">
       <p>{{ confirmText }}</p>
       <template #footer>
         <NkButton variant="ghost" @click="confirmVisible = false">取消</NkButton>

@@ -48,7 +48,7 @@
       </div>
     </div>
 
-    <NkDialog v-model:visible="formVisible" title="登记归类资产" :width="620">
+    <NkDialog v-model:visible="formVisible" title="登记归类资产" width="620">
       <div class="dm-form-grid">
         <div class="dm-form-item">
           <span class="dm-form-label">类别 *</span>
@@ -70,7 +70,7 @@
       </template>
     </NkDialog>
 
-    <NkDialog v-model:visible="confirmVisible" title="确认操作" :width="420">
+    <NkDialog v-model:visible="confirmVisible" title="确认操作" width="420">
       <p>{{ confirmText }}</p>
       <template #footer>
         <NkButton variant="ghost" @click="confirmVisible = false">取消</NkButton>

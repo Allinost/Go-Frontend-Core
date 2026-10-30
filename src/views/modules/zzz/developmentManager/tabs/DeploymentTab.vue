@@ -188,7 +188,7 @@
     </div>
 
     <!-- ==================== 容器表单 ==================== -->
-    <NkDialog v-model:visible="containerVisible" :title="editingContainer ? '编辑容器' : '新建容器'" :width="620">
+    <NkDialog v-model:visible="containerVisible" :title="editingContainer ? '编辑容器' : '新建容器'" width="620">
       <div class="dm-form-grid">
         <div class="dm-form-item">
           <span class="dm-form-label">容器名 *</span>
@@ -226,7 +226,7 @@
     </NkDialog>
 
     <!-- ==================== 资源分配 ==================== -->
-    <NkDialog v-model:visible="resourceVisible" :title="`资源分配 · ${currentContainer?.container_name || ''}`" :width="620">
+    <NkDialog v-model:visible="resourceVisible" :title="`资源分配 · ${currentContainer?.container_name || ''}`" width="620">
       <div class="dm-form-grid">
         <div class="dm-form-item"><span class="dm-form-label">CPU 上限</span><NkInput v-model="resourceForm.cpu_limit" size="sm" placeholder="2 / 1.5 / 500m" /></div>
         <div class="dm-form-item"><span class="dm-form-label">CPU 权重</span><NkInput v-model.number="resourceForm.cpu_shares" type="number" size="sm" /></div>
@@ -243,7 +243,7 @@
     </NkDialog>
 
     <!-- ==================== 卷映射 ==================== -->
-    <NkDialog v-model:visible="volumeVisible" :title="`卷映射 · ${currentContainer?.container_name || ''}`" :width="760">
+    <NkDialog v-model:visible="volumeVisible" :title="`卷映射 · ${currentContainer?.container_name || ''}`" width="760">
       <table class="dm-table">
         <thead>
           <tr><th>宿主路径</th><th>容器路径</th><th>模式</th><th>用途</th><th>备份</th><th style="width: 110px">操作</th></tr>
@@ -283,7 +283,7 @@
     </NkDialog>
 
     <!-- ==================== 接入点表单 ==================== -->
-    <NkDialog v-model:visible="accessPointVisible" :title="editingAccessPoint ? '编辑接入点' : '新建接入点'" :width="720">
+    <NkDialog v-model:visible="accessPointVisible" :title="editingAccessPoint ? '编辑接入点' : '新建接入点'" width="720">
       <div class="dm-form-grid">
         <div class="dm-form-item"><span class="dm-form-label">监听端口 *</span><NkInput v-model.number="apForm.listen_port" type="number" size="sm" /></div>
         <div class="dm-form-item"><span class="dm-form-label">宿主端口（空=不映射）</span><NkInput v-model="apForm.host_port" size="sm" /></div>
@@ -328,7 +328,7 @@
     </NkDialog>
 
     <!-- ==================== 白名单表单 ==================== -->
-    <NkDialog v-model:visible="whitelistVisible" :title="editingWhitelist ? '编辑白名单组' : '新建白名单组'" :width="520">
+    <NkDialog v-model:visible="whitelistVisible" :title="editingWhitelist ? '编辑白名单组' : '新建白名单组'" width="520">
       <div class="dm-form-grid">
         <div class="dm-form-item dm-form-item--full"><span class="dm-form-label">组名 *</span><NkInput v-model="whitelistForm.name" size="sm" placeholder="ia-market-allow" /></div>
         <div class="dm-form-item dm-form-item--full"><span class="dm-form-label">说明</span><NkTextarea v-model="whitelistForm.note" :rows="2" /></div>
@@ -340,7 +340,7 @@
     </NkDialog>
 
     <!-- ==================== 白名单成员 ==================== -->
-    <NkDialog v-model:visible="membersVisible" :title="`白名单成员 · ${currentWhitelist?.name || ''}`" :width="620">
+    <NkDialog v-model:visible="membersVisible" :title="`白名单成员 · ${currentWhitelist?.name || ''}`" width="620">
       <table class="dm-table">
         <thead><tr><th>容器</th><th>说明</th><th style="width: 80px">操作</th></tr></thead>
         <tbody>
@@ -366,7 +366,7 @@
     </NkDialog>
 
     <!-- ==================== 备份表单 ==================== -->
-    <NkDialog v-model:visible="backupVisible" :title="editingBackup ? '编辑备份' : '新建备份'" :width="640">
+    <NkDialog v-model:visible="backupVisible" :title="editingBackup ? '编辑备份' : '新建备份'" width="640">
       <div class="dm-form-grid">
         <div class="dm-form-item">
           <span class="dm-form-label">备份类型 *</span>
@@ -397,7 +397,7 @@
     </NkDialog>
 
     <!-- ==================== 通用确认 ==================== -->
-    <NkDialog v-model:visible="confirmVisible" title="确认操作" :width="420">
+    <NkDialog v-model:visible="confirmVisible" title="确认操作" width="420">
       <p>{{ confirmText }}</p>
       <template #footer>
         <NkButton variant="ghost" @click="confirmVisible = false">取消</NkButton>

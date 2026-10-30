@@ -61,7 +61,7 @@
     </div>
 
     <!-- 需求表单 -->
-    <NkDialog v-model:visible="formVisible" :title="editing ? '编辑需求' : '新建需求'" :width="720">
+    <NkDialog v-model:visible="formVisible" :title="editing ? '编辑需求' : '新建需求'" width="720">
       <div class="dm-form-grid">
         <div class="dm-form-item dm-form-item--full">
           <span class="dm-form-label">标题 *</span>
@@ -99,7 +99,7 @@
     </NkDialog>
 
     <!-- 状态流转 -->
-    <NkDialog v-model:visible="statusVisible" :title="`状态流转 · ${current?.code || ''}`" :width="480">
+    <NkDialog v-model:visible="statusVisible" :title="`状态流转 · ${current?.code || ''}`" width="480">
       <p class="dm-muted">当前状态：{{ statusLabel(current?.status || '') }}</p>
       <div class="dm-form-grid" style="margin-top: 12px">
         <div class="dm-form-item dm-form-item--full">
@@ -118,7 +118,7 @@
     </NkDialog>
 
     <!-- 版本历史 -->
-    <NkDialog v-model:visible="versionsVisible" :title="`版本历史 · ${current?.code || ''}`" :width="760">
+    <NkDialog v-model:visible="versionsVisible" :title="`版本历史 · ${current?.code || ''}`" width="760">
       <NkLoading v-if="loadingVersions" />
       <div v-else class="dm-section">
         <div v-for="v in versions" :key="v.id" class="dm-card">
@@ -134,7 +134,7 @@
       </div>
     </NkDialog>
 
-    <NkDialog v-model:visible="confirmVisible" title="确认操作" :width="420">
+    <NkDialog v-model:visible="confirmVisible" title="确认操作" width="420">
       <p>{{ confirmText }}</p>
       <template #footer>
         <NkButton variant="ghost" @click="confirmVisible = false">取消</NkButton>
