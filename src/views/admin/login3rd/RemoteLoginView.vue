@@ -16,6 +16,11 @@
           <NkButton :loading="starting" @click="startSession">启动远程登录</NkButton>
         </div>
 
+        <div v-else-if="isLocalBrowser" class="l3-remote__placeholder">
+          <p>已在本机 Chrome 打开登录窗口</p>
+          <p>请直接在浏览器窗口中完成登录，页面会自动检测结果</p>
+        </div>
+
         <div v-else-if="!screenshotUrl" class="l3-remote__placeholder">
           <NkLoading />
           <p>等待浏览器连接...</p>
@@ -78,9 +83,9 @@ import {
   getAccount,
   refreshSession,
   verifySession,
+  getRemoteSessionStatus,
 } from '@/api/login3rd'
 import type {
-  Login3rdAccount,
   Login3rdPlatform,
   RemoteLoginResp,
 } from '@/types/login3rd'
@@ -99,6 +104,7 @@ const sessionStarted = ref(false)
 const sessionToken = ref('')
 const screenshotUrl = ref('')
 const loginSuccess = ref(false)
+const isLocalBrowser = ref(false)
 
 const cssSelector = ref('')
 const cssValue = ref('')
@@ -124,6 +130,7 @@ const connectionClass = computed(() => {
   if (loginSuccess.value) return 'l3-remote__dot--success'
   if (wsError.value) return 'l3-remote__dot--error'
   if (wsConnected.value) return 'l3-remote__dot--connected'
+  if (isLocalBrowser.value) return 'l3-remote__dot--connected'
   if (sessionStarted.value) return 'l3-remote__dot--connecting'
   return 'l3-remote__dot--idle'
 })
@@ -132,12 +139,14 @@ const connectionText = computed(() => {
   if (loginSuccess.value) return '登录成功'
   if (wsError.value) return '连接错误'
   if (wsConnected.value) return '已连接'
+  if (isLocalBrowser.value) return '等待本机登录'
   if (sessionStarted.value) return '连接中...'
   return '未启动'
 })
 
 let ws: WebSocket | null = null
 let screenshotTimer: ReturnType<typeof setInterval> | null = null
+let statusTimer: ReturnType<typeof setInterval> | null = null
 
 async function loadAccount() {
   try {
@@ -169,17 +178,52 @@ async function startSession() {
     const res = await remoteLogin(accountId)
     const data: RemoteLoginResp = res.data
     sessionToken.value = data.token
+    isLocalBrowser.value = !!data.is_local
 
     const platformResp = await getAccount(accountId)
     const pid = platformResp.data.platform_id
     currentPlatform.value = platforms.value.find(p => p.id === pid) || null
 
     sessionStarted.value = true
-    connectWebSocket(data.url)
+    if (data.is_local) {
+      // 本地开发：后端已拉起本机 Chrome 可见窗口，用户直接在该窗口操作，
+      // 前端通过 status 接口轮询登录结果，不使用 WebSocket 截图。
+      startLocalStatusPolling()
+    } else {
+      connectWebSocket(data.ws_url || `${data.url}/ws`)
+    }
   } catch (err: any) {
     NKMessage.error(err.message || '启动远程登录失败')
   } finally {
     starting.value = false
+  }
+}
+
+function startLocalStatusPolling() {
+  stopStatusPolling()
+  statusTimer = setInterval(async () => {
+    try {
+      const res = await getRemoteSessionStatus(sessionToken.value)
+      if (!res.data.done) return
+      stopStatusPolling()
+      if (res.data.success) {
+        loginSuccess.value = true
+        resultMessage.value = '登录成功，Cookie 已保存到数据库'
+      } else {
+        wsError.value = true
+        resultMessage.value = res.data.error || '登录失败或超时'
+      }
+      showResultDialog.value = true
+    } catch {
+      // 轮询期间网络抖动不立即中断，等待下一次轮询
+    }
+  }, 2000)
+}
+
+function stopStatusPolling() {
+  if (statusTimer) {
+    clearInterval(statusTimer)
+    statusTimer = null
   }
 }
 
@@ -197,14 +241,14 @@ function connectWebSocket(url: string) {
       const msg = JSON.parse(event.data)
       if (msg.type === 'screenshot' && msg.data) {
         screenshotUrl.value = `data:image/png;base64,${msg.data}`
-      } else if (msg.type === 'success') {
+      } else if (msg.type === 'success' || msg.type === 'login_success') {
         loginSuccess.value = true
         resultMessage.value = msg.message || '登录成功'
         showResultDialog.value = true
         cleanup()
-      } else if (msg.type === 'error') {
+      } else if (msg.type === 'error' || msg.type === 'login_failed') {
         wsError.value = true
-        resultMessage.value = msg.message || '登录过程出错'
+        resultMessage.value = msg.message || msg.error || '登录过程出错'
         showResultDialog.value = true
       } else if (msg.type === 'timeout') {
         resultMessage.value = '登录超时，请重试'
@@ -239,10 +283,12 @@ function sendWsMessage(type: string, payload: Record<string, any>) {
 
 function sendCssAction() {
   if (!cssSelector.value) return
-  sendWsMessage('css_action', {
+  // 后端当前支持 input/click/close，CSS 输入框统一按 input 指令发送。
+  sendWsMessage('input', {
     selector: cssSelector.value,
     value: cssValue.value,
   })
+  cssValue.value = ''
 }
 
 function sendPreset(btn: { label: string; selector: string }) {
@@ -264,8 +310,12 @@ async function handleRefresh() {
 async function handleVerify() {
   verifying.value = true
   try {
-    await verifySession(accountId)
-    NKMessage.success('Session 有效')
+    const res = await verifySession(accountId)
+    if (res.data.valid) {
+      NKMessage.success('Session 有效')
+    } else {
+      NKMessage.warning('Session 已失效，请重新登录')
+    }
   } catch (err: any) {
     NKMessage.error(err.message || 'Session 无效')
   } finally {
@@ -274,6 +324,7 @@ async function handleVerify() {
 }
 
 function cleanup() {
+  stopStatusPolling()
   if (ws) {
     ws.onclose = null
     ws.close()

@@ -6,12 +6,13 @@ import type {
   CreateAccountReq,
   UpdateAccountReq,
   RemoteLoginResp,
+  RemoteSessionStatus,
   AccountStatus,
   PaginatedAccounts,
   SchedulerTask,
   SchedulerTaskLog,
   SchedulerHandler,
-  SchedulerTaskList,
+  VerifySessionResp,
 } from '@/types/login3rd'
 
 export function listPlatforms(): Promise<ApiResponse<Login3rdPlatform[]>> {
@@ -50,6 +51,10 @@ export function remoteLogin(id: string): Promise<ApiResponse<RemoteLoginResp>> {
   return postResponse(`/login3rd/accounts/${id}/remote-login`)
 }
 
+export function getRemoteSessionStatus(token: string): Promise<ApiResponse<RemoteSessionStatus>> {
+  return getResponse(`/login3rd/remote/session/${token}/status`)
+}
+
 export function getAccountStatus(id: string): Promise<ApiResponse<AccountStatus>> {
   return getResponse(`/login3rd/accounts/${id}/status`)
 }
@@ -58,7 +63,7 @@ export function refreshSession(id: string): Promise<ApiResponse<void>> {
   return postResponse(`/login3rd/accounts/${id}/refresh`)
 }
 
-export function verifySession(id: string): Promise<ApiResponse<void>> {
+export function verifySession(id: string): Promise<ApiResponse<VerifySessionResp>> {
   return postResponse(`/login3rd/accounts/${id}/verify`)
 }
 
@@ -66,7 +71,7 @@ export function logoutSession(id: string): Promise<ApiResponse<void>> {
   return postResponse(`/login3rd/accounts/${id}/logout`)
 }
 
-export function listSchedulerTasks(): Promise<ApiResponse<SchedulerTaskList>> {
+export function listSchedulerTasks(): Promise<ApiResponse<SchedulerTask[]>> {
   return getResponse('/scheduler/tasks')
 }
 

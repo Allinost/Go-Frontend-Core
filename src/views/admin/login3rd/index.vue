@@ -49,6 +49,7 @@
                 <NkButton size="xs" variant="ghost" @click="startRemoteLogin(acc)">远程登录</NkButton>
                 <NkButton v-if="autoPlatforms.has(acc.platform_id)" size="xs" variant="ghost" :loading="autoLoginingId === acc.id" @click="handleAutoLogin(acc)">自动登录</NkButton>
                 <NkButton size="xs" variant="ghost" @click="handleRefresh(acc)">刷新</NkButton>
+                <NkButton size="xs" variant="ghost" :loading="verifyingId === acc.id" @click="handleVerify(acc)">验证</NkButton>
                 <NkButton size="xs" variant="ghost" @click="openEditDialog(acc)">编辑</NkButton>
                 <NkButton size="xs" variant="ghost" type="danger" @click="confirmDelete(acc)">删除</NkButton>
               </div>
@@ -89,7 +90,7 @@
           <tr v-for="task in tasks" :key="task.id">
             <td>{{ task.name }}</td>
             <td><NkTag size="xs">{{ task.handler }}</NkTag></td>
-            <td>{{ task.interval }}</td>
+            <td>{{ task.interval || task.expression || task.type }}</td>
             <td>
               <NkTag v-if="task.status === 'active'" type="success" size="xs">运行中</NkTag>
               <NkTag v-else-if="task.status === 'paused'" type="warning" size="xs">已暂停</NkTag>
@@ -136,7 +137,7 @@
       </div>
       <template #footer>
         <NkButton variant="ghost" @click="showFormDialog = false">取消</NkButton>
-        <NkButton :loading="saving" :disabled="!form.platform_id || !form.label || !form.username" @click="handleSave">保存</NkButton>
+        <NkButton :loading="saving" :disabled="!form.platform_id || !form.label" @click="handleSave">保存</NkButton>
       </template>
     </NkDialog>
 
@@ -196,9 +197,9 @@
               <NkTag v-else-if="log.status === 'failed'" type="danger" size="xs">失败</NkTag>
               <NkTag v-else size="xs" variant="outline">运行中</NkTag>
             </td>
-            <td>{{ log.message }}</td>
+            <td>{{ log.message || log.error || '-' }}</td>
             <td class="l3-table__time">{{ formatDate(log.started_at) }}</td>
-            <td>{{ log.duration_ms ? log.duration_ms + 'ms' : '-' }}</td>
+            <td>{{ logDuration(log) }}</td>
           </tr>
         </tbody>
       </table>
@@ -221,6 +222,7 @@ import {
   getAccountStatus,
   autoLogin,
   refreshSession,
+  verifySession,
   listSchedulerTasks,
   runSchedulerTask,
   pauseSchedulerTask,
@@ -288,6 +290,7 @@ const deleting = ref(false)
 
 // ---- Auto Login ----
 const autoLoginingId = ref('')
+const verifyingId = ref('')
 
 // ---- Scheduler Tasks ----
 const tasksLoading = ref(false)
@@ -349,7 +352,8 @@ async function loadTasks() {
   tasksLoading.value = true
   try {
     const res = await listSchedulerTasks()
-    tasks.value = (res.data.items || []).filter((t: SchedulerTask) =>
+    const list = Array.isArray(res.data) ? res.data : ((res.data as any)?.items || [])
+    tasks.value = list.filter((t: SchedulerTask) =>
       t.handler?.startsWith('login3rd'),
     )
   } catch (err: any) {
@@ -461,6 +465,23 @@ async function handleRefresh(acc: Login3rdAccount) {
   }
 }
 
+async function handleVerify(acc: Login3rdAccount) {
+  verifyingId.value = acc.id
+  try {
+    const res = await verifySession(acc.id)
+    if (res.data.valid) {
+      NKMessage.success('Session 有效')
+    } else {
+      NKMessage.warning('Session 已失效，请重新登录')
+    }
+    loadAccounts()
+  } catch (err: any) {
+    NKMessage.error(err.message || '验证失败')
+  } finally {
+    verifyingId.value = ''
+  }
+}
+
 function confirmDelete(acc: Login3rdAccount) {
   deletingAccount.value = acc
   showDeleteDialog.value = true
@@ -539,6 +560,14 @@ function formatDate(dateStr?: string): string {
   const d = new Date(dateStr)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function logDuration(log: SchedulerTaskLog): string {
+  if (log.duration_ms) return `${log.duration_ms}ms`
+  const end = log.ended_at || log.finished_at
+  if (!log.started_at || !end) return '-'
+  const ms = new Date(end).getTime() - new Date(log.started_at).getTime()
+  return ms >= 0 ? `${ms}ms` : '-'
 }
 
 onMounted(() => {
