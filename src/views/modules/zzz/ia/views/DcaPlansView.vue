@@ -2,7 +2,7 @@
   <div class="ia-dca">
     <div class="ia-dca__header">
       <h2 class="ia-dca__title">定投计划</h2>
-      <NkButton type="primary" @click="createDialogVisible = true">新建计划</NkButton>
+      <NkButton type="primary" @click="dialogVisible = true">新建计划</NkButton>
     </div>
     <div class="ia-dca__filters">
       <NkSelect v-model="filters.status" :options="statusOptions" clearable placeholder="状态" @change="load" />

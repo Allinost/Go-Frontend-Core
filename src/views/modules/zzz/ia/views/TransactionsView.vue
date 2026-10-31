@@ -190,7 +190,7 @@ function calcAmount() {
 async function loadAccounts() {
   try {
     const res = await listAccounts({ status: 'active' })
-    accountOptions.value = (res.data || []).map((a) => ({ label: `${a.name} (${a.id})`, value: a.id }))
+    accountOptions.value = (res.data?.items || []).map((a) => ({ label: `${a.name} (${a.id})`, value: a.id }))
   } catch (e) {
     accountOptions.value = []
   }
