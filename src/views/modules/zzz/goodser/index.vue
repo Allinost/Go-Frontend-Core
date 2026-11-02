@@ -5,7 +5,9 @@
       <NkButton size="sm" variant="ghost" @click="showSettings = true">设置</NkButton>
     </div>
 
-    <NkTabs v-model="activeTab" :items="tabs" />
+    <div class="goodser__tabs">
+      <NkTabs v-model="activeTab" :items="tabs" />
+    </div>
 
     <div class="goodser__content">
       <!-- ==================== 商品列表 Tab ==================== -->
@@ -395,6 +397,64 @@
             </div>
             <div v-else-if="canReturn(o)" class="goodser__order-actions" @click.stop>
               <NkButton size="xs" variant="ghost" @click="openReturnDialog(o)">退货</NkButton>
+            </div>
+          </NkCard>
+        </div>
+      </div>
+
+      <!-- ==================== 退货单 Tab ==================== -->
+      <div v-if="activeTab === 'returns'" class="goodser__tab">
+        <div class="goodser__tab-header">
+          <span class="goodser__count">共 {{ filteredReturns.length }} 张退货单</span>
+          <div class="goodser__return-toolbar">
+            <NkInput
+              v-model="returnQuery"
+              placeholder="搜索单号/商品/备注..."
+              size="sm"
+              style="width: 220px"
+            />
+            <NkSelect
+              v-model="returnStatusFilter"
+              :options="returnStatusOptions"
+              size="sm"
+              style="width: 140px"
+            />
+            <NkButton size="sm" variant="ghost" @click="fetchReturns">刷新</NkButton>
+          </div>
+        </div>
+        <NkLoading v-if="loadingReturnList" />
+        <div v-else-if="!filteredReturns.length" class="goodser__empty">
+          <NkEmpty :description="returnQuery || returnStatusFilter ? '未匹配退货单' : '暂无退货单'" />
+        </div>
+        <div v-else class="goodser__return-list">
+          <NkCard v-for="ret in filteredReturns" :key="ret._id" class="goodser__return-card">
+            <div class="goodser__order-card-header">
+              <div>
+                <span class="goodser__order-no">{{ ret.order_no }}</span>
+                <NkTag :type="returnStatusType(ret.status)" size="sm" style="margin-left:8px">{{ returnStatusLabel(ret.status) }}</NkTag>
+                <NkTag size="sm" style="margin-left:4px">{{ returnReasonLabel(ret.reason) }}</NkTag>
+              </div>
+              <span class="goodser__order-date">{{ formatDate(ret.created_at) }}</span>
+            </div>
+            <div class="goodser__order-meta">
+              <span>{{ ret.items?.length || 0 }} 种商品</span>
+              <span>合计 {{ returnTotalQty(ret) }} 件</span>
+              <span v-if="ret.remark">{{ ret.remark }}</span>
+            </div>
+            <div class="goodser__return-lines">
+              <div v-for="line in (ret.items || []).slice(0, 3)" :key="line.product_id" class="goodser__return-line">
+                <span class="goodser__return-line-name">{{ line.product_name || line.product_code }}</span>
+                <span class="goodser__return-line-qty">× {{ line.quantity }}</span>
+                <NkTag size="sm" :type="line.restock ? 'success' : 'info'">{{ line.restock ? '回库' : '不回库' }}</NkTag>
+              </div>
+              <span v-if="(ret.items?.length || 0) > 3" class="goodser__return-more">还有 {{ (ret.items?.length || 0) - 3 }} 种商品</span>
+            </div>
+            <div class="goodser__order-actions">
+              <NkButton size="xs" variant="ghost" @click="openReturnOrder(ret)">查看出库单</NkButton>
+              <template v-if="ret.status === 'pending'">
+                <NkButton size="xs" variant="ghost" @click="handleConfirmReturn(ret)">确认退货</NkButton>
+                <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReturn(ret)">取消</NkButton>
+              </template>
             </div>
           </NkCard>
         </div>
@@ -1399,6 +1459,7 @@ const tabs = [
   { label: '捆', value: 'bundles' },
   { label: '统计', value: 'stats' },
   { label: '出库订单', value: 'orders' },
+  { label: '退货单', value: 'returns' },
   { label: '入库记录', value: 'logs' },
   { label: '库存目录', value: 'inventories' },
 ]
@@ -1624,6 +1685,8 @@ function onInventoryChange() {
     fetchBundles()
   } else if (activeTab.value === 'stats') {
     fetchStats()
+  } else if (activeTab.value === 'returns') {
+    fetchReturns()
   } else {
     searchProducts()
   }
@@ -1862,6 +1925,35 @@ const returnReason = ref<ReturnReason>('return_refund')
 const returnRemark = ref('')
 const orderReturns = ref<ReturnOrder[]>([])
 const loadingReturns = ref(false)
+const allReturns = ref<ReturnOrder[]>([])
+const loadingReturnList = ref(false)
+const returnQuery = ref('')
+const returnStatusFilter = ref('')
+const returnStatusOptions = [
+  { label: '全部状态', value: '' },
+  { label: '待确认', value: 'pending' },
+  { label: '已确认', value: 'confirmed' },
+  { label: '已取消', value: 'cancelled' },
+]
+const filteredReturns = computed(() => {
+  let list = allReturns.value
+  if (returnStatusFilter.value) {
+    list = list.filter((ret) => ret.status === returnStatusFilter.value)
+  }
+  const keyword = returnQuery.value.trim().toLowerCase()
+  if (keyword) {
+    list = list.filter((ret) => {
+      if ((ret.order_no || '').toLowerCase().includes(keyword)) return true
+      if ((ret.remark || '').toLowerCase().includes(keyword)) return true
+      if (returnReasonLabel(ret.reason).toLowerCase().includes(keyword)) return true
+      return (ret.items || []).some((item) =>
+        (item.product_name || '').toLowerCase().includes(keyword) ||
+        (item.product_code || '').toLowerCase().includes(keyword),
+      )
+    })
+  }
+  return list
+})
 const returnFormItems = ref<Array<{
   product_id: string
   product_name: string
@@ -1879,8 +1971,38 @@ const returnReasonOptions = [
   { label: '其他', value: 'other' },
 ]
 
-async function fetchOrders() {
+async function fetchReturns() {
   if (!currentInventoryId.value) return
+  loadingReturnList.value = true
+  try {
+    const res = await loadReturns(currentInventoryId.value)
+    allReturns.value = res.data || []
+  } catch (err: any) {
+    allReturns.value = []
+    NKMessage.error(err.message || '加载退货单失败')
+  } finally {
+    loadingReturnList.value = false
+  }
+}
+
+function returnTotalQty(ret: ReturnOrder) {
+  return (ret.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)
+}
+
+async function openReturnOrder(ret: ReturnOrder) {
+  let order = orders.value.find((item) => item._id === ret.outbound_order_id)
+  if (!order) {
+    await fetchOrders()
+    order = orders.value.find((item) => item._id === ret.outbound_order_id)
+  }
+  if (order) {
+    openOrderDetail(order)
+  } else {
+    NKMessage.warning('未找到关联出库单，请刷新后重试')
+  }
+}
+
+async function fetchOrders() {  if (!currentInventoryId.value) return
   loadingOrders.value = true
   try {
     const res = await loadOutboundOrders({ inventory_id: currentInventoryId.value, page: 1, page_size: 50 })
@@ -2220,6 +2342,7 @@ async function handleConfirmReturn(ret: ReturnOrder) {
       detailOrder.value = orders.value.find((o) => o._id === detailOrder.value!._id) || detailOrder.value
       await loadOrderReturns(detailOrder.value)
     }
+    if (activeTab.value === 'returns') await fetchReturns()
     await searchProducts()
   } catch (err: any) {
     NKMessage.error(err.message || '确认退货失败')
@@ -2236,6 +2359,7 @@ async function handleCancelReturn(ret: ReturnOrder) {
     if (detailOrder.value) {
       await loadOrderReturns(detailOrder.value)
     }
+    if (activeTab.value === 'returns') await fetchReturns()
   } catch (err: any) {
     NKMessage.error(err.message || '取消退货失败')
   } finally {
@@ -3221,6 +3345,7 @@ watch(activeTab, (tab) => {
   if (tab === 'bundles') fetchBundles()
   if (tab === 'stats') fetchStats()
   if (tab === 'orders') fetchOrders()
+  if (tab === 'returns') fetchReturns()
   if (tab === 'logs') fetchLogs()
 })
 
@@ -3246,6 +3371,26 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: $nk-spacing-lg;
+  }
+
+  &__tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 1px;
+    -webkit-overflow-scrolling: touch;
+
+    :deep(.nk-tabs__header) {
+      min-width: max-content;
+    }
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $nk-color-neutral-200;
+      border-radius: 2px;
+    }
   }
 
   &__title {
@@ -3671,6 +3816,60 @@ onMounted(async () => {
     margin-top: $nk-spacing-sm;
     display: flex;
     gap: $nk-spacing-xs;
+  }
+
+  // ---- Return list ----
+  &__return-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  &__return-list {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-md;
+  }
+
+  &__return-card {
+    padding: $nk-spacing-md;
+  }
+
+  &__return-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: $nk-spacing-sm;
+    padding: 8px 10px;
+    border-radius: $nk-radius-md;
+    background: $nk-color-neutral-50;
+  }
+
+  &__return-line {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-line-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__return-line-qty {
+    color: $nk-color-primary-600;
+    font-weight: $nk-font-weight-medium;
+  }
+
+  &__return-more {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
   }
 
   // ---- Order Form ----
