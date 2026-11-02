@@ -69,7 +69,9 @@
             </div>
             <div class="goodser__product-name">{{ p.name }}</div>
             <div class="goodser__product-meta">
-              <span>数量: {{ p.quantity }}{{ p.reserved_quantity ? ` (预留 ${p.reserved_quantity})` : '' }}</span>
+              <span>可用 {{ p.quantity }}</span>
+              <span v-if="p.reserved_quantity">锁定 {{ p.reserved_quantity }}</span>
+              <span>总量 {{ p.total_quantity ?? p.quantity + (p.reserved_quantity || 0) }}</span>
               <span v-if="p.expected_price != null">¥{{ p.expected_price }}</span>
             </div>
             <div class="goodser__product-zone">{{ p.main_zone }}{{ p.sub_zone }}-{{ String(p.seq_number).padStart(4, '0') }}</div>
@@ -84,6 +86,156 @@
           </div>
           <span class="goodser__page-info">{{ productPage }} / {{ productTotalPages }}</span>
           <NkButton size="sm" variant="ghost" :disabled="productPage >= productTotalPages" @click="goToPage(productPage + 1)">下一页</NkButton>
+        </div>
+      </div>
+
+      <!-- ==================== 系列视图 Tab ==================== -->
+      <div v-if="activeTab === 'series'" class="goodser__tab">
+        <div class="goodser__product-toolbar">
+          <NkSelect
+            v-if="inventories.length"
+            v-model="currentInventoryId"
+            :options="inventoryOptions"
+            style="width: 200px"
+            size="sm"
+            @change="onInventoryChange"
+          />
+          <span class="goodser__count">共 {{ seriesSummary.length }} 个系列</span>
+        </div>
+        <NkLoading v-if="loadingSeries" />
+        <div v-else-if="!seriesSummary.length" class="goodser__empty">
+          <NkEmpty description="暂无系列数据，请先在设置中维护系列字典，并给商品关联系列" />
+        </div>
+        <div v-else class="goodser__series-grid">
+          <NkCard
+            v-for="s in seriesSummary"
+            :key="s.series_id || s.series_name"
+            class="goodser__series-card"
+            @click="openSeriesProducts(s)"
+          >
+            <div class="goodser__series-name">{{ s.series_name || '未命名系列' }}</div>
+            <div class="goodser__series-meta">
+              <span>商品 {{ s.product_count }}</span>
+              <span>可用 {{ s.available }}</span>
+              <span>总量 {{ s.total_quantity }}</span>
+            </div>
+          </NkCard>
+        </div>
+      </div>
+
+      <!-- ==================== 组合包 Tab ==================== -->
+      <div v-if="activeTab === 'combos'" class="goodser__tab">
+        <div class="goodser__product-toolbar">
+          <NkSelect
+            v-if="inventories.length"
+            v-model="currentInventoryId"
+            :options="inventoryOptions"
+            style="width: 200px"
+            size="sm"
+            @change="onInventoryChange"
+          />
+          <span class="goodser__count">共 {{ combos.length }} 个组合包</span>
+          <div class="goodser__product-toolbar-right">
+            <NkButton size="sm" @click="openCreateCombo">新建组合包</NkButton>
+          </div>
+        </div>
+        <NkLoading v-if="loadingCombos" />
+        <div v-else-if="!combos.length" class="goodser__empty">
+          <NkEmpty description="暂无组合包，点击上方按钮创建" />
+        </div>
+        <div v-else class="goodser__combo-list">
+          <NkCard v-for="c in combos" :key="c._id" class="goodser__combo-card">
+            <div class="goodser__order-card-header">
+              <div>
+                <span class="goodser__order-no">{{ c.name }}</span>
+                <NkTag :type="c.status === 'active' ? 'success' : 'info'" size="sm" style="margin-left:8px">
+                  {{ c.status === 'active' ? '启用' : '停用' }}
+                </NkTag>
+              </div>
+              <span class="goodser__order-date">{{ c.code }}</span>
+            </div>
+            <div class="goodser__order-meta">
+              <span>可售 {{ c.availability }}</span>
+              <span v-if="c.price != null">¥{{ c.price }}</span>
+              <span>{{ c.items?.length || 0 }} 个组件</span>
+            </div>
+            <div class="goodser__combo-components">
+              <span v-for="item in c.items" :key="item.product_id" class="goodser__combo-component">
+                {{ item.product_name }} × {{ item.quantity }}（可用 {{ item.available }}）
+              </span>
+            </div>
+            <div class="goodser__order-actions">
+              <NkButton size="xs" variant="ghost" @click="openEditCombo(c)">编辑</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteCombo(c)">删除</NkButton>
+            </div>
+          </NkCard>
+        </div>
+      </div>
+
+      <!-- ==================== 捆 Tab ==================== -->
+      <div v-if="activeTab === 'bundles'" class="goodser__tab">
+        <div class="goodser__product-toolbar">
+          <NkSelect
+            v-if="inventories.length"
+            v-model="currentInventoryId"
+            :options="inventoryOptions"
+            style="width: 200px"
+            size="sm"
+            @change="onInventoryChange"
+          />
+          <span class="goodser__count">共 {{ bundles.length }} 个捆</span>
+          <div class="goodser__product-toolbar-right">
+            <NkButton size="sm" @click="openCreateBundle">新建捆</NkButton>
+          </div>
+        </div>
+        <NkLoading v-if="loadingBundles" />
+        <div v-else-if="!bundles.length" class="goodser__empty">
+          <NkEmpty description="暂无捆，点击上方按钮创建" />
+        </div>
+        <div v-else class="goodser__combo-list">
+          <NkCard v-for="b in bundles" :key="b._id" class="goodser__combo-card">
+            <div class="goodser__order-card-header">
+              <div>
+                <span class="goodser__order-no">{{ b.name }}</span>
+                <NkTag :type="b.status === 'active' ? 'success' : 'info'" size="sm" style="margin-left:8px">
+                  {{ b.status === 'active' ? '启用' : '停用' }}
+                </NkTag>
+              </div>
+              <span class="goodser__order-date">{{ b.code }}</span>
+            </div>
+            <div class="goodser__order-meta">
+              <span>{{ bundlePriceModeLabel(b.price_mode) }}</span>
+              <span>主商品 {{ b.main_products.length }}</span>
+              <span>副区商品 {{ b.sub_products.length }}</span>
+              <span v-if="b.price_mode === 'fixed'">¥{{ b.fixed_price }}</span>
+            </div>
+            <div class="goodser__order-meta">
+              <span>主商品 ≥ {{ b.min_main_quantity }} 件</span>
+              <span v-if="b.min_main_amount > 0">主商品金额 ≥ ¥{{ b.min_main_amount }}</span>
+              <span>副区 ≥ {{ b.min_sub_quantity }} 件</span>
+              <span v-if="b.max_sub_quantity > 0">副区 ≤ {{ b.max_sub_quantity }} 件</span>
+              <span v-if="b.min_sub_amount > 0">副区金额 ≥ ¥{{ b.min_sub_amount }}</span>
+            </div>
+            <div class="goodser__combo-components">
+              <span v-for="m in b.main_products.slice(0, 6)" :key="m.product_id" class="goodser__combo-component">
+                主 · {{ m.product_name }}（可用 {{ m.available }}）
+              </span>
+              <span v-if="b.main_products.length > 6" class="goodser__combo-component">
+                +{{ b.main_products.length - 6 }} 个主商品
+              </span>
+              <span v-if="!b.main_products.length" class="goodser__combo-component">仅按筛选条件匹配主商品</span>
+            </div>
+            <div class="goodser__combo-components">
+              <span v-for="s in b.sub_products" :key="s.product_id" class="goodser__combo-component">
+                副 · {{ s.product_name }} × {{ s.default_quantity }}（可用 {{ s.available }}）
+              </span>
+            </div>
+            <div class="goodser__order-actions">
+              <NkButton size="xs" variant="ghost" @click="openCreateOrder('outbound', b._id)">下单</NkButton>
+              <NkButton size="xs" variant="ghost" @click="openEditBundle(b)">编辑</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteBundle(b)">删除</NkButton>
+            </div>
+          </NkCard>
         </div>
       </div>
 
@@ -115,12 +267,17 @@
               <span v-if="o.order_info">{{ o.order_info }}</span>
             </div>
             <div v-if="o.status === 'pending'" class="goodser__order-actions" @click.stop>
-              <NkButton size="xs" variant="ghost" @click="handleConfirmOrder(o)">确认</NkButton>
-              <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelOrder(o)">取消</NkButton>
+              <template v-if="o.type === 'reserve'">
+                <NkButton size="xs" variant="ghost" @click="openConvertReserve(o)">转出库</NkButton>
+                <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReserve(o)">取消预留</NkButton>
+              </template>
+              <template v-else>
+                <NkButton size="xs" variant="ghost" @click="handleConfirmOrder(o)">确认出库</NkButton>
+                <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelOrder(o)">取消</NkButton>
+              </template>
             </div>
-            <div v-else-if="o.status === 'reserve'" class="goodser__order-actions" @click.stop>
-              <NkButton size="xs" variant="ghost" @click="openConvertReserve(o)">转出库</NkButton>
-              <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReserve(o)">取消预留</NkButton>
+            <div v-else-if="canReturn(o)" class="goodser__order-actions" @click.stop>
+              <NkButton size="xs" variant="ghost" @click="openReturnDialog(o)">退货</NkButton>
             </div>
           </NkCard>
         </div>
@@ -245,6 +402,26 @@
         </div>
       </div>
       <div class="goodser__filter-section">
+        <label class="goodser__filter-label">系列 / 角色</label>
+        <NkSelect v-model="productFilterSeries" :options="filterSeriesOptions" placeholder="全部系列" />
+        <NkSelect
+          v-model="productFilterCharacter"
+          :options="filterCharacterOptions"
+          placeholder="全部角色"
+          style="margin-top:6px"
+        />
+      </div>
+      <div class="goodser__filter-section">
+        <label class="goodser__filter-label">套型 / 商品类型</label>
+        <NkSelect v-model="productFilterSetType" :options="filterSetTypeOptions" placeholder="全部套型" />
+        <NkSelect
+          v-model="productFilterProductType"
+          :options="filterProductTypeOptions"
+          placeholder="全部商品类型"
+          style="margin-top:6px"
+        />
+      </div>
+      <div class="goodser__filter-section">
         <label class="goodser__filter-label">标签</label>
         <div class="goodser__filter-tags">
           <span
@@ -319,6 +496,35 @@
           </div>
         </div>
         <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">系列</label>
+            <NkSelect v-model="productForm.series_id" :options="seriesOptions" placeholder="未设置" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">套型</label>
+            <NkSelect v-model="productForm.set_type_id" :options="setTypeOptions" placeholder="未设置" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">商品类型</label>
+            <NkSelect v-model="productForm.product_type_id" :options="productTypeOptions" placeholder="未设置" />
+          </div>
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field">
+            <label class="goodser__form-label">角色（可多选）</label>
+            <div class="goodser__tag-selector">
+              <span
+                v-for="ch in characterDictionaries"
+                :key="ch._id"
+                class="goodser__tag-chip"
+                :class="{ 'goodser__tag-chip--selected': productFormCharacters.includes(ch._id) }"
+                @click="toggleProductCharacter(ch._id)"
+              >{{ ch.name }}</span>
+              <span v-if="!characterDictionaries.length" class="goodser__return-tip">暂无角色字典，请先在设置中创建</span>
+            </div>
+          </div>
+        </div>
+        <div class="goodser__form-row">
           <div class="goodser__form-field">
             <label class="goodser__form-label">存放位置</label>
             <NkInput v-model="productForm.storage_location" placeholder="例如 A-01-01" />
@@ -357,8 +563,12 @@
       <div v-if="detailProduct" class="goodser__product-detail">
         <div class="goodser__detail-row"><span class="goodser__detail-label">编码</span><span>{{ detailProduct.code }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">分区</span><span>{{ detailProduct.main_zone }}{{ detailProduct.sub_zone }}-{{ String(detailProduct.seq_number).padStart(4, '0') }}</span></div>
-        <div class="goodser__detail-row"><span class="goodser__detail-label">数量</span><span>{{ detailProduct.quantity }}{{ detailProduct.reserved_quantity ? ` (预留 ${detailProduct.reserved_quantity})` : '' }}</span></div>
+        <div class="goodser__detail-row"><span class="goodser__detail-label">库存</span><span>可用 {{ detailProduct.quantity }} · 锁定 {{ detailProduct.reserved_quantity || 0 }} · 总量 {{ detailProduct.total_quantity ?? detailProduct.quantity + (detailProduct.reserved_quantity || 0) }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">状态</span><NkTag size="sm">{{ detailProduct.status_code }}</NkTag></div>
+        <div class="goodser__detail-row"><span class="goodser__detail-label">系列</span><span>{{ dictionaryName(detailProduct.series_id) }}</span></div>
+        <div class="goodser__detail-row"><span class="goodser__detail-label">角色</span><span>{{ characterNames(detailProduct.character_ids) }}</span></div>
+        <div class="goodser__detail-row"><span class="goodser__detail-label">套型</span><span>{{ dictionaryName(detailProduct.set_type_id) }}</span></div>
+        <div class="goodser__detail-row"><span class="goodser__detail-label">商品类型</span><span>{{ dictionaryName(detailProduct.product_type_id) }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">原价</span><span>{{ detailProduct.original_price != null ? '¥' + detailProduct.original_price : '-' }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">市场价</span><span>{{ detailProduct.market_price != null ? '¥' + detailProduct.market_price : '-' }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">期望价</span><span>{{ detailProduct.expected_price != null ? '¥' + detailProduct.expected_price : '-' }}</span></div>
@@ -395,6 +605,89 @@
           <NkTextarea v-model="orderForm.remark" placeholder="备注" />
         </div>
         <div class="goodser__form-field">
+          <label class="goodser__form-label">组合包（可选）</label>
+          <div class="goodser__combo-picker">
+            <NkSelect
+              v-model="orderForm.combo_id"
+              :options="comboSelectOptions"
+              placeholder="不使用组合包"
+              :disabled="!!bundleOrder.bundle_id"
+              @change="onComboChange"
+            />
+            <NkInput
+              v-if="orderForm.combo_id"
+              v-model="orderForm.combo_quantity"
+              type="number"
+              size="sm"
+              style="width:90px"
+              placeholder="数量"
+            />
+          </div>
+          <p v-if="orderForm.combo_id" class="goodser__return-tip">提交后会按组件明细展开并扣减组件库存。</p>
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">捆（可选）</label>
+          <NkSelect
+            v-model="bundleOrder.bundle_id"
+            :options="bundleSelectOptions"
+            placeholder="不使用捆"
+            :disabled="!!orderForm.combo_id"
+            @change="onBundleOrderChange"
+          />
+          <template v-if="bundleOrder.bundle_id && selectedBundle">
+            <div class="goodser__form-row" style="margin-top:8px">
+              <div class="goodser__form-field">
+                <label class="goodser__form-label">主商品</label>
+                <NkSelect
+                  v-model="bundleOrder.main_product_id"
+                  :options="bundleMainOrderOptions"
+                  placeholder="选择主商品"
+                  @change="refreshBundleOrderPreview"
+                />
+              </div>
+              <div class="goodser__form-field goodser__form-field--third">
+                <label class="goodser__form-label">主商品数量 / 单捆</label>
+                <NkInput
+                  v-model="bundleOrder.main_quantity"
+                  type="number"
+                  size="sm"
+                  @change="refreshBundleOrderPreview"
+                />
+              </div>
+              <div class="goodser__form-field goodser__form-field--third">
+                <label class="goodser__form-label">捆数</label>
+                <NkInput
+                  v-model="bundleOrder.quantity"
+                  type="number"
+                  size="sm"
+                  @change="refreshBundleOrderPreview"
+                />
+              </div>
+            </div>
+            <div class="goodser__order-items" style="margin-top:8px">
+              <div class="goodser__form-label">副区商品数量 / 单捆</div>
+              <div v-for="s in selectedBundle.sub_products" :key="s.product_id" class="goodser__order-item">
+                <span class="goodser__order-item-name">
+                  {{ s.product_name }}（{{ s.product_code }} · 可用 {{ s.available }}）
+                </span>
+                <NkInput
+                  v-model="bundleOrder.sub_quantities[s.product_id]"
+                  type="number"
+                  size="xs"
+                  style="width:80px"
+                  @change="refreshBundleOrderPreview"
+                />
+              </div>
+            </div>
+            <p v-if="bundlePreviewError" class="goodser__return-tip" style="color:#d4380d">{{ bundlePreviewError }}</p>
+            <p v-else-if="bundlePreview" class="goodser__return-tip">
+              单捆 ¥{{ bundlePreview.unit_price }} · 共 {{ bundlePreview.quantity }} 捆 · 总价 ¥{{ bundlePreview.total_price }}
+              （主商品 ¥{{ bundlePreview.main_amount }} / 副区 ¥{{ bundlePreview.sub_amount }}）
+            </p>
+            <p v-else-if="bundlePreviewLoading" class="goodser__return-tip">正在计算捆价格...</p>
+          </template>
+        </div>
+        <div v-if="!bundleOrder.bundle_id" class="goodser__form-field">
           <label class="goodser__form-label">商品 (搜索添加)</label>
           <NkInput v-model="orderProductQuery" placeholder="搜索商品..." size="sm" @keyup.enter="searchOrderProducts" />
           <div v-if="orderSearchResults.length" class="goodser__order-search-results">
@@ -414,12 +707,12 @@
       </div>
       <template #footer>
         <NkButton variant="ghost" @click="showOrderForm = false">取消</NkButton>
-        <NkButton :loading="saving" :disabled="!orderForm.order_no.trim() || !orderFormItems.length" @click="handleCreateOrder">确定</NkButton>
+        <NkButton :loading="saving" :disabled="!orderForm.order_no.trim() || (!orderFormItems.length && !orderForm.combo_id && !bundleOrder.bundle_id) || (!!bundleOrder.bundle_id && !bundlePreview)" @click="handleCreateOrder">确定</NkButton>
       </template>
     </NkDialog>
 
     <!-- Order Detail -->
-    <NkDialog v-model:visible="showOrderDetail" :title="'订单 ' + (detailOrder?.order_no || '')" :width="500">
+    <NkDialog v-model:visible="showOrderDetail" :title="'订单 ' + (detailOrder?.order_no || '')" :width="520">
       <div v-if="detailOrder" class="goodser__order-detail">
         <div class="goodser__detail-row"><span class="goodser__detail-label">单号</span><span>{{ detailOrder.order_no }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">类型</span><NkTag size="sm">{{ detailOrder.type === 'reserve' ? '预留' : '出库' }}</NkTag></div>
@@ -430,9 +723,90 @@
         <div v-for="(item, idx) in detailOrder.items" :key="idx" class="goodser__detail-item">
           {{ item.product_name }} ({{ item.product_code }}) × {{ item.quantity }}
         </div>
+        <div v-if="detailOrder.bundle_snapshot" class="goodser__detail-row">
+          <span class="goodser__detail-label">捆</span>
+          <span>
+            {{ detailOrder.bundle_snapshot.bundle_name }} × {{ detailOrder.bundle_quantity }}
+            · 单捆 ¥{{ detailOrder.bundle_snapshot.unit_price }}
+            · 总价 ¥{{ detailOrder.bundle_snapshot.total_price }}
+          </span>
+        </div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">创建时间</span><span>{{ formatDate(detailOrder.created_at) }}</span></div>
         <div v-if="detailOrder.confirmed_at" class="goodser__detail-row"><span class="goodser__detail-label">确认时间</span><span>{{ formatDate(detailOrder.confirmed_at) }}</span></div>
+        <div v-if="detailOrder.converted_at" class="goodser__detail-row"><span class="goodser__detail-label">转出库时间</span><span>{{ formatDate(detailOrder.converted_at) }}</span></div>
+        <div v-if="detailOrder.returned_at" class="goodser__detail-row"><span class="goodser__detail-label">全部退货时间</span><span>{{ formatDate(detailOrder.returned_at) }}</span></div>
+
+        <template v-if="detailOrder.type === 'outbound'">
+          <div class="goodser__detail-row" style="margin-top:12px">
+            <span class="goodser__detail-label">退货记录</span>
+            <span>{{ orderReturns.length ? `${orderReturns.length} 条` : '无' }}</span>
+          </div>
+          <NkLoading v-if="loadingReturns" />
+          <div v-for="ret in orderReturns" :key="ret._id" class="goodser__return-item">
+            <div class="goodser__return-item-head">
+              <NkTag :type="returnStatusType(ret.status)" size="sm">{{ returnStatusLabel(ret.status) }}</NkTag>
+              <span class="goodser__return-reason">{{ returnReasonLabel(ret.reason) }}</span>
+              <span class="goodser__return-date">{{ formatDate(ret.created_at) }}</span>
+            </div>
+            <div class="goodser__return-item-body">
+              <span v-for="(it, i) in ret.items || []" :key="i" class="goodser__return-item-line">
+                {{ it.product_name }} × {{ it.quantity }}{{ it.restock ? ' · 回库' : '' }}
+              </span>
+            </div>
+            <div v-if="ret.status === 'pending'" class="goodser__order-actions">
+              <NkButton size="xs" variant="ghost" @click="handleConfirmReturn(ret)">确认退货</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReturn(ret)">取消</NkButton>
+            </div>
+          </div>
+        </template>
       </div>
+      <template #footer>
+        <NkButton variant="ghost" @click="showOrderDetail = false">关闭</NkButton>
+        <NkButton v-if="detailOrder && canReturn(detailOrder)" @click="openReturnDialog(detailOrder)">退货</NkButton>
+      </template>
+    </NkDialog>
+
+    <!-- Create Return Order -->
+    <NkDialog v-model:visible="showReturnDialog" title="新建退货单" :width="580">
+      <div v-if="returnOrder" class="goodser__return-form">
+        <div class="goodser__detail-row"><span class="goodser__detail-label">原出库单</span><span>{{ returnOrder.order_no }}</span></div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">退货原因</label>
+          <NkSelect v-model="returnReason" :options="returnReasonOptions" @change="onReturnReasonChange" />
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">退货商品（可多选）</label>
+          <div v-if="!returnFormItems.length" class="goodser__empty">
+            <NkEmpty description="该订单已无可退商品" />
+          </div>
+          <div v-for="(item, idx) in returnFormItems" :key="idx" class="goodser__return-row">
+            <NkCheckbox v-model="item.selected" :disabled="item.maxQuantity <= 0" />
+            <span class="goodser__return-name">{{ item.product_name }} ({{ item.product_code }})</span>
+            <span class="goodser__return-max">可退 {{ item.maxQuantity }}</span>
+            <NkInput
+              v-model="item.quantity"
+              type="number"
+              size="xs"
+              style="width:70px"
+              :disabled="!item.selected || item.maxQuantity <= 0"
+            />
+            <NkCheckbox
+              v-model="item.restock"
+              size="sm"
+              :disabled="returnReason === 'refund_only' || !item.selected"
+            >回库</NkCheckbox>
+          </div>
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">备注</label>
+          <NkTextarea v-model="returnRemark" placeholder="退货备注" />
+        </div>
+        <p class="goodser__return-tip">创建后需在订单详情中确认退货，确认时才按“回库”设置调整库存。</p>
+      </div>
+      <template #footer>
+        <NkButton variant="ghost" @click="showReturnDialog = false">取消</NkButton>
+        <NkButton :loading="saving" :disabled="!returnFormItems.some((i) => i.selected)" @click="handleCreateReturn">创建退货单</NkButton>
+      </template>
     </NkDialog>
 
     <!-- Convert Reserve to Outbound -->
@@ -564,6 +938,41 @@
           <div v-if="!statusCodes.length" class="goodser__empty"><NkEmpty description="暂无状态码" /></div>
         </div>
       </div>
+      <div v-if="settingsTab === 'dictionaries'" class="goodser__settings-section">
+        <div class="goodser__settings-header">
+          <span>维度字典</span>
+          <NkButton size="xs" @click="openCreateDictionary">新建{{ dictionaryKindLabel }}</NkButton>
+        </div>
+        <div class="goodser__sort-chips" style="margin-bottom: 8px">
+          <span
+            v-for="kind in dictionaryKindOptions"
+            :key="kind.value"
+            class="goodser__sort-chip"
+            :class="{ 'goodser__sort-chip--active': dictionaryKind === kind.value }"
+            @click="switchDictionaryKind(kind.value)"
+          >{{ kind.label }}</span>
+        </div>
+        <NkLoading v-if="loadingDictionaries" />
+        <div v-else class="goodser__settings-list">
+          <div v-for="d in dictionariesForKind" :key="d._id" class="goodser__settings-item">
+            <span class="goodser__settings-item-name">
+              {{ d.name }}
+              <span class="goodser__dictionary-code">{{ d.code }}</span>
+              <span v-if="d.kind === 'character' && d.parent_id" class="goodser__dictionary-code">
+                · {{ dictionaryName(d.parent_id) }}
+              </span>
+              <NkTag v-if="!d.enabled" size="xs" type="info" style="margin-left:4px">停用</NkTag>
+            </span>
+            <span class="goodser__settings-item-actions">
+              <NkButton size="xs" variant="ghost" @click="openEditDictionary(d)">编辑</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteDictionary(d)">删除</NkButton>
+            </span>
+          </div>
+          <div v-if="!dictionariesForKind.length" class="goodser__empty">
+            <NkEmpty :description="`暂无${dictionaryKindLabel}字典`" />
+          </div>
+        </div>
+      </div>
       <template #footer>
         <NkButton @click="showSettings = false">关闭</NkButton>
       </template>
@@ -588,6 +997,255 @@
         <NkButton :loading="saving" :disabled="!newCode.code.trim() || !newCode.label.trim()" @click="handleCreateStatusCode">确定</NkButton>
       </template>
     </NkDialog>
+
+    <!-- Create/Edit Combo -->
+    <NkDialog
+      v-model:visible="showComboForm"
+      :title="editingCombo ? '编辑组合包' : '新建组合包'"
+      :width="620"
+    >
+      <div class="goodser__order-form">
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">名称 *</label>
+            <NkInput v-model="comboForm.name" placeholder="组合包名称" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">编码</label>
+            <NkInput v-model="comboForm.code" placeholder="留空自动生成" />
+          </div>
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">价格</label>
+            <NkInput v-model="comboForm.price" type="number" placeholder="0" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">状态</label>
+            <NkSelect v-model="comboForm.status" :options="comboStatusOptions" />
+          </div>
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">描述</label>
+          <NkTextarea v-model="comboForm.description" placeholder="组合包描述" />
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">组件商品（搜索添加）</label>
+          <NkInput v-model="comboProductQuery" size="sm" placeholder="搜索商品..." @keyup.enter="searchComboProducts" />
+          <div v-if="comboSearchResults.length" class="goodser__order-search-results">
+            <div v-for="r in comboSearchResults" :key="r._id" class="goodser__order-search-item" @click="addComboItem(r)">
+              <span>{{ r.code }} - {{ r.name }}</span>
+              <NkButton size="xs" variant="ghost">添加</NkButton>
+            </div>
+          </div>
+          <div v-if="comboFormItems.length" class="goodser__order-items">
+            <div v-for="(item, idx) in comboFormItems" :key="item.product_id" class="goodser__order-item">
+              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
+              <NkInput v-model="item.quantity" type="number" size="xs" style="width:80px" placeholder="数量" />
+              <NkButton size="xs" variant="ghost" type="danger" @click="comboFormItems.splice(idx, 1)">×</NkButton>
+            </div>
+          </div>
+          <p class="goodser__return-tip">组合包不持有独立库存，可售量按组件可用量推导。</p>
+        </div>
+      </div>
+      <template #footer>
+        <NkButton variant="ghost" @click="showComboForm = false">取消</NkButton>
+        <NkButton
+          :loading="saving"
+          :disabled="!comboForm.name.trim() || !comboFormItems.length"
+          @click="handleSaveCombo"
+        >保存</NkButton>
+      </template>
+    </NkDialog>
+
+    <!-- Create/Edit Bundle（捆） -->
+    <NkDialog
+      v-model:visible="showBundleForm"
+      :title="editingBundle ? '编辑捆' : '新建捆'"
+      :width="700"
+    >
+      <div class="goodser__order-form">
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">名称 *</label>
+            <NkInput v-model="bundleForm.name" placeholder="捆名称" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">编码</label>
+            <NkInput v-model="bundleForm.code" placeholder="留空自动生成" />
+          </div>
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">状态</label>
+            <NkSelect v-model="bundleForm.status" :options="comboStatusOptions" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">价格模式</label>
+            <NkSelect v-model="bundleForm.price_mode" :options="bundlePriceModeOptions" />
+          </div>
+        </div>
+        <div v-if="bundleForm.price_mode === 'fixed'" class="goodser__form-field">
+          <label class="goodser__form-label">固定价格 / 单捆</label>
+          <NkInput v-model="bundleForm.fixed_price" type="number" placeholder="0" />
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">描述</label>
+          <NkTextarea v-model="bundleForm.description" placeholder="捆说明" />
+        </div>
+
+        <label class="goodser__form-label">规则（以下阈值均按单捆计算）</label>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">主商品最少数量</label>
+            <NkInput v-model="bundleForm.min_main_quantity" type="number" placeholder="1" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">主商品最低金额</label>
+            <NkInput v-model="bundleForm.min_main_amount" type="number" placeholder="0" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">副区最少数量</label>
+            <NkInput v-model="bundleForm.min_sub_quantity" type="number" placeholder="0" />
+          </div>
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">副区最多数量（0 不限）</label>
+            <NkInput v-model="bundleForm.max_sub_quantity" type="number" placeholder="0" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">副区最低金额</label>
+            <NkInput v-model="bundleForm.min_sub_amount" type="number" placeholder="0" />
+          </div>
+        </div>
+
+        <label class="goodser__form-label">主商品条件（可选）</label>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">系列</label>
+            <NkSelect v-model="bundleForm.main_filter.series_id" :options="filterSeriesOptions" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">套型</label>
+            <NkSelect v-model="bundleForm.main_filter.set_type_id" :options="filterSetTypeOptions" />
+          </div>
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">商品类型</label>
+            <NkSelect v-model="bundleForm.main_filter.product_type_id" :options="filterProductTypeOptions" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">状态</label>
+            <NkSelect v-model="bundleForm.main_filter.status_code" :options="bundleStatusFilterOptions" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--third">
+            <label class="goodser__form-label">角色</label>
+            <NkSelect v-model="bundleForm.main_filter.character_id" :options="filterCharacterOptions" />
+          </div>
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">主商品关键词（可选）</label>
+          <NkInput v-model="bundleForm.main_filter.keyword" placeholder="名称或编码关键词" />
+        </div>
+        <p class="goodser__return-tip">
+          显式主商品清单与筛选条件同时存在时按 AND 校验；至少配置一种主商品来源。
+        </p>
+
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">显式主商品（可选）</label>
+          <NkInput v-model="bundleMainQuery" size="sm" placeholder="搜索并添加主商品..." @keyup.enter="searchBundleMainProducts" />
+          <div v-if="bundleMainResults.length" class="goodser__order-search-results">
+            <div v-for="r in bundleMainResults" :key="r._id" class="goodser__order-search-item" @click="addBundleMainProduct(r)">
+              <span>{{ r.code }} - {{ r.name }}</span>
+              <NkButton size="xs" variant="ghost">添加</NkButton>
+            </div>
+          </div>
+          <div v-if="bundleFormMainProducts.length" class="goodser__order-items">
+            <div v-for="(item, idx) in bundleFormMainProducts" :key="item.product_id" class="goodser__order-item">
+              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
+              <NkButton size="xs" variant="ghost" type="danger" @click="bundleFormMainProducts.splice(idx, 1)">×</NkButton>
+            </div>
+          </div>
+        </div>
+
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">副区商品（必须，店主选定）</label>
+          <NkInput v-model="bundleSubQuery" size="sm" placeholder="搜索并添加副区商品..." @keyup.enter="searchBundleSubProducts" />
+          <div v-if="bundleSubResults.length" class="goodser__order-search-results">
+            <div v-for="r in bundleSubResults" :key="r._id" class="goodser__order-search-item" @click="addBundleSubProduct(r)">
+              <span>{{ r.code }} - {{ r.name }}</span>
+              <NkButton size="xs" variant="ghost">添加</NkButton>
+            </div>
+          </div>
+          <div v-if="bundleFormSubProducts.length" class="goodser__order-items">
+            <div v-for="(item, idx) in bundleFormSubProducts" :key="item.product_id" class="goodser__order-item">
+              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
+              <NkInput
+                v-model="item.default_quantity"
+                type="number"
+                size="xs"
+                style="width:90px"
+                placeholder="单捆数量"
+              />
+              <NkButton size="xs" variant="ghost" type="danger" @click="bundleFormSubProducts.splice(idx, 1)">×</NkButton>
+            </div>
+          </div>
+          <p class="goodser__return-tip">客户和店主下单时只能从该清单中选择副区商品。</p>
+        </div>
+      </div>
+      <template #footer>
+        <NkButton variant="ghost" @click="showBundleForm = false">取消</NkButton>
+        <NkButton
+          :loading="saving"
+          :disabled="!bundleForm.name.trim() || (!bundleFormMainProducts.length && !hasBundleMainFilter) || !bundleFormSubProducts.length"
+          @click="handleSaveBundle"
+        >保存</NkButton>
+      </template>
+    </NkDialog>
+
+    <!-- Create/Edit Dictionary -->
+    <NkDialog
+      v-model:visible="showDictionaryDialog"
+      :title="(editingDictionary ? '编辑' : '新建') + dictionaryKindLabel"
+      :width="440"
+    >
+      <div class="goodser__product-form">
+        <div v-if="dictionaryKind === 'character'" class="goodser__form-field">
+          <label class="goodser__form-label">所属系列</label>
+          <NkSelect v-model="dictionaryForm.parent_id" :options="parentSeriesOptions" placeholder="不归属系列" />
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">名称 *</label>
+          <NkInput v-model="dictionaryForm.name" placeholder="显示名称" />
+        </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">编码 *</label>
+          <NkInput v-model="dictionaryForm.code" placeholder="唯一编码，例如 genshin" />
+        </div>
+        <div class="goodser__form-row">
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">排序</label>
+            <NkInput v-model="dictionaryForm.sort_order" type="number" placeholder="0" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--half">
+            <label class="goodser__form-label">启用</label>
+            <div style="padding-top: 6px">
+              <NkCheckbox v-model="dictionaryForm.enabled">启用</NkCheckbox>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <NkButton variant="ghost" @click="showDictionaryDialog = false">取消</NkButton>
+        <NkButton
+          :loading="saving"
+          :disabled="!dictionaryForm.name.trim() || !dictionaryForm.code.trim()"
+          @click="handleSaveDictionary"
+        >保存</NkButton>
+      </template>
+    </NkDialog>
   </div>
 </template>
 
@@ -598,18 +1256,29 @@ import {
   loadInventories, createInventory, updateInventory, deleteInventory,
   loadProducts, queryProducts, createProduct, updateProduct, deleteProduct,
   loadOutboundOrders, createOutbound, confirmOutbound, cancelOutbound, cancelReserve, reserveToOutbound,
+  createReturn, loadReturns, confirmReturn, cancelReturn,
   loadInboundLogs, inboundSingle, inboundSearchImport,
   loadTags, createTag, deleteTag,
   loadStatusCodes, addStatusCode, removeStatusCode,
+  loadDictionaries, createDictionary, updateDictionary, deleteDictionary,
+  loadSeriesSummary,
+  loadCombos, createCombo, updateCombo, deleteCombo,
+  loadBundles, createBundle, updateBundle, deleteBundle, previewBundle,
 } from '@/api/goodser'
 import type {
   Inventory, Product, OutboundOrder, InboundLog, OrderItem, GoodserTag, StatusCode,
+  ReturnOrder, ReturnReason,
+  Dictionary, DictionaryKind, SeriesSummary, Combo,
+  Bundle, BundlePriceMode, BundlePreviewResp,
 } from '@/types/goodser'
 
 // ---- Tabs ----
 const activeTab = ref('products')
 const tabs = [
   { label: '商品列表', value: 'products' },
+  { label: '系列视图', value: 'series' },
+  { label: '组合包', value: 'combos' },
+  { label: '捆', value: 'bundles' },
   { label: '出库订单', value: 'orders' },
   { label: '入库记录', value: 'logs' },
   { label: '库存目录', value: 'inventories' },
@@ -622,6 +1291,7 @@ const settingsTab = ref('tags')
 const settingsTabs = [
   { label: '标签管理', value: 'tags' },
   { label: '状态码', value: 'statusCodes' },
+  { label: '维度字典', value: 'dictionaries' },
 ]
 
 // ---- Inventories ----
@@ -723,6 +1393,10 @@ const productSortOrder = ref<'asc' | 'desc'>('asc')
 const productFilterZone = ref('')
 const productFilterStatus = ref('')
 const productFilterTag = ref('')
+const productFilterSeries = ref('')
+const productFilterCharacter = ref('')
+const productFilterSetType = ref('')
+const productFilterProductType = ref('')
 const productPage = ref(1)
 const productHasMore = ref(false)
 const productTotal = ref(0)
@@ -744,8 +1418,12 @@ const productForm = ref({
   expected_price: null as number | null,
   storage_location: '',
   remark: '',
+  series_id: '',
+  set_type_id: '',
+  product_type_id: '',
 })
 const productFormTags = ref<string[]>([])
+const productFormCharacters = ref<string[]>([])
 
 const sortChips = [
   { key: '', label: '默认' },
@@ -774,7 +1452,13 @@ const subZoneOptions = [
 ]
 
 const hasProductFilter = computed(() =>
-  productFilterZone.value || productFilterStatus.value || productFilterTag.value,
+  productFilterZone.value ||
+  productFilterStatus.value ||
+  productFilterTag.value ||
+  productFilterSeries.value ||
+  productFilterCharacter.value ||
+  productFilterSetType.value ||
+  productFilterProductType.value,
 )
 
 const productCodePreview = computed(() => {
@@ -809,7 +1493,19 @@ function selectInventory(inv: Inventory) {
 }
 
 function onInventoryChange() {
-  searchProducts()
+  if (activeTab.value === 'orders') {
+    fetchOrders()
+  } else if (activeTab.value === 'logs') {
+    fetchLogs()
+  } else if (activeTab.value === 'series') {
+    fetchSeriesSummary()
+  } else if (activeTab.value === 'combos') {
+    fetchCombos()
+  } else if (activeTab.value === 'bundles') {
+    fetchBundles()
+  } else {
+    searchProducts()
+  }
 }
 
 async function searchProducts() {
@@ -836,6 +1532,10 @@ async function goToPage(page: number) {
         main_zone: productFilterZone.value || undefined,
         status_code: productFilterStatus.value || undefined,
         tag_id: productFilterTag.value || undefined,
+        series_id: productFilterSeries.value || undefined,
+        character_id: productFilterCharacter.value || undefined,
+        set_type_id: productFilterSetType.value || undefined,
+        product_type_id: productFilterProductType.value || undefined,
         page,
         page_size: pageSize,
       })
@@ -867,6 +1567,10 @@ function resetProductFilter() {
   productFilterZone.value = ''
   productFilterStatus.value = ''
   productFilterTag.value = ''
+  productFilterSeries.value = ''
+  productFilterCharacter.value = ''
+  productFilterSetType.value = ''
+  productFilterProductType.value = ''
 }
 
 function applyProductFilter() {
@@ -876,8 +1580,9 @@ function applyProductFilter() {
 
 function openCreateProduct() {
   editingProduct.value = null
-  productForm.value = { name: '', main_zone: '', sub_zone: '', quantity: 0, status_code: '', original_price: null, market_price: null, expected_price: null, storage_location: '', remark: '' }
+  productForm.value = { name: '', main_zone: '', sub_zone: '', quantity: 0, status_code: '', original_price: null, market_price: null, expected_price: null, storage_location: '', remark: '', series_id: '', set_type_id: '', product_type_id: '' }
   productFormTags.value = []
+  productFormCharacters.value = []
   showProductForm.value = true
 }
 
@@ -896,8 +1601,12 @@ function openEditProduct() {
     expected_price: p.expected_price,
     storage_location: p.storage_location || '',
     remark: p.remark || '',
+    series_id: p.series_id || '',
+    set_type_id: p.set_type_id || '',
+    product_type_id: p.product_type_id || '',
   }
   productFormTags.value = p.tags ? [...p.tags] : []
+  productFormCharacters.value = p.character_ids ? [...p.character_ids] : []
   showProductForm.value = true
   showProductDetail.value = false
 }
@@ -913,6 +1622,15 @@ function toggleProductTag(tagId: string) {
     productFormTags.value.splice(idx, 1)
   } else {
     productFormTags.value.push(tagId)
+  }
+}
+
+function toggleProductCharacter(characterId: string) {
+  const idx = productFormCharacters.value.indexOf(characterId)
+  if (idx >= 0) {
+    productFormCharacters.value.splice(idx, 1)
+  } else {
+    productFormCharacters.value.push(characterId)
   }
 }
 
@@ -935,6 +1653,12 @@ async function handleSaveProduct() {
         storage_location: form.storage_location || undefined,
         remark: form.remark || undefined,
         tags: productFormTags.value.length ? productFormTags.value : undefined,
+        // 传空字符串表示清空：后端把空字符串归一为 NULL，
+        // 而 null 会被当成“不修改”导致清空无效。
+        series_id: form.series_id || '',
+        set_type_id: form.set_type_id || '',
+        product_type_id: form.product_type_id || '',
+        character_ids: productFormCharacters.value,
       })
       NKMessage.success('更新成功')
     } else {
@@ -954,6 +1678,10 @@ async function handleSaveProduct() {
         storage_location: form.storage_location || null,
         remark: form.remark || null,
         tags: productFormTags.value.length ? productFormTags.value : null,
+        series_id: form.series_id || null,
+        set_type_id: form.set_type_id || null,
+        product_type_id: form.product_type_id || null,
+        character_ids: productFormCharacters.value,
       })
       NKMessage.success('创建成功')
     }
@@ -988,13 +1716,47 @@ const showOrderForm = ref(false)
 const showOrderDetail = ref(false)
 const showConvertDialog = ref(false)
 const orderFormType = ref<'outbound' | 'reserve'>('outbound')
-const orderForm = ref({ order_no: '', order_info: '', remark: '' })
+const orderForm = ref({ order_no: '', order_info: '', remark: '', combo_id: '', combo_quantity: 1 })
 const orderFormItems = ref<OrderItem[]>([])
 const orderProductQuery = ref('')
 const orderSearchResults = ref<Product[]>([])
+const bundleOrder = ref({
+  bundle_id: '',
+  main_product_id: '',
+  main_quantity: 1,
+  quantity: 1,
+  sub_quantities: {} as Record<string, number>,
+})
+const bundlePreview = ref<BundlePreviewResp | null>(null)
+const bundlePreviewLoading = ref(false)
+const bundlePreviewError = ref('')
 const detailOrder = ref<OutboundOrder | null>(null)
 const convertingOrder = ref<OutboundOrder | null>(null)
 const convertOrderNo = ref('')
+
+// ---- Returns ----
+const showReturnDialog = ref(false)
+const returnOrder = ref<OutboundOrder | null>(null)
+const returnReason = ref<ReturnReason>('return_refund')
+const returnRemark = ref('')
+const orderReturns = ref<ReturnOrder[]>([])
+const loadingReturns = ref(false)
+const returnFormItems = ref<Array<{
+  product_id: string
+  product_name: string
+  product_code: string
+  quantity: number
+  restock: boolean
+  image_url?: string | null
+  selected: boolean
+  maxQuantity: number
+}>>([])
+const returnReasonOptions = [
+  { label: '退货退款（默认回库）', value: 'return_refund' },
+  { label: '仅退款（不回库）', value: 'refund_only' },
+  { label: '运损（默认不回库）', value: 'shipping_damage' },
+  { label: '其他', value: 'other' },
+]
 
 async function fetchOrders() {
   if (!currentInventoryId.value) return
@@ -1009,13 +1771,26 @@ async function fetchOrders() {
   }
 }
 
-function openCreateOrder(type: 'outbound' | 'reserve') {
+function openCreateOrder(type: 'outbound' | 'reserve', bundleId?: string) {
   orderFormType.value = type
-  orderForm.value = { order_no: '', order_info: '', remark: '' }
+  orderForm.value = { order_no: '', order_info: '', remark: '', combo_id: '', combo_quantity: 1 }
   orderFormItems.value = []
   orderProductQuery.value = ''
   orderSearchResults.value = []
+  bundleOrder.value = { bundle_id: '', main_product_id: '', main_quantity: 1, quantity: 1, sub_quantities: {} }
+  bundlePreview.value = null
+  bundlePreviewError.value = ''
+  if (!combos.value.length) {
+    fetchCombos()
+  }
+  if (!bundles.value.length) {
+    fetchBundles()
+  }
   showOrderForm.value = true
+  if (bundleId) {
+    bundleOrder.value.bundle_id = bundleId
+    onBundleOrderChange()
+  }
 }
 
 async function searchOrderProducts() {
@@ -1049,7 +1824,9 @@ function addOrderItem(product: Product) {
 }
 
 async function handleCreateOrder() {
-  if (!currentInventoryId.value || !orderForm.value.order_no.trim() || !orderFormItems.value.length) return
+  if (!currentInventoryId.value || !orderForm.value.order_no.trim()) return
+  if (!orderFormItems.value.length && !orderForm.value.combo_id && !bundleOrder.value.bundle_id) return
+  if (bundleOrder.value.bundle_id && !bundlePreview.value) return
   saving.value = true
   try {
     const items = orderFormItems.value.map((i) => ({
@@ -1058,14 +1835,27 @@ async function handleCreateOrder() {
       product_code: i.product_code,
       quantity: Number(i.quantity) || 1,
     }))
+    const bundleSelection = bundleOrder.value.bundle_id
+      ? {
+          bundle_id: bundleOrder.value.bundle_id,
+          main_product_id: bundleOrder.value.main_product_id,
+          main_quantity: Number(bundleOrder.value.main_quantity) || 1,
+          quantity: Number(bundleOrder.value.quantity) || 1,
+          sub_items: Object.entries(bundleOrder.value.sub_quantities)
+            .map(([product_id, quantity]) => ({ product_id, quantity: Number(quantity) || 0 }))
+            .filter((item) => item.quantity > 0),
+        }
+      : null
     await createOutbound({
       inventory_id: currentInventoryId.value,
       order_no: orderForm.value.order_no.trim(),
       type: orderFormType.value,
-      status: orderFormType.value === 'reserve' ? 'reserve' : 'pending',
       order_info: orderForm.value.order_info || undefined,
       remark: orderForm.value.remark || undefined,
-      items,
+      items: bundleSelection ? [] : items,
+      combo_id: orderForm.value.combo_id || null,
+      combo_quantity: orderForm.value.combo_id ? Number(orderForm.value.combo_quantity) || 1 : null,
+      bundle: bundleSelection,
     })
     NKMessage.success('创建成功')
     showOrderForm.value = false
@@ -1079,7 +1869,11 @@ async function handleCreateOrder() {
 
 function openOrderDetail(order: OutboundOrder) {
   detailOrder.value = order
+  orderReturns.value = []
   showOrderDetail.value = true
+  if (order.type === 'outbound') {
+    loadOrderReturns(order)
+  }
 }
 
 async function handleConfirmOrder(order: OutboundOrder) {
@@ -1131,17 +1925,10 @@ async function handleConvertReserve() {
   if (!convertingOrder.value || !convertOrderNo.value.trim()) return
   saving.value = true
   try {
-    const items = (convertingOrder.value.items || []).map((i) => ({
-      product_id: i.product_id,
-      product_name: i.product_name,
-      product_code: i.product_code,
-      quantity: i.quantity,
-    }))
     await reserveToOutbound({
       id: convertingOrder.value._id,
       inventory_id: convertingOrder.value.inventory_id,
       order_no: convertOrderNo.value.trim(),
-      items,
     })
     NKMessage.success('转换成功')
     showConvertDialog.value = false
@@ -1153,18 +1940,186 @@ async function handleConvertReserve() {
   }
 }
 
+function canReturn(order: OutboundOrder | null) {
+  if (!order || order.type !== 'outbound') return false
+  return order.status === 'confirmed' || order.status === 'partially_returned'
+}
+
 function orderStatusType(status: string) {
   if (status === 'confirmed') return 'success'
-  if (status === 'cancelled') return 'danger'
-  if (status === 'reserve') return 'warning'
+  if (status === 'partially_returned') return 'warning'
+  if (status === 'returned' || status === 'cancelled') return 'danger'
+  if (status === 'converted') return 'info'
   return 'info'
 }
 
 function orderStatusLabel(status: string) {
+  const map: Record<string, string> = {
+    pending: '待确认',
+    converted: '已转出库',
+    confirmed: '已确认',
+    partially_returned: '部分退货',
+    returned: '已退货',
+    cancelled: '已取消',
+    reserved: '预留中',
+  }
+  return map[status] || status
+}
+
+function returnStatusType(status: string) {
+  if (status === 'confirmed') return 'success'
+  if (status === 'cancelled') return 'danger'
+  return 'warning'
+}
+
+function returnStatusLabel(status: string) {
   if (status === 'confirmed') return '已确认'
   if (status === 'cancelled') return '已取消'
-  if (status === 'reserve') return '预留中'
-  return '待处理'
+  return '待确认'
+}
+
+function returnReasonLabel(reason: string) {
+  const map: Record<string, string> = {
+    refund_only: '仅退款',
+    return_refund: '退货退款',
+    shipping_damage: '运损',
+    other: '其他',
+  }
+  return map[reason] || reason
+}
+
+async function loadOrderReturns(order: OutboundOrder) {
+  loadingReturns.value = true
+  try {
+    const res = await loadReturns(order.inventory_id, order._id)
+    orderReturns.value = res.data || []
+  } catch (err: any) {
+    orderReturns.value = []
+    NKMessage.error(err.message || '加载退货记录失败')
+  } finally {
+    loadingReturns.value = false
+  }
+}
+
+async function openReturnDialog(order: OutboundOrder) {
+  returnOrder.value = order
+  returnReason.value = 'return_refund'
+  returnRemark.value = ''
+  showOrderDetail.value = false
+  showReturnDialog.value = true
+
+  let existing = orderReturns.value
+  if (detailOrder.value?._id !== order._id || !existing.length) {
+    try {
+      const res = await loadReturns(order.inventory_id, order._id)
+      existing = res.data || []
+    } catch (err: any) {
+      NKMessage.error(err.message || '加载退货记录失败')
+      showReturnDialog.value = false
+      return
+    }
+  }
+
+  const returned: Record<string, number> = {}
+  for (const ret of existing) {
+    if (ret.status === 'cancelled') continue
+    for (const item of ret.items || []) {
+      returned[item.product_id] = (returned[item.product_id] || 0) + item.quantity
+    }
+  }
+
+  returnFormItems.value = (order.items || []).map((item) => {
+    const maxQuantity = Math.max(0, item.quantity - (returned[item.product_id] || 0))
+    return {
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_code: item.product_code,
+      quantity: maxQuantity,
+      restock: true,
+      image_url: item.image_url,
+      selected: maxQuantity > 0,
+      maxQuantity,
+    }
+  })
+}
+
+function onReturnReasonChange() {
+  const restock = returnReason.value === 'return_refund'
+  for (const item of returnFormItems.value) {
+    item.restock = restock
+  }
+}
+
+async function handleCreateReturn() {
+  if (!returnOrder.value) return
+  const items = returnFormItems.value
+    .filter((i) => i.selected && Number(i.quantity) > 0)
+    .map((i) => ({
+      product_id: i.product_id,
+      product_name: i.product_name,
+      product_code: i.product_code,
+      quantity: Math.min(Number(i.quantity) || 0, i.maxQuantity),
+      restock: returnReason.value === 'refund_only' ? false : !!i.restock,
+      image_url: i.image_url,
+    }))
+  if (!items.length) {
+    NKMessage.warning('请选择退货商品和数量')
+    return
+  }
+
+  saving.value = true
+  try {
+    const order = returnOrder.value
+    await createReturn(order.inventory_id, order._id, {
+      outbound_order_id: order._id,
+      reason: returnReason.value,
+      remark: returnRemark.value || undefined,
+      items,
+    })
+    NKMessage.success('退货单已创建，请在订单详情中确认')
+    showReturnDialog.value = false
+    await fetchOrders()
+    detailOrder.value = orders.value.find((o) => o._id === order._id) || order
+    showOrderDetail.value = true
+    await loadOrderReturns(detailOrder.value)
+  } catch (err: any) {
+    NKMessage.error(err.message || '创建退货单失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleConfirmReturn(ret: ReturnOrder) {
+  saving.value = true
+  try {
+    await confirmReturn(ret.inventory_id, ret._id)
+    NKMessage.success('退货已确认')
+    await fetchOrders()
+    if (detailOrder.value) {
+      detailOrder.value = orders.value.find((o) => o._id === detailOrder.value!._id) || detailOrder.value
+      await loadOrderReturns(detailOrder.value)
+    }
+    await searchProducts()
+  } catch (err: any) {
+    NKMessage.error(err.message || '确认退货失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleCancelReturn(ret: ReturnOrder) {
+  saving.value = true
+  try {
+    await cancelReturn(ret.inventory_id, ret._id)
+    NKMessage.success('退货单已取消')
+    if (detailOrder.value) {
+      await loadOrderReturns(detailOrder.value)
+    }
+  } catch (err: any) {
+    NKMessage.error(err.message || '取消退货失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 // ---- Logs ----
@@ -1383,6 +2338,702 @@ async function handleDeleteStatusCode(sc: StatusCode) {
   }
 }
 
+// ---- P1 Dictionaries ----
+const dictionaries = ref<Dictionary[]>([])
+const loadingDictionaries = ref(false)
+const dictionaryKind = ref<DictionaryKind>('series')
+const showDictionaryDialog = ref(false)
+const editingDictionary = ref<Dictionary | null>(null)
+const dictionaryForm = ref({
+  name: '',
+  code: '',
+  parent_id: '',
+  sort_order: 0,
+  enabled: true,
+})
+const dictionaryKindOptions: Array<{ label: string; value: DictionaryKind }> = [
+  { label: '系列', value: 'series' },
+  { label: '角色', value: 'character' },
+  { label: '套型', value: 'set_type' },
+  { label: '商品类型', value: 'product_type' },
+]
+const dictionaryKindLabel = computed(
+  () => dictionaryKindOptions.find((k) => k.value === dictionaryKind.value)?.label || '字典',
+)
+const dictionariesForKind = computed(() =>
+  dictionaries.value.filter((d) => d.kind === dictionaryKind.value),
+)
+const seriesDictionaries = computed(() =>
+  dictionaries.value.filter((d) => d.kind === 'series' && d.enabled),
+)
+const characterDictionaries = computed(() =>
+  dictionaries.value.filter((d) => d.kind === 'character' && d.enabled),
+)
+const setTypeDictionaries = computed(() =>
+  dictionaries.value.filter((d) => d.kind === 'set_type' && d.enabled),
+)
+const productTypeDictionaries = computed(() =>
+  dictionaries.value.filter((d) => d.kind === 'product_type' && d.enabled),
+)
+const seriesOptions = computed(() =>
+  seriesDictionaries.value.map((d) => ({ label: d.name, value: d._id })),
+)
+const setTypeOptions = computed(() =>
+  setTypeDictionaries.value.map((d) => ({ label: d.name, value: d._id })),
+)
+const productTypeOptions = computed(() =>
+  productTypeDictionaries.value.map((d) => ({ label: d.name, value: d._id })),
+)
+const filterSeriesOptions = computed(() => [{ label: '全部系列', value: '' }, ...seriesOptions.value])
+const filterCharacterOptions = computed(() => [
+  { label: '全部角色', value: '' },
+  ...characterDictionaries.value.map((d) => ({ label: d.name, value: d._id })),
+])
+const filterSetTypeOptions = computed(() => [{ label: '全部套型', value: '' }, ...setTypeOptions.value])
+const parentSeriesOptions = computed(() => [{ label: '不归属系列', value: '' }, ...seriesOptions.value])
+const filterProductTypeOptions = computed(() => [
+  { label: '全部商品类型', value: '' },
+  ...productTypeOptions.value,
+])
+
+async function fetchDictionaries() {
+  loadingDictionaries.value = true
+  try {
+    const res = await loadDictionaries()
+    dictionaries.value = res.data?.items || []
+  } catch (err: any) {
+    dictionaries.value = []
+    NKMessage.error(err.message || '加载维度字典失败')
+  } finally {
+    loadingDictionaries.value = false
+  }
+}
+
+function switchDictionaryKind(kind: DictionaryKind) {
+  dictionaryKind.value = kind
+}
+
+function openCreateDictionary() {
+  editingDictionary.value = null
+  dictionaryForm.value = {
+    name: '',
+    code: '',
+    parent_id: '',
+    sort_order: 0,
+    enabled: true,
+  }
+  showDictionaryDialog.value = true
+}
+
+function openEditDictionary(item: Dictionary) {
+  editingDictionary.value = item
+  dictionaryForm.value = {
+    name: item.name,
+    code: item.code,
+    parent_id: item.parent_id || '',
+    sort_order: item.sort_order,
+    enabled: item.enabled,
+  }
+  showDictionaryDialog.value = true
+}
+
+async function handleSaveDictionary() {
+  const form = dictionaryForm.value
+  if (!form.name.trim() || !form.code.trim()) return
+  saving.value = true
+  try {
+    const parentId = dictionaryKind.value === 'character' ? form.parent_id || '' : null
+    if (editingDictionary.value) {
+      await updateDictionary({
+        id: editingDictionary.value._id,
+        name: form.name.trim(),
+        code: form.code.trim(),
+        parent_id: parentId,
+        sort_order: Number(form.sort_order) || 0,
+        enabled: form.enabled,
+      })
+      NKMessage.success('更新成功')
+    } else {
+      await createDictionary({
+        kind: dictionaryKind.value,
+        name: form.name.trim(),
+        code: form.code.trim(),
+        parent_id: parentId,
+        sort_order: Number(form.sort_order) || 0,
+        enabled: form.enabled,
+      })
+      NKMessage.success('创建成功')
+    }
+    showDictionaryDialog.value = false
+    await fetchDictionaries()
+  } catch (err: any) {
+    NKMessage.error(err.message || '保存字典失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleDeleteDictionary(item: Dictionary) {
+  saving.value = true
+  try {
+    await deleteDictionary(item._id)
+    NKMessage.success('已删除')
+    await fetchDictionaries()
+  } catch (err: any) {
+    NKMessage.error(err.message || '删除失败，可能仍被引用')
+  } finally {
+    saving.value = false
+  }
+}
+
+function dictionaryName(id?: string | null) {
+  if (!id) return '-'
+  return dictionaries.value.find((d) => d._id === id)?.name || id
+}
+
+function characterNames(ids?: string[] | null) {
+  if (!ids?.length) return '-'
+  return ids.map((id) => dictionaryName(id)).join('、')
+}
+
+// ---- P1 Series Summary ----
+const seriesSummary = ref<SeriesSummary[]>([])
+const loadingSeries = ref(false)
+
+async function fetchSeriesSummary() {
+  if (!currentInventoryId.value) return
+  loadingSeries.value = true
+  try {
+    const res = await loadSeriesSummary(currentInventoryId.value)
+    seriesSummary.value = res.data?.items || []
+  } catch (err: any) {
+    seriesSummary.value = []
+    NKMessage.error(err.message || '加载系列视图失败')
+  } finally {
+    loadingSeries.value = false
+  }
+}
+
+function openSeriesProducts(series: SeriesSummary) {
+  if (!series.series_id) {
+    NKMessage.info('该系列没有关联商品，或为未设置系列的商品')
+    return
+  }
+  productFilterSeries.value = series.series_id
+  activeTab.value = 'products'
+  searchProducts()
+}
+
+// ---- P1 Combos ----
+const combos = ref<Combo[]>([])
+const loadingCombos = ref(false)
+const showComboForm = ref(false)
+const editingCombo = ref<Combo | null>(null)
+const comboForm = ref({
+  name: '',
+  code: '',
+  description: '',
+  price: 0,
+  status: 'active' as 'active' | 'inactive',
+})
+const comboFormItems = ref<Array<{
+  product_id: string
+  product_name: string
+  product_code: string
+  quantity: number
+}>>([])
+const comboProductQuery = ref('')
+const comboSearchResults = ref<Product[]>([])
+const comboStatusOptions = [
+  { label: '启用', value: 'active' },
+  { label: '停用', value: 'inactive' },
+]
+const comboSelectOptions = computed(() =>
+  combos.value
+    .filter((c) => c.status === 'active')
+    .map((c) => ({ label: `${c.name}（可售 ${c.availability}）`, value: c._id })),
+)
+
+async function fetchCombos() {
+  if (!currentInventoryId.value) return
+  loadingCombos.value = true
+  try {
+    const res = await loadCombos(currentInventoryId.value)
+    combos.value = res.data?.items || []
+  } catch (err: any) {
+    combos.value = []
+    NKMessage.error(err.message || '加载组合包失败')
+  } finally {
+    loadingCombos.value = false
+  }
+}
+
+function openCreateCombo() {
+  if (!currentInventoryId.value) {
+    NKMessage.error('请先选择库存目录')
+    return
+  }
+  editingCombo.value = null
+  comboForm.value = { name: '', code: '', description: '', price: 0, status: 'active' }
+  comboFormItems.value = []
+  comboProductQuery.value = ''
+  comboSearchResults.value = []
+  showComboForm.value = true
+}
+
+function openEditCombo(combo: Combo) {
+  editingCombo.value = combo
+  comboForm.value = {
+    name: combo.name,
+    code: combo.code,
+    description: combo.description || '',
+    price: combo.price || 0,
+    status: combo.status,
+  }
+  comboFormItems.value = (combo.items || []).map((item) => ({
+    product_id: item.product_id,
+    product_name: item.product_name,
+    product_code: item.product_code,
+    quantity: item.quantity,
+  }))
+  comboProductQuery.value = ''
+  comboSearchResults.value = []
+  showComboForm.value = true
+}
+
+async function searchComboProducts() {
+  if (!currentInventoryId.value || !comboProductQuery.value.trim()) return
+  try {
+    const res = await queryProducts({
+      inventory_id: currentInventoryId.value,
+      keyword: comboProductQuery.value.trim(),
+      page_size: 10,
+    })
+    comboSearchResults.value = res.data?.items || []
+  } catch {
+    comboSearchResults.value = []
+  }
+}
+
+function addComboItem(product: Product) {
+  const existing = comboFormItems.value.find((i) => i.product_id === product._id)
+  if (existing) {
+    existing.quantity++
+  } else {
+    comboFormItems.value.push({
+      product_id: product._id,
+      product_name: product.name,
+      product_code: product.code,
+      quantity: 1,
+    })
+  }
+  comboProductQuery.value = ''
+  comboSearchResults.value = []
+}
+
+async function handleSaveCombo() {
+  if (!currentInventoryId.value || !comboForm.value.name.trim() || !comboFormItems.value.length) return
+  saving.value = true
+  try {
+    const items = comboFormItems.value.map((item) => ({
+      product_id: item.product_id,
+      quantity: Number(item.quantity) || 1,
+    }))
+    if (editingCombo.value) {
+      await updateCombo({
+        id: editingCombo.value._id,
+        name: comboForm.value.name.trim(),
+        code: comboForm.value.code || null,
+        description: comboForm.value.description || null,
+        price: Number(comboForm.value.price) || 0,
+        status: comboForm.value.status,
+        items,
+      })
+      NKMessage.success('更新成功')
+    } else {
+      await createCombo({
+        inventory_id: currentInventoryId.value,
+        name: comboForm.value.name.trim(),
+        code: comboForm.value.code || null,
+        description: comboForm.value.description || null,
+        price: Number(comboForm.value.price) || 0,
+        status: comboForm.value.status,
+        items,
+      })
+      NKMessage.success('创建成功')
+    }
+    showComboForm.value = false
+    await fetchCombos()
+  } catch (err: any) {
+    NKMessage.error(err.message || '保存组合包失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleDeleteCombo(combo: Combo) {
+  saving.value = true
+  try {
+    await deleteCombo(combo._id)
+    NKMessage.success('已删除')
+    await fetchCombos()
+  } catch (err: any) {
+    NKMessage.error(err.message || '删除组合包失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---- P1.5 捆 ----
+const bundles = ref<Bundle[]>([])
+const loadingBundles = ref(false)
+const showBundleForm = ref(false)
+const editingBundle = ref<Bundle | null>(null)
+const bundleForm = ref({
+  name: '',
+  code: '',
+  description: '',
+  status: 'active' as 'active' | 'inactive',
+  price_mode: 'sum' as BundlePriceMode,
+  fixed_price: 0,
+  min_main_quantity: 1,
+  min_main_amount: 0,
+  min_sub_quantity: 0,
+  max_sub_quantity: 0,
+  min_sub_amount: 0,
+  main_filter: {
+    series_id: '',
+    set_type_id: '',
+    product_type_id: '',
+    character_id: '',
+    status_code: '',
+    keyword: '',
+  },
+})
+const bundleFormMainProducts = ref<Array<{
+  product_id: string
+  product_name: string
+  product_code: string
+}>>([])
+const bundleFormSubProducts = ref<Array<{
+  product_id: string
+  product_name: string
+  product_code: string
+  default_quantity: number
+}>>([])
+const bundleMainQuery = ref('')
+const bundleSubQuery = ref('')
+const bundleMainResults = ref<Product[]>([])
+const bundleSubResults = ref<Product[]>([])
+const bundlePriceModeOptions = [
+  { label: '合计（主商品 + 副区）', value: 'sum' },
+  { label: '固定价（单捆）', value: 'fixed' },
+  { label: '只收主商品（副区搭配）', value: 'main_only' },
+]
+const bundleStatusFilterOptions = computed(() => [
+  { label: '全部状态', value: '' },
+  ...statusCodeOptions.value,
+])
+const hasBundleMainFilter = computed(() => {
+  const f = bundleForm.value.main_filter
+  return !!(f.series_id || f.set_type_id || f.product_type_id || f.character_id || f.status_code || f.keyword.trim())
+})
+const bundleSelectOptions = computed(() =>
+  bundles.value
+    .filter((b) => b.status === 'active')
+    .map((b) => ({ label: `${b.name}（${bundlePriceModeLabel(b.price_mode)}）`, value: b._id })),
+)
+const selectedBundle = computed(() =>
+  bundles.value.find((b) => b._id === bundleOrder.value.bundle_id) || null,
+)
+const bundleMainOrderOptions = computed(() =>
+  (selectedBundle.value?.main_products || []).map((p) => ({
+    label: `${p.product_name}（${p.product_code} · 可用 ${p.available}）`,
+    value: p.product_id,
+  })),
+)
+
+function bundlePriceModeLabel(mode: BundlePriceMode): string {
+  switch (mode) {
+    case 'fixed':
+      return '固定价'
+    case 'main_only':
+      return '只收主商品'
+    default:
+      return '合计计价'
+  }
+}
+
+async function fetchBundles() {
+  if (!currentInventoryId.value) return
+  loadingBundles.value = true
+  try {
+    const res = await loadBundles(currentInventoryId.value)
+    bundles.value = res.data?.items || []
+  } catch (err: any) {
+    bundles.value = []
+    NKMessage.error(err.message || '加载捆失败')
+  } finally {
+    loadingBundles.value = false
+  }
+}
+
+function resetBundleForm() {
+  bundleForm.value = {
+    name: '',
+    code: '',
+    description: '',
+    status: 'active',
+    price_mode: 'sum',
+    fixed_price: 0,
+    min_main_quantity: 1,
+    min_main_amount: 0,
+    min_sub_quantity: 0,
+    max_sub_quantity: 0,
+    min_sub_amount: 0,
+    main_filter: {
+      series_id: '',
+      set_type_id: '',
+      product_type_id: '',
+      character_id: '',
+      status_code: '',
+      keyword: '',
+    },
+  }
+  bundleFormMainProducts.value = []
+  bundleFormSubProducts.value = []
+  bundleMainQuery.value = ''
+  bundleSubQuery.value = ''
+  bundleMainResults.value = []
+  bundleSubResults.value = []
+}
+
+function openCreateBundle() {
+  if (!currentInventoryId.value) {
+    NKMessage.error('请先选择库存目录')
+    return
+  }
+  editingBundle.value = null
+  resetBundleForm()
+  showBundleForm.value = true
+}
+
+function openEditBundle(bundle: Bundle) {
+  editingBundle.value = bundle
+  resetBundleForm()
+  bundleForm.value = {
+    name: bundle.name,
+    code: bundle.code,
+    description: bundle.description || '',
+    status: bundle.status,
+    price_mode: bundle.price_mode,
+    fixed_price: bundle.fixed_price || 0,
+    min_main_quantity: bundle.min_main_quantity || 1,
+    min_main_amount: bundle.min_main_amount || 0,
+    min_sub_quantity: bundle.min_sub_quantity || 0,
+    max_sub_quantity: bundle.max_sub_quantity || 0,
+    min_sub_amount: bundle.min_sub_amount || 0,
+    main_filter: {
+      series_id: bundle.main_filter?.series_id || '',
+      set_type_id: bundle.main_filter?.set_type_id || '',
+      product_type_id: bundle.main_filter?.product_type_id || '',
+      character_id: bundle.main_filter?.character_id || '',
+      status_code: bundle.main_filter?.status_code || '',
+      keyword: bundle.main_filter?.keyword || '',
+    },
+  }
+  const mainByID = new Map((bundle.main_products || []).map((p) => [p.product_id, p]))
+  bundleFormMainProducts.value = (bundle.main_product_ids || []).map((id) => {
+    const product = mainByID.get(id)
+    return {
+      product_id: id,
+      product_name: product?.product_name || id,
+      product_code: product?.product_code || '',
+    }
+  })
+  bundleFormSubProducts.value = (bundle.sub_products || []).map((item) => ({
+    product_id: item.product_id,
+    product_name: item.product_name,
+    product_code: item.product_code,
+    default_quantity: item.default_quantity || 1,
+  }))
+  showBundleForm.value = true
+}
+
+async function searchBundleMainProducts() {
+  if (!currentInventoryId.value || !bundleMainQuery.value.trim()) return
+  try {
+    const res = await queryProducts({
+      inventory_id: currentInventoryId.value,
+      keyword: bundleMainQuery.value.trim(),
+      page_size: 10,
+    })
+    bundleMainResults.value = res.data?.items || []
+  } catch {
+    bundleMainResults.value = []
+  }
+}
+
+async function searchBundleSubProducts() {
+  if (!currentInventoryId.value || !bundleSubQuery.value.trim()) return
+  try {
+    const res = await queryProducts({
+      inventory_id: currentInventoryId.value,
+      keyword: bundleSubQuery.value.trim(),
+      page_size: 10,
+    })
+    bundleSubResults.value = res.data?.items || []
+  } catch {
+    bundleSubResults.value = []
+  }
+}
+
+function addBundleMainProduct(product: Product) {
+  if (!bundleFormMainProducts.value.some((p) => p.product_id === product._id)) {
+    bundleFormMainProducts.value.push({
+      product_id: product._id,
+      product_name: product.name,
+      product_code: product.code,
+    })
+  }
+  bundleMainQuery.value = ''
+  bundleMainResults.value = []
+}
+
+function addBundleSubProduct(product: Product) {
+  if (!bundleFormSubProducts.value.some((p) => p.product_id === product._id)) {
+    bundleFormSubProducts.value.push({
+      product_id: product._id,
+      product_name: product.name,
+      product_code: product.code,
+      default_quantity: 1,
+    })
+  }
+  bundleSubQuery.value = ''
+  bundleSubResults.value = []
+}
+
+async function handleSaveBundle() {
+  if (!currentInventoryId.value || !bundleForm.value.name.trim()) return
+  if (!bundleFormMainProducts.value.length && !hasBundleMainFilter.value) {
+    NKMessage.warning('请至少配置显式主商品或主商品筛选条件')
+    return
+  }
+  if (!bundleFormSubProducts.value.length) {
+    NKMessage.warning('请至少选择一个副区商品')
+    return
+  }
+  saving.value = true
+  try {
+    const f = bundleForm.value
+    const filter = hasBundleMainFilter.value
+      ? {
+          series_id: f.main_filter.series_id || undefined,
+          set_type_id: f.main_filter.set_type_id || undefined,
+          product_type_id: f.main_filter.product_type_id || undefined,
+          character_id: f.main_filter.character_id || undefined,
+          status_code: f.main_filter.status_code || undefined,
+          keyword: f.main_filter.keyword.trim() || undefined,
+        }
+      : null
+    const payload = {
+      name: f.name.trim(),
+      code: f.code || null,
+      description: f.description || null,
+      status: f.status,
+      price_mode: f.price_mode,
+      fixed_price: Number(f.fixed_price) || 0,
+      min_main_quantity: Number(f.min_main_quantity) || 0,
+      min_main_amount: Number(f.min_main_amount) || 0,
+      min_sub_quantity: Number(f.min_sub_quantity) || 0,
+      max_sub_quantity: Number(f.max_sub_quantity) || 0,
+      min_sub_amount: Number(f.min_sub_amount) || 0,
+      main_filter: filter,
+      main_product_ids: bundleFormMainProducts.value.map((p) => p.product_id),
+      sub_products: bundleFormSubProducts.value.map((p) => ({
+        product_id: p.product_id,
+        default_quantity: Number(p.default_quantity) || 1,
+      })),
+    }
+    if (editingBundle.value) {
+      await updateBundle({ id: editingBundle.value._id, ...payload })
+      NKMessage.success('更新成功')
+    } else {
+      await createBundle({ inventory_id: currentInventoryId.value, ...payload })
+      NKMessage.success('创建成功')
+    }
+    showBundleForm.value = false
+    await fetchBundles()
+  } catch (err: any) {
+    NKMessage.error(err.message || '保存捆失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleDeleteBundle(bundle: Bundle) {
+  saving.value = true
+  try {
+    await deleteBundle(bundle._id)
+    NKMessage.success('已删除')
+    await fetchBundles()
+  } catch (err: any) {
+    NKMessage.error(err.message || '删除捆失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function onComboChange() {
+  if (!orderForm.value.combo_id) return
+  bundleOrder.value = { bundle_id: '', main_product_id: '', main_quantity: 1, quantity: 1, sub_quantities: {} }
+  bundlePreview.value = null
+  bundlePreviewError.value = ''
+}
+
+function onBundleOrderChange() {
+  bundlePreview.value = null
+  bundlePreviewError.value = ''
+  const selected = selectedBundle.value
+  if (!selected) return
+  orderForm.value.combo_id = ''
+  orderFormItems.value = []
+  const main = (selected.main_products || []).find((p) => p.available > 0) || selected.main_products?.[0]
+  bundleOrder.value.main_product_id = main?.product_id || ''
+  bundleOrder.value.main_quantity = selected.min_main_quantity || 1
+  bundleOrder.value.quantity = 1
+  const subQuantities: Record<string, number> = {}
+  for (const item of selected.sub_products || []) {
+    subQuantities[item.product_id] = item.default_quantity || 1
+  }
+  bundleOrder.value.sub_quantities = subQuantities
+  refreshBundleOrderPreview()
+}
+
+async function refreshBundleOrderPreview() {
+  bundlePreview.value = null
+  bundlePreviewError.value = ''
+  const selected = selectedBundle.value
+  if (!selected || !bundleOrder.value.main_product_id) return
+  const subItems = Object.entries(bundleOrder.value.sub_quantities)
+    .map(([product_id, quantity]) => ({ product_id, quantity: Number(quantity) || 0 }))
+    .filter((item) => item.quantity > 0)
+  bundlePreviewLoading.value = true
+  try {
+    const res = await previewBundle(selected._id, {
+      main_product_id: bundleOrder.value.main_product_id,
+      main_quantity: Number(bundleOrder.value.main_quantity) || 1,
+      quantity: Number(bundleOrder.value.quantity) || 1,
+      sub_items: subItems,
+    })
+    bundlePreview.value = res.data || null
+  } catch (err: any) {
+    bundlePreviewError.value = err.message || '捆校验失败'
+  } finally {
+    bundlePreviewLoading.value = false
+  }
+}
+
 // ---- Utils ----
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
@@ -1401,6 +3052,9 @@ watch(activeTab, (tab) => {
       searchProducts()
     }
   }
+  if (tab === 'series') fetchSeriesSummary()
+  if (tab === 'combos') fetchCombos()
+  if (tab === 'bundles') fetchBundles()
   if (tab === 'orders') fetchOrders()
   if (tab === 'logs') fetchLogs()
 })
@@ -1410,6 +3064,7 @@ onMounted(async () => {
   await fetchInventories()
   await fetchTags()
   await fetchStatusCodes()
+  await fetchDictionaries()
   if (inventories.value.length) {
     currentInventoryId.value = inventories.value[0]._id
     searchProducts()
@@ -1750,6 +3405,63 @@ onMounted(async () => {
     color: $nk-color-neutral-700;
   }
 
+  // ---- Series / Combos ----
+  &__series-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: $nk-spacing-md;
+  }
+
+  &__series-card {
+    cursor: pointer;
+    transition: box-shadow $nk-duration-fast, border-color $nk-duration-fast;
+    &:hover {
+      box-shadow: $nk-shadow-md;
+      border-color: $nk-color-primary-300;
+    }
+  }
+
+  &__series-name {
+    font-weight: $nk-font-weight-medium;
+    color: $nk-color-neutral-900;
+    font-size: $nk-font-size-base;
+    margin-bottom: $nk-spacing-xs;
+  }
+
+  &__series-meta {
+    display: flex;
+    gap: $nk-spacing-md;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+  }
+
+  &__combo-list {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-md;
+  }
+
+  &__combo-components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $nk-spacing-xs;
+    margin-top: $nk-spacing-xs;
+  }
+
+  &__combo-component {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-600;
+    background: $nk-color-neutral-50;
+    border-radius: $nk-radius-md;
+    padding: 2px 8px;
+  }
+
+  &__combo-picker {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+  }
+
   // ---- Orders ----
   &__order-list {
     display: flex;
@@ -1851,6 +3563,80 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     gap: $nk-spacing-sm;
+  }
+
+  // ---- Returns ----
+  &__return-form {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-sm;
+  }
+
+  &__return-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: $nk-spacing-xs $nk-spacing-sm;
+    background: $nk-color-neutral-50;
+    border-radius: $nk-radius-md;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__return-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__return-max {
+    color: $nk-color-neutral-500;
+    font-size: $nk-font-size-xs;
+    flex-shrink: 0;
+  }
+
+  &__return-tip {
+    margin: 0;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+  }
+
+  &__return-item {
+    padding: $nk-spacing-sm;
+    border: 1px solid $nk-color-neutral-200;
+    border-radius: $nk-radius-md;
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-xs;
+  }
+
+  &__return-item-head {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    font-size: $nk-font-size-xs;
+  }
+
+  &__return-reason {
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-date {
+    margin-left: auto;
+    color: $nk-color-neutral-500;
+  }
+
+  &__return-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-item-line {
+    display: block;
   }
 
   // ---- Logs ----
@@ -1983,6 +3769,19 @@ onMounted(async () => {
 
   &__settings-item-name {
     color: $nk-color-neutral-800;
+  }
+
+  &__settings-item-actions {
+    display: flex;
+    gap: $nk-spacing-xs;
+    flex-shrink: 0;
+  }
+
+  &__dictionary-code {
+    margin-left: 6px;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+    font-family: $nk-font-family-mono;
   }
 }
 </style>

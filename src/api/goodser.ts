@@ -1,13 +1,18 @@
-import { postResponse } from './request'
+import { getResponse, postResponse, putResponse, deleteResponse } from './request'
 import type {
   Inventory, CreateInventoryReq, UpdateInventoryReq,
   Product, CreateProductReq, UpdateProductReq, QueryProductsReq, AllocateSeqReq, AllocateSeqResp,
   InboundLog, InboundSingleReq, InboundBatchReq, InboundSearchImportReq,
   CreateInboundLogReq, UpdateInboundLogReq,
   OutboundOrder, CreateOutboundReq, ReserveToOutboundReq,
+  ReturnOrder, CreateReturnReq,
   GoodserTag, CreateTagReq, UpdateTagReq,
   StatusCode, AddStatusCodeReq, UpdateStatusCodeReq,
-  IdReq, PaginatedReq, PaginatedResp, UploadImageResp, SyncAllResp
+  IdReq, PaginatedReq, PaginatedResp, UploadImageResp, SyncAllResp,
+  Dictionary, DictionaryKind, CreateDictionaryReq, UpdateDictionaryReq,
+  SeriesSummary, Combo, CreateComboReq, UpdateComboReq,
+  Bundle, CreateBundleReq, UpdateBundleReq, BundleMainProduct, BundleSubProduct,
+  BundlePreviewReq, BundlePreviewResp,
 } from '@/types/goodser'
 
 // Inventories
@@ -106,6 +111,29 @@ export function reserveToOutbound(data: ReserveToOutboundReq) {
   return postResponse<OutboundOrder>('zzz-goodser/legacy/reserveToOutbound', data)
 }
 
+// Returns
+export function createReturn(inventoryId: string, outboundOrderId: string, data: CreateReturnReq) {
+  return postResponse<ReturnOrder>(
+    `zzz-goodser/inventories/${inventoryId}/outbound-orders/${outboundOrderId}/returns`,
+    data,
+  )
+}
+
+export function loadReturns(inventoryId: string, outboundOrderId?: string) {
+  return getResponse<ReturnOrder[]>(
+    `zzz-goodser/inventories/${inventoryId}/returns`,
+    outboundOrderId ? { outbound_order_id: outboundOrderId } : undefined,
+  )
+}
+
+export function confirmReturn(inventoryId: string, returnId: string) {
+  return postResponse<ReturnOrder>(`zzz-goodser/inventories/${inventoryId}/returns/${returnId}/confirm`)
+}
+
+export function cancelReturn(inventoryId: string, returnId: string) {
+  return postResponse<ReturnOrder>(`zzz-goodser/inventories/${inventoryId}/returns/${returnId}/cancel`)
+}
+
 // Tags
 export function loadTags() {
   return postResponse<GoodserTag[]>('zzz-goodser/legacy/loadTags')
@@ -138,4 +166,98 @@ export function updateStatusCode(data: UpdateStatusCodeReq) {
 
 export function removeStatusCode(data: IdReq) {
   return postResponse<any>('zzz-goodser/legacy/removeStatusCode', data)
+}
+
+// ---- P1: 受控维度字典 ----
+export function loadDictionaries(kind?: DictionaryKind, enabled?: boolean) {
+  const params: Record<string, any> = {}
+  if (kind) params.kind = kind
+  if (enabled !== undefined) params.enabled = enabled
+  return getResponse<{ items: Dictionary[] }>('zzz-goodser/settings/dictionaries', params)
+}
+
+export function createDictionary(data: CreateDictionaryReq) {
+  return postResponse<Dictionary>('zzz-goodser/settings/dictionaries', data)
+}
+
+export function updateDictionary(data: UpdateDictionaryReq) {
+  return putResponse<Dictionary>(`zzz-goodser/settings/dictionaries/${data.id}`, data)
+}
+
+export function deleteDictionary(id: string) {
+  return deleteResponse<any>(`zzz-goodser/settings/dictionaries/${id}`)
+}
+
+// ---- P1: 系列聚合视图 ----
+export function loadSeriesSummary(inventoryId: string) {
+  return getResponse<{ items: SeriesSummary[] }>(`zzz-goodser/inventories/${inventoryId}/series`)
+}
+
+// ---- P1: 组合包 ----
+export function loadCombos(inventoryId: string, status?: 'active' | 'inactive') {
+  return getResponse<{ items: Combo[] }>(
+    `zzz-goodser/inventories/${inventoryId}/combos`,
+    status ? { status } : undefined,
+  )
+}
+
+export function getCombo(comboId: string) {
+  return getResponse<Combo>(`zzz-goodser/combos/${comboId}`)
+}
+
+export function createCombo(data: CreateComboReq) {
+  return postResponse<Combo>(`zzz-goodser/inventories/${data.inventory_id}/combos`, data)
+}
+
+export function updateCombo(data: UpdateComboReq) {
+  return putResponse<Combo>(`zzz-goodser/combos/${data.id}`, data)
+}
+
+export function deleteCombo(comboId: string) {
+  return deleteResponse<any>(`zzz-goodser/combos/${comboId}`)
+}
+
+// ---- P1.5: 捆 ----
+export function loadBundles(inventoryId: string, status?: 'active' | 'inactive') {
+  return getResponse<{ items: Bundle[] }>(
+    `zzz-goodser/inventories/${inventoryId}/bundles`,
+    status ? { status } : undefined,
+  )
+}
+
+export function getBundle(bundleId: string) {
+  return getResponse<Bundle>(`zzz-goodser/bundles/${bundleId}`)
+}
+
+export function createBundle(data: CreateBundleReq) {
+  return postResponse<Bundle>(`zzz-goodser/inventories/${data.inventory_id}/bundles`, data)
+}
+
+export function updateBundle(data: UpdateBundleReq) {
+  return putResponse<Bundle>(`zzz-goodser/bundles/${data.id}`, data)
+}
+
+export function deleteBundle(bundleId: string) {
+  return deleteResponse<any>(`zzz-goodser/bundles/${bundleId}`)
+}
+
+export function loadBundleMainProducts(bundleId: string, keyword?: string) {
+  return getResponse<{ items: BundleMainProduct[] }>(
+    `zzz-goodser/bundles/${bundleId}/main-products`,
+    keyword ? { keyword } : undefined,
+  )
+}
+
+export function loadBundleSubProducts(
+  bundleId: string,
+  params?: { keyword?: string; only_available?: boolean },
+) {
+  return getResponse<{ items: BundleSubProduct[] }>(
+    `zzz-goodser/bundles/${bundleId}/sub-products`,
+    params,
+  )
+}
+
+export function previewBundle(bundleId: string, data: BundlePreviewReq) {
+  return postResponse<BundlePreviewResp>(`zzz-goodser/bundles/${bundleId}/preview`, data)
 }
