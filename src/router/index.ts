@@ -79,6 +79,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Goodser' },
       },
       {
+        path: 'modules/zzz/integration',
+        name: 'Integration',
+        component: () => import('@/views/modules/zzz/integration/index.vue'),
+        meta: { title: '集成管理' },
+      },
+      {
         path: 'modules/zzz/shopchecker/products',
         name: 'ShopChecker',
         component: () => import('@/views/modules/zzz/shopchecker/index.vue'),

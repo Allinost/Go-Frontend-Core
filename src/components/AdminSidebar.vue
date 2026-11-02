@@ -86,6 +86,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
       { label: '项目开发管理', path: '/modules/zzz/developmentmanager' },
       { label: '投资分析', path: '/modules/zzz/ia' },
       { label: 'Goodser', path: '/modules/zzz/goodser' },
+      { label: '集成管理', path: '/modules/zzz/integration' },
       { label: 'ShopChecker', path: '/modules/zzz/shopchecker/products' },
     ],
   },
