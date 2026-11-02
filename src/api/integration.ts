@@ -20,6 +20,10 @@ export function deleteConnector(id: string) {
   return deleteResponse<any>(`integration/connectors/${id}`)
 }
 
+export function testConnector(id: string) {
+  return postResponse<{ sent: boolean; connector_id: string }>(`integration/connectors/${id}/test`)
+}
+
 export function loadEvents(params?: { status?: string; topic?: string; limit?: number; offset?: number }) {
   return getResponse<{ items: IntegrationEvent[]; limit: number; offset: number }>('integration/events', params)
 }

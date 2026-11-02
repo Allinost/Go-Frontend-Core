@@ -40,6 +40,7 @@
               <span>订阅 {{ topicsLabel(item) }}</span>
             </div>
             <div class="integration__actions">
+              <NkButton size="xs" variant="ghost" :loading="testingId === item.id" @click="handleTest(item)">发送测试</NkButton>
               <NkButton size="xs" variant="ghost" @click="openEdit(item)">编辑</NkButton>
               <NkButton size="xs" variant="ghost" type="danger" @click="askDelete(item)">删除</NkButton>
             </div>
@@ -120,7 +121,7 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import {
   loadConnectors, createConnector, updateConnector, deleteConnector,
-  loadEvents, dispatchEvents,
+  loadEvents, dispatchEvents, testConnector,
 } from '@/api/integration'
 import type { IntegrationConnector, IntegrationEvent } from '@/types/integration'
 
@@ -143,6 +144,7 @@ const statusOptions = [
 ]
 
 const dispatching = ref(false)
+const testingId = ref('')
 const saving = ref(false)
 const showDialog = ref(false)
 const showDeleteDialog = ref(false)
@@ -248,8 +250,19 @@ async function handleDelete() {
   }
 }
 
-async function handleDispatch() {
-  dispatching.value = true
+async function handleTest(item: IntegrationConnector) {
+  testingId.value = item.id
+  try {
+    await testConnector(item.id)
+    NKMessage.success('测试事件已发送')
+  } catch (e: any) {
+    NKMessage.error(e?.message || '测试事件发送失败')
+  } finally {
+    testingId.value = ''
+  }
+}
+
+async function handleDispatch() {  dispatching.value = true
   try {
     const res = await dispatchEvents()
     const result = res.data
