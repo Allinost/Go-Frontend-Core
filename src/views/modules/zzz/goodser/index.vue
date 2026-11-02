@@ -239,6 +239,123 @@
         </div>
       </div>
 
+      <!-- ==================== 统计 Tab ==================== -->
+      <div v-if="activeTab === 'stats'" class="goodser__tab">
+        <div class="goodser__tab-header">
+          <span class="goodser__count">{{ statsRangeLabel }}</span>
+          <div class="goodser__stats-controls">
+            <NkSelect
+              v-if="inventories.length"
+              v-model="currentInventoryId"
+              :options="inventoryOptions"
+              style="width: 200px"
+              size="sm"
+              @change="onInventoryChange"
+            />
+            <NkSelect
+              v-model="statsDays"
+              :options="statsDayOptions"
+              style="width: 120px"
+              size="sm"
+              @change="fetchStats"
+            />
+            <NkButton size="sm" variant="ghost" @click="fetchStats">刷新</NkButton>
+          </div>
+        </div>
+        <NkLoading v-if="loadingStats" />
+        <div v-else-if="!stats" class="goodser__empty">
+          <NkEmpty description="暂无统计数据" />
+        </div>
+        <template v-else>
+          <div class="goodser__stat-grid">
+            <NkCard class="goodser__stat-card">
+              <div class="goodser__stat-label">商品数</div>
+              <div class="goodser__stat-value">{{ stats.stock.total_products }}</div>
+              <div class="goodser__stat-hint">缺货 {{ stats.stock.out_of_stock }} 件</div>
+            </NkCard>
+            <NkCard class="goodser__stat-card">
+              <div class="goodser__stat-label">可售库存</div>
+              <div class="goodser__stat-value">{{ stats.stock.available }}</div>
+              <div class="goodser__stat-hint">已锁定 {{ stats.stock.reserved }}</div>
+            </NkCard>
+            <NkCard class="goodser__stat-card">
+              <div class="goodser__stat-label">库存总量</div>
+              <div class="goodser__stat-value">{{ stats.stock.total }}</div>
+              <div class="goodser__stat-hint">可售 + 锁定</div>
+            </NkCard>
+            <NkCard class="goodser__stat-card">
+              <div class="goodser__stat-label">库存总值</div>
+              <div class="goodser__stat-value">¥{{ stats.stock.stock_value.toFixed(2) }}</div>
+              <div class="goodser__stat-hint">按预期价 / 市场价</div>
+            </NkCard>
+          </div>
+
+          <div class="goodser__stat-panels">
+            <NkCard class="goodser__stat-panel">
+              <div class="goodser__stat-panel-title">订单与退货（近 {{ stats.days }} 天）</div>
+              <div class="goodser__stat-kv"><span>待确认出库</span><strong>{{ stats.orders.pending_outbound }}</strong></div>
+              <div class="goodser__stat-kv"><span>已确认出库</span><strong>{{ stats.orders.confirmed_outbound }}</strong></div>
+              <div class="goodser__stat-kv"><span>已取消出库</span><strong>{{ stats.orders.cancelled_outbound }}</strong></div>
+              <div class="goodser__stat-kv"><span>待处理预留</span><strong>{{ stats.orders.pending_reserves }}</strong></div>
+              <div class="goodser__stat-kv"><span>待确认退货</span><strong>{{ stats.orders.pending_returns }}</strong></div>
+              <div class="goodser__stat-kv"><span>已确认退货</span><strong>{{ stats.orders.confirmed_returns }}</strong></div>
+            </NkCard>
+            <NkCard class="goodser__stat-panel">
+              <div class="goodser__stat-panel-title">热销商品（按确认出库量）</div>
+              <NkEmpty v-if="!stats.top_products.length" description="区间内暂无出库记录" />
+              <div v-for="(p, i) in stats.top_products" :key="p.product_id" class="goodser__stat-rank">
+                <span class="goodser__stat-rank-index">{{ i + 1 }}</span>
+                <span class="goodser__stat-rank-name">{{ p.product_name || p.product_code }}</span>
+                <strong>{{ p.outbound_quantity }}</strong>
+              </div>
+            </NkCard>
+          </div>
+
+          <NkCard class="goodser__stat-panel">
+            <div class="goodser__stat-panel-title">出库 / 退货趋势</div>
+            <div class="goodser__stat-legend">
+              <span><i class="goodser__stat-dot goodser__stat-dot--out"></i>出库</span>
+              <span><i class="goodser__stat-dot goodser__stat-dot--ret"></i>退货回库</span>
+            </div>
+            <div class="goodser__stat-trend">
+              <div v-for="p in stats.trend" :key="p.date" class="goodser__stat-trend-col">
+                <div class="goodser__stat-trend-bars">
+                  <div
+                    class="goodser__stat-bar goodser__stat-bar--out"
+                    :style="{ height: trendHeight(p.outbound_quantity) + 'px' }"
+                    :title="`${p.date} 出库 ${p.outbound_quantity}`"
+                  ></div>
+                  <div
+                    class="goodser__stat-bar goodser__stat-bar--ret"
+                    :style="{ height: trendHeight(p.return_quantity) + 'px' }"
+                    :title="`${p.date} 退货 ${p.return_quantity}`"
+                  ></div>
+                </div>
+                <span class="goodser__stat-trend-label">{{ p.date.slice(5) }}</span>
+              </div>
+            </div>
+          </NkCard>
+
+          <NkCard class="goodser__stat-panel">
+            <div class="goodser__stat-panel-title">系列分布</div>
+            <NkEmpty v-if="!stats.series.length" description="暂无系列数据" />
+            <div v-for="row in stats.series" :key="row.series_id || row.series_name" class="goodser__stat-series">
+              <div class="goodser__stat-series-head">
+                <span>{{ row.series_name }}</span>
+                <span>{{ row.product_count }} 件 / 可售 {{ row.available }}</span>
+              </div>
+              <div class="goodser__stat-series-bar">
+                <div class="goodser__stat-series-fill" :style="{ width: seriesWidth(row.total) }"></div>
+              </div>
+              <div class="goodser__stat-series-meta">
+                <span>总量 {{ row.total }}（锁定 {{ row.reserved }}）</span>
+                <span>¥{{ row.stock_value.toFixed(2) }}</span>
+              </div>
+            </div>
+          </NkCard>
+        </template>
+      </div>
+
       <!-- ==================== 出库订单 Tab ==================== -->
       <div v-if="activeTab === 'orders'" class="goodser__tab">
         <div class="goodser__tab-header">
@@ -1264,12 +1381,13 @@ import {
   loadSeriesSummary,
   loadCombos, createCombo, updateCombo, deleteCombo,
   loadBundles, createBundle, updateBundle, deleteBundle, previewBundle,
+  getInventoryStats,
 } from '@/api/goodser'
 import type {
   Inventory, Product, OutboundOrder, InboundLog, OrderItem, GoodserTag, StatusCode,
   ReturnOrder, ReturnReason,
   Dictionary, DictionaryKind, SeriesSummary, Combo,
-  Bundle, BundlePriceMode, BundlePreviewResp,
+  Bundle, BundlePriceMode, BundlePreviewResp, StatsOverview,
 } from '@/types/goodser'
 
 // ---- Tabs ----
@@ -1279,6 +1397,7 @@ const tabs = [
   { label: '系列视图', value: 'series' },
   { label: '组合包', value: 'combos' },
   { label: '捆', value: 'bundles' },
+  { label: '统计', value: 'stats' },
   { label: '出库订单', value: 'orders' },
   { label: '入库记录', value: 'logs' },
   { label: '库存目录', value: 'inventories' },
@@ -1503,6 +1622,8 @@ function onInventoryChange() {
     fetchCombos()
   } else if (activeTab.value === 'bundles') {
     fetchBundles()
+  } else if (activeTab.value === 'stats') {
+    fetchStats()
   } else {
     searchProducts()
   }
@@ -3042,6 +3163,49 @@ function formatDate(dateStr: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// ---- 统计 ----
+const stats = ref<StatsOverview | null>(null)
+const loadingStats = ref(false)
+const statsDays = ref(30)
+const statsDayOptions = [
+  { label: '近 7 天', value: 7 },
+  { label: '近 30 天', value: 30 },
+  { label: '近 90 天', value: 90 },
+  { label: '近 365 天', value: 365 },
+]
+const statsRangeLabel = computed(() => {
+  if (!stats.value) return `统计区间：近 ${statsDays.value} 天`
+  return `${stats.value.inventory_name}｜近 ${stats.value.days} 天｜更新于 ${formatDate(stats.value.generated_at)}`
+})
+const statsMaxTrend = computed(() => {
+  if (!stats.value) return 1
+  return Math.max(1, ...stats.value.trend.map(p => Math.max(p.outbound_quantity, p.return_quantity)))
+})
+const statsMaxSeries = computed(() => {
+  if (!stats.value) return 1
+  return Math.max(1, ...stats.value.series.map(r => r.total))
+})
+function trendHeight(value: number) {
+  if (!value) return 2
+  return Math.max(4, Math.round((value / statsMaxTrend.value) * 100))
+}
+function seriesWidth(total: number) {
+  return Math.max(total ? 4 : 0, Math.round((total / statsMaxSeries.value) * 100)) + '%'
+}
+
+async function fetchStats() {
+  if (!currentInventoryId.value) return
+  loadingStats.value = true
+  try {
+    const res = await getInventoryStats(currentInventoryId.value, statsDays.value)
+    stats.value = res.data || null
+  } catch (e: any) {
+    NKMessage.error(e?.message || '加载统计失败')
+  } finally {
+    loadingStats.value = false
+  }
+}
+
 // ---- Watchers ----
 watch(activeTab, (tab) => {
   if (tab === 'products') {
@@ -3055,6 +3219,7 @@ watch(activeTab, (tab) => {
   if (tab === 'series') fetchSeriesSummary()
   if (tab === 'combos') fetchCombos()
   if (tab === 'bundles') fetchBundles()
+  if (tab === 'stats') fetchStats()
   if (tab === 'orders') fetchOrders()
   if (tab === 'logs') fetchLogs()
 })
@@ -3782,6 +3947,213 @@ onMounted(async () => {
     font-size: $nk-font-size-xs;
     color: $nk-color-neutral-400;
     font-family: $nk-font-family-mono;
+  }
+
+  // ---- 统计 ----
+  &__stats-controls {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+  }
+
+  &__stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: $nk-spacing-md;
+    margin-bottom: $nk-spacing-md;
+  }
+
+  &__stat-card {
+    padding: $nk-spacing-md;
+  }
+
+  &__stat-label {
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-500;
+  }
+
+  &__stat-value {
+    margin-top: 6px;
+    font-size: 26px;
+    font-weight: $nk-font-weight-semibold;
+    color: $nk-color-neutral-900;
+  }
+
+  &__stat-hint {
+    margin-top: 4px;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+  }
+
+  &__stat-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $nk-spacing-md;
+    margin-bottom: $nk-spacing-md;
+
+    @media (max-width: 720px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__stat-panel {
+    padding: $nk-spacing-md;
+    margin-bottom: $nk-spacing-md;
+  }
+
+  &__stat-panel-title {
+    margin-bottom: $nk-spacing-sm;
+    font-size: $nk-font-size-base;
+    font-weight: $nk-font-weight-semibold;
+    color: $nk-color-neutral-800;
+  }
+
+  &__stat-kv {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-600;
+    border-bottom: 1px dashed $nk-color-neutral-100;
+
+    strong {
+      color: $nk-color-neutral-900;
+    }
+  }
+
+  &__stat-rank {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: 6px 0;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__stat-rank-index {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: $nk-color-neutral-100;
+    color: $nk-color-neutral-600;
+    font-size: $nk-font-size-xs;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__stat-rank-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__stat-legend {
+    display: flex;
+    gap: $nk-spacing-md;
+    margin-bottom: $nk-spacing-sm;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+  }
+
+  &__stat-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-radius: 2px;
+
+    &--out {
+      background: #1677ff;
+    }
+
+    &--ret {
+      background: #52c41a;
+    }
+  }
+
+  &__stat-trend {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 140px;
+    padding: 0 2px;
+    overflow-x: auto;
+  }
+
+  &__stat-trend-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 22px;
+    flex: 1;
+  }
+
+  &__stat-trend-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 110px;
+  }
+
+  &__stat-bar {
+    width: 7px;
+    min-height: 2px;
+    border-radius: 2px 2px 0 0;
+
+    &--out {
+      background: #1677ff;
+    }
+
+    &--ret {
+      background: #52c41a;
+    }
+  }
+
+  &__stat-trend-label {
+    font-size: 10px;
+    color: $nk-color-neutral-400;
+    white-space: nowrap;
+  }
+
+  &__stat-series {
+    padding: $nk-spacing-sm 0;
+    border-bottom: 1px dashed $nk-color-neutral-100;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__stat-series-head,
+  &__stat-series-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: $nk-spacing-sm;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-600;
+  }
+
+  &__stat-series-meta {
+    margin-top: 4px;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+  }
+
+  &__stat-series-bar {
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 3px;
+    background: $nk-color-neutral-100;
+    overflow: hidden;
+  }
+
+  &__stat-series-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #1677ff, #69b1ff);
   }
 }
 </style>

@@ -628,6 +628,61 @@ export interface BundleOrderSnapshot {
   total_price: number
 }
 
+// ---- P1.5: 统计 ----
+
+export interface StatsStock {
+  total_products: number
+  available: number
+  reserved: number
+  total: number
+  stock_value: number
+  out_of_stock: number
+}
+
+export interface StatsOrderCounts {
+  pending_outbound: number
+  confirmed_outbound: number
+  cancelled_outbound: number
+  pending_reserves: number
+  pending_returns: number
+  confirmed_returns: number
+}
+
+export interface StatsTrendPoint {
+  date: string
+  outbound_quantity: number
+  return_quantity: number
+}
+
+export interface StatsSeriesRow {
+  series_id: string | null
+  series_name: string
+  product_count: number
+  available: number
+  reserved: number
+  total: number
+  stock_value: number
+}
+
+export interface StatsTopProduct {
+  product_id: string
+  product_name: string
+  product_code: string
+  outbound_quantity: number
+}
+
+export interface StatsOverview {
+  inventory_id: string
+  inventory_name: string
+  days: number
+  generated_at: string
+  stock: StatsStock
+  orders: StatsOrderCounts
+  trend: StatsTrendPoint[]
+  series: StatsSeriesRow[]
+  top_products: StatsTopProduct[]
+}
+
 export interface BundlePreviewResp {
   bundle_id: string
   bundle_code: string

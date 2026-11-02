@@ -12,7 +12,7 @@ import type {
   Dictionary, DictionaryKind, CreateDictionaryReq, UpdateDictionaryReq,
   SeriesSummary, Combo, CreateComboReq, UpdateComboReq,
   Bundle, CreateBundleReq, UpdateBundleReq, BundleMainProduct, BundleSubProduct,
-  BundlePreviewReq, BundlePreviewResp,
+  BundlePreviewReq, BundlePreviewResp, StatsOverview,
 } from '@/types/goodser'
 
 // Inventories
@@ -260,4 +260,9 @@ export function loadBundleSubProducts(
 
 export function previewBundle(bundleId: string, data: BundlePreviewReq) {
   return postResponse<BundlePreviewResp>(`zzz-goodser/bundles/${bundleId}/preview`, data)
+}
+
+// ---- P1.5: 统计 ----
+export function getInventoryStats(inventoryId: string, days = 30) {
+  return getResponse<StatsOverview>(`zzz-goodser/inventories/${inventoryId}/stats`, { days })
 }
