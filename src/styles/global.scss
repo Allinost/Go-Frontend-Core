@@ -27,3 +27,56 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+// ---- Responsive dialogs (narrow screens use a bottom sheet) ----
+@media (max-width: 768px) {
+  .nk-dialog__overlay {
+    align-items: flex-end !important;
+  }
+
+  .nk-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 90vh !important;
+    border-radius: $nk-radius-lg $nk-radius-lg 0 0 !important;
+  }
+
+  .nk-dialog__header {
+    padding: $nk-spacing-md $nk-spacing-lg !important;
+  }
+
+  .nk-dialog__body {
+    padding: $nk-spacing-lg !important;
+  }
+
+  .nk-dialog__footer {
+    padding: $nk-spacing-md $nk-spacing-lg calc(#{$nk-spacing-md} + env(safe-area-inset-bottom)) !important;
+  }
+
+  .nk-dialog-fade-enter-active .nk-dialog {
+    animation-name: nk-dialog-sheet-enter !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .nk-dialog__header,
+  .nk-dialog__footer {
+    padding-left: $nk-spacing-md !important;
+    padding-right: $nk-spacing-md !important;
+  }
+
+  .nk-dialog__body {
+    padding: $nk-spacing-md !important;
+  }
+}
+
+@keyframes nk-dialog-sheet-enter {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

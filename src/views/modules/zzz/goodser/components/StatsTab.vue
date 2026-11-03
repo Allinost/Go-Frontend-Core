@@ -268,6 +268,7 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     display: flex;
     align-items: center;
     gap: $nk-spacing-sm;
+    flex-wrap: wrap;
   }
 
   &__stat-grid {
