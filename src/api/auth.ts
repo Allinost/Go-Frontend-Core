@@ -68,4 +68,46 @@ export function deleteUser(id: number): Promise<ApiResponse<void>> {
   return deleteResponse(`/auth/users/${id}`)
 }
 
+// ---- API Keys ----
+export interface APIKey {
+  id: number
+  name: string
+  key_prefix: string
+  scopes: string
+  user_id: number
+  last_used_at?: string | null
+  expires_at?: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreatedAPIKey {
+  id: number
+  name: string
+  key_prefix: string
+  raw_key: string
+  scopes: string
+  expires_at?: string | null
+}
+
+export function listAPIKeys(params?: { page?: number; page_size?: number }) {
+  return getResponse<APIKey[] | { data: APIKey[]; total: number; page: number; size: number }>(
+    '/auth/api-keys',
+    params,
+  )
+}
+
+export function createAPIKey(data: { name: string; scopes: string; expires_in?: string }) {
+  return postResponse<CreatedAPIKey>('/auth/api-keys', data)
+}
+
+export function updateAPIKey(id: number, data: { name?: string; scopes?: string; status?: string }) {
+  return putResponse<APIKey>(`/auth/api-keys/${id}`, data)
+}
+
+export function deleteAPIKey(id: number) {
+  return deleteResponse<void>(`/auth/api-keys/${id}`)
+}
+
 

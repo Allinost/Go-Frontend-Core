@@ -36,6 +36,7 @@ export interface Product {
   original_price: number | null
   market_price: number | null
   expected_price: number | null
+  cost_price: number | null
   remark: string | null
   storage_location: string | null
   image_url: string | null
@@ -65,6 +66,7 @@ export interface CreateProductReq {
   original_price?: number | null
   market_price?: number | null
   expected_price?: number | null
+  cost_price?: number | null
   remark?: string | null
   storage_location?: string | null
   image_url?: string | null
@@ -87,6 +89,7 @@ export interface UpdateProductReq {
   original_price?: number | null
   market_price?: number | null
   expected_price?: number | null
+  cost_price?: number | null
   remark?: string | null
   storage_location?: string | null
   image_url?: string | null
@@ -149,6 +152,7 @@ export interface InboundSingleReq {
   original_price?: number | null
   market_price?: number | null
   expected_price?: number | null
+  cost_price?: number | null
   remark?: string | null
   storage_location?: string | null
   image_url?: string | null
@@ -177,6 +181,7 @@ export interface InboundBatchItem {
   original_price?: number | null
   market_price?: number | null
   expected_price?: number | null
+  cost_price?: number | null
   remark?: string | null
   storage_location?: string | null
   image_url?: string | null
@@ -312,6 +317,7 @@ export interface CreateReturnReq {
 
 export interface PaginatedReq {
   inventory_id: string
+  keyword?: string
   page?: number
   page_size?: number
 }
@@ -671,6 +677,28 @@ export interface StatsTopProduct {
   outbound_quantity: number
 }
 
+export interface StatsProfitProduct {
+  product_id: string
+  product_name: string
+  product_code: string
+  quantity: number
+  revenue: number
+  cost: number
+  profit: number
+  /** 收益率，0-1 */
+  margin_rate: number
+}
+
+export interface StatsProfit {
+  revenue: number
+  cost: number
+  profit: number
+  /** 整体收益率，0-1 */
+  margin_rate: number
+  top_by_profit: StatsProfitProduct[]
+  top_by_margin: StatsProfitProduct[]
+}
+
 export interface StatsOverview {
   inventory_id: string
   inventory_name: string
@@ -681,6 +709,7 @@ export interface StatsOverview {
   trend: StatsTrendPoint[]
   series: StatsSeriesRow[]
   top_products: StatsTopProduct[]
+  profit: StatsProfit
 }
 
 export interface BundlePreviewResp {

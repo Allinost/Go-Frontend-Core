@@ -9,6 +9,17 @@
         <NkButton size="sm" @click="openCreateOrder('outbound')">新建出库</NkButton>
       </div>
     </div>
+    <div class="goodser__order-toolbar">
+      <NkInput
+        v-model="orderKeyword"
+        placeholder="搜索单号 / 订单信息 / 备注..."
+        size="sm"
+        clearable
+        @clear="searchOrders"
+        @keyup.enter="searchOrders"
+      />
+      <NkButton size="sm" variant="ghost" @click="searchOrders">搜索</NkButton>
+    </div>
     <NkLoading v-if="loadingOrders" />
     <div v-else-if="!orders.length" class="goodser__empty">
       <NkEmpty description="暂无出库订单" />
@@ -430,6 +441,7 @@ const loadingOrders = ref(false)
 const ordersPage = ref(1)
 const ordersPageSize = ref(20)
 const ordersTotal = ref(0)
+const orderKeyword = ref('')
 const jumpPage = ref<number | null>(null)
 const pageSizeOptions = [10, 20, 50, 100].map((value) => ({ label: `${value} 条/页`, value }))
 const saving = ref(false)
@@ -593,6 +605,7 @@ async function fetchOrders(page = ordersPage.value) {
     const request = (target: number) =>
       loadOutboundOrders({
         inventory_id: props.inventoryId,
+        keyword: orderKeyword.value.trim() || undefined,
         page: target,
         page_size: ordersPageSize.value,
       })
@@ -620,6 +633,10 @@ async function fetchOrders(page = ordersPage.value) {
 }
 
 const ordersTotalPages = computed(() => Math.max(1, Math.ceil(ordersTotal.value / ordersPageSize.value)))
+
+function searchOrders() {
+  fetchOrders(1)
+}
 
 function onPageSizeChange(value: number) {
   ordersPageSize.value = Number(value) || 20
@@ -1067,6 +1084,7 @@ onMounted(async () => {
 watch(
   () => props.inventoryId,
   () => {
+    orderKeyword.value = ''
     fetchOrders(1)
   },
 )
@@ -1074,4 +1092,24 @@ watch(
 
 <style lang="scss" scoped>
 @use '../styles/shared';
+
+.goodser {
+  &__order-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    margin-bottom: $nk-spacing-md;
+
+    .nk-input {
+      width: 280px;
+    }
+
+    @media (max-width: 640px) {
+      .nk-input {
+        flex: 1;
+        width: auto;
+      }
+    }
+  }
+}
 </style>

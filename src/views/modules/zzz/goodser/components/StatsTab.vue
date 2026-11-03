@@ -49,6 +49,49 @@
         </NkCard>
       </div>
 
+      <NkCard class="goodser__stat-panel goodser__profit-panel">
+        <div class="goodser__stat-panel-title">收益统计（近 {{ stats.days }} 天）</div>
+        <div class="goodser__profit-layout">
+          <div class="goodser__profit-summary">
+            <div class="goodser__profit-hero">
+              <span class="goodser__profit-hero-label">整体收益</span>
+              <strong class="goodser__profit-hero-value" :class="{ 'goodser__profit-hero-value--negative': profit.profit < 0 }">
+                ¥{{ profit.profit.toFixed(2) }}
+              </strong>
+              <NkTag size="sm" :type="profit.margin_rate >= 0 ? 'success' : 'danger'">
+                收益率 {{ formatRate(profit.margin_rate) }}
+              </NkTag>
+            </div>
+            <div class="goodser__stat-kv"><span>销售额</span><strong>¥{{ profit.revenue.toFixed(2) }}</strong></div>
+            <div class="goodser__stat-kv"><span>成本</span><strong>¥{{ profit.cost.toFixed(2) }}</strong></div>
+            <div class="goodser__stat-kv"><span>整体收益率</span><strong>{{ formatRate(profit.margin_rate) }}</strong></div>
+            <p class="goodser__return-tip">
+              销售额 = 期望价（为 0 取市场价）× 净出库量；成本价留空时按原价计算。
+            </p>
+          </div>
+          <div class="goodser__profit-ranks">
+            <div class="goodser__profit-rank">
+              <div class="goodser__profit-rank-title">最高收益单品</div>
+              <NkEmpty v-if="!profit.top_by_profit.length" description="区间内暂无收益数据" />
+              <div v-for="(p, i) in profit.top_by_profit" :key="p.product_id" class="goodser__profit-row">
+                <span class="goodser__stat-rank-index">{{ i + 1 }}</span>
+                <span class="goodser__profit-row-name">{{ p.product_name || p.product_code }}</span>
+                <span class="goodser__profit-row-profit">¥{{ p.profit.toFixed(2) }}</span>
+              </div>
+            </div>
+            <div class="goodser__profit-rank">
+              <div class="goodser__profit-rank-title">最高收益率单品</div>
+              <NkEmpty v-if="!profit.top_by_margin.length" description="区间内暂无收益数据" />
+              <div v-for="(p, i) in profit.top_by_margin" :key="p.product_id" class="goodser__profit-row">
+                <span class="goodser__stat-rank-index">{{ i + 1 }}</span>
+                <span class="goodser__profit-row-name">{{ p.product_name || p.product_code }}</span>
+                <span class="goodser__profit-row-profit">{{ formatRate(p.margin_rate) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </NkCard>
+
       <div class="goodser__stat-panels">
         <NkCard class="goodser__stat-panel">
           <div class="goodser__stat-panel-title">订单与退货（近 {{ stats.days }} 天）</div>
@@ -174,6 +217,21 @@ const statsMaxSeries = computed(() => {
   if (!stats.value) return 1
   return Math.max(1, ...stats.value.series.map((row) => row.total))
 })
+const profit = computed(
+  () =>
+    stats.value?.profit || {
+      revenue: 0,
+      cost: 0,
+      profit: 0,
+      margin_rate: 0,
+      top_by_profit: [],
+      top_by_margin: [],
+    },
+)
+
+function formatRate(value: number) {
+  return `${((Number(value) || 0) * 100).toFixed(1)}%`
+}
 const selectedTrendPoint = computed(() => {
   if (!stats.value) return null
   return stats.value.trend.find((p) => p.date === selectedTrendDate.value) || null
@@ -243,6 +301,46 @@ function exportStatsCSV() {
   push('')
   push('商品', '编码', '确认出库量')
   value.top_products.forEach((p) => push(p.product_name || p.product_code, p.product_code, p.outbound_quantity))
+  push('')
+  push('收益指标', '数值')
+  const profitValue = value.profit || {
+    revenue: 0,
+    cost: 0,
+    profit: 0,
+    margin_rate: 0,
+    top_by_profit: [],
+    top_by_margin: [],
+  }
+  push('销售额', profitValue.revenue)
+  push('成本', profitValue.cost)
+  push('整体收益', profitValue.profit)
+  push('整体收益率', `${(profitValue.margin_rate * 100).toFixed(1)}%`)
+  push('')
+  push('最高收益单品', '编码', '数量', '销售额', '成本', '收益', '收益率')
+  profitValue.top_by_profit.forEach((p) =>
+    push(
+      p.product_name || p.product_code,
+      p.product_code,
+      p.quantity,
+      p.revenue,
+      p.cost,
+      p.profit,
+      `${(p.margin_rate * 100).toFixed(1)}%`,
+    ),
+  )
+  push('')
+  push('最高收益率单品', '编码', '数量', '销售额', '成本', '收益', '收益率')
+  profitValue.top_by_margin.forEach((p) =>
+    push(
+      p.product_name || p.product_code,
+      p.product_code,
+      p.quantity,
+      p.revenue,
+      p.cost,
+      p.profit,
+      `${(p.margin_rate * 100).toFixed(1)}%`,
+    ),
+  )
 
   const escape = (text: string) => `"${text.replace(/"/g, '""')}"`
   const csv = '\uFEFF' + rows.map((row) => row.map(escape).join(',')).join('\r\n')
@@ -321,6 +419,94 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     font-size: $nk-font-size-base;
     font-weight: $nk-font-weight-semibold;
     color: $nk-color-neutral-800;
+  }
+
+  &__profit-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) 2fr;
+    gap: $nk-spacing-xl;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+      gap: $nk-spacing-md;
+    }
+  }
+
+  &__profit-summary {
+    min-width: 0;
+  }
+
+  &__profit-hero {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: $nk-spacing-sm;
+    margin-bottom: $nk-spacing-sm;
+  }
+
+  &__profit-hero-label {
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-500;
+  }
+
+  &__profit-hero-value {
+    font-size: 30px;
+    font-weight: $nk-font-weight-semibold;
+    color: $nk-color-primary-600;
+
+    &--negative {
+      color: $nk-color-error;
+    }
+  }
+
+  &__profit-ranks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $nk-spacing-lg;
+    min-width: 0;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__profit-rank {
+    min-width: 0;
+  }
+
+  &__profit-rank-title {
+    margin-bottom: $nk-spacing-xs;
+    font-size: $nk-font-size-sm;
+    font-weight: $nk-font-weight-medium;
+    color: $nk-color-neutral-700;
+  }
+
+  &__profit-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: 6px 0;
+    font-size: $nk-font-size-sm;
+    border-bottom: 1px dashed $nk-color-neutral-100;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__profit-row-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $nk-color-neutral-700;
+  }
+
+  &__profit-row-profit {
+    flex-shrink: 0;
+    color: $nk-color-primary-600;
+    font-weight: $nk-font-weight-medium;
   }
 
   &__stat-kv {

@@ -288,6 +288,10 @@
     &--third {
       flex: 0 0 calc(33.33% - #{$nk-spacing-sm} * 2 / 3);
     }
+
+    &--quarter {
+      flex: 0 0 calc(25% - #{$nk-spacing-sm} * 3 / 4);
+    }
   }
 
   &__form-label {
@@ -372,7 +376,8 @@
     }
 
     &__form-field--half,
-    &__form-field--third {
+    &__form-field--third,
+    &__form-field--quarter {
       flex: 1 1 auto;
     }
 

@@ -234,17 +234,21 @@
           </div>
         </div>
         <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--third">
+          <div class="goodser__form-field goodser__form-field--quarter">
             <label class="goodser__form-label">原价</label>
             <NkInput v-model="productForm.original_price" type="number" placeholder="0" />
           </div>
-          <div class="goodser__form-field goodser__form-field--third">
+          <div class="goodser__form-field goodser__form-field--quarter">
             <label class="goodser__form-label">市场价</label>
             <NkInput v-model="productForm.market_price" type="number" placeholder="0" />
           </div>
-          <div class="goodser__form-field goodser__form-field--third">
+          <div class="goodser__form-field goodser__form-field--quarter">
             <label class="goodser__form-label">期望价</label>
             <NkInput v-model="productForm.expected_price" type="number" placeholder="0" />
+          </div>
+          <div class="goodser__form-field goodser__form-field--quarter">
+            <label class="goodser__form-label">成本价</label>
+            <NkInput v-model="productForm.cost_price" type="number" placeholder="留空按原价" />
           </div>
         </div>
         <div class="goodser__form-row">
@@ -342,6 +346,14 @@
           <span class="goodser__detail-label">期望价</span>
           <span>{{ detailProduct.expected_price != null ? '¥' + detailProduct.expected_price : '-' }}</span>
         </div>
+        <div class="goodser__detail-row">
+          <span class="goodser__detail-label">成本价</span>
+          <span>{{ detailProduct.cost_price ? '¥' + detailProduct.cost_price : '按原价 ' + (detailProduct.original_price != null ? '¥' + detailProduct.original_price : '-') }}</span>
+        </div>
+        <div class="goodser__detail-row">
+          <span class="goodser__detail-label">毛利率</span>
+          <span>{{ productMargin(detailProduct) }}</span>
+        </div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">位置</span><span>{{ detailProduct.storage_location || '-' }}</span></div>
         <div class="goodser__detail-row"><span class="goodser__detail-label">备注</span><span>{{ detailProduct.remark || '-' }}</span></div>
         <div class="goodser__detail-row">
@@ -434,6 +446,7 @@ const productForm = ref({
   original_price: null as number | null,
   market_price: null as number | null,
   expected_price: null as number | null,
+  cost_price: null as number | null,
   storage_location: '',
   remark: '',
   series_id: '',
@@ -516,10 +529,16 @@ function characterNames(ids?: string[] | null) {
   return ids.map((id) => dictionaryName(id)).join('、')
 }
 
+function productMargin(product: Product) {
+  const sale = Number(product.expected_price) || Number(product.market_price) || 0
+  const cost = Number(product.cost_price) || Number(product.original_price) || 0
+  if (!sale || !cost) return '-'
+  return `${(((sale - cost) / sale) * 100).toFixed(1)}%`
+}
+
 function onInventoryChange(value: string) {
+  // 只更新父级作用域，实际请求由 inventoryId watcher 触发，避免用旧 id 发起竞态请求。
   emit('update:inventoryId', value)
-  productPage.value = 1
-  goToPage(1)
 }
 
 function toggleSort(key: string) {
@@ -538,42 +557,46 @@ async function searchProducts() {
   await goToPage(1)
 }
 
+let requestSeq = 0
+
 async function goToPage(page: number) {
-  if (!props.inventoryId || page < 1) return
+  const invId = props.inventoryId
+  if (!invId || page < 1) return
+  const seq = ++requestSeq
   productPage.value = page
   selectedProductIds.value = []
   loadingProducts.value = true
   try {
     const hasFilters = hasProductFilter.value || !!productSortBy.value || !!productQuery.value
-    if (hasFilters) {
-      const res = await queryProducts({
-        inventory_id: props.inventoryId,
-        keyword: productQuery.value || undefined,
-        sort_by: productSortBy.value || undefined,
-        sort_order: productSortOrder.value,
-        main_zone: productFilterZone.value || undefined,
-        status_code: productFilterStatus.value || undefined,
-        tag_id: productFilterTag.value || undefined,
-        series_id: productFilterSeries.value || undefined,
-        character_id: productFilterCharacter.value || undefined,
-        set_type_id: productFilterSetType.value || undefined,
-        product_type_id: productFilterProductType.value || undefined,
-        page,
-        page_size: pageSize,
-      })
-      products.value = res.data?.items || []
-      productHasMore.value = res.data?.has_more || false
-      productTotal.value = res.data?.total || 0
-    } else {
-      const res = await loadProducts({ inventory_id: props.inventoryId, page, page_size: pageSize })
-      products.value = res.data?.items || []
-      productHasMore.value = res.data?.has_more || false
-      productTotal.value = res.data?.total || 0
-    }
+    const data = hasFilters
+      ? (
+          await queryProducts({
+            inventory_id: invId,
+            keyword: productQuery.value || undefined,
+            sort_by: productSortBy.value || undefined,
+            sort_order: productSortOrder.value,
+            main_zone: productFilterZone.value || undefined,
+            status_code: productFilterStatus.value || undefined,
+            tag_id: productFilterTag.value || undefined,
+            series_id: productFilterSeries.value || undefined,
+            character_id: productFilterCharacter.value || undefined,
+            set_type_id: productFilterSetType.value || undefined,
+            product_type_id: productFilterProductType.value || undefined,
+            page,
+            page_size: pageSize,
+          })
+        ).data
+      : (await loadProducts({ inventory_id: invId, page, page_size: pageSize })).data
+    // 库存目录切换后旧请求可能后返回，丢弃过期响应。
+    if (seq !== requestSeq) return
+    products.value = data?.items || []
+    productHasMore.value = data?.has_more || false
+    productTotal.value = data?.total || 0
   } catch (err: any) {
+    if (seq !== requestSeq) return
     NKMessage.error(err.message || '加载失败')
   } finally {
-    loadingProducts.value = false
+    if (seq === requestSeq) loadingProducts.value = false
   }
 }
 
@@ -648,6 +671,7 @@ function openCreateProduct() {
     original_price: null,
     market_price: null,
     expected_price: null,
+    cost_price: null,
     storage_location: '',
     remark: '',
     series_id: '',
@@ -672,6 +696,7 @@ function openEditProduct() {
     original_price: p.original_price,
     market_price: p.market_price,
     expected_price: p.expected_price,
+    cost_price: p.cost_price,
     storage_location: p.storage_location || '',
     remark: p.remark || '',
     series_id: p.series_id || '',
@@ -723,6 +748,7 @@ async function handleSaveProduct() {
         original_price: form.original_price,
         market_price: form.market_price,
         expected_price: form.expected_price,
+        cost_price: form.cost_price,
         storage_location: form.storage_location || undefined,
         remark: form.remark || undefined,
         tags: productFormTags.value.length ? productFormTags.value : undefined,
@@ -748,6 +774,7 @@ async function handleSaveProduct() {
         original_price: form.original_price,
         market_price: form.market_price,
         expected_price: form.expected_price,
+        cost_price: form.cost_price,
         storage_location: form.storage_location || null,
         remark: form.remark || null,
         tags: productFormTags.value.length ? productFormTags.value : null,
