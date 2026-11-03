@@ -45,6 +45,13 @@ src/
 - `npm run build` - 构建生产版本
 - `npm run preview` - 预览构建结果
 
+## 生产镜像（GHCR）
+- `Dockerfile`：Node 构建 → nginx 静态托管，`/api/` 反代到 `http://gobackendcore:29090`
+- `deploy/nginx.conf`：SPA 回退、静态缓存、`/healthz`
+- CI：`.github/workflows/ci.yml`（手动触发；仓库变量 `ENABLE_GHCR_BUILD=true` 才执行）
+- 镜像：`ghcr.io/allinost/go-frontend-core:<tag>`
+- 依赖 `@nkui/vue` 是 `file:../NKUI/Vue3`：CI 会把 NKUI 检出到 `nkui/`；本地构建可先创建 `nkui -> ../NKUI` 链接
+
 ## 已接入模块
 - `developmentManager`（项目开发管理）：`/modules/zzz/developmentmanager`
   - API 封装：`src/api/developmentManager.ts`
