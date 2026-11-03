@@ -2,9 +2,10 @@ import axios from 'axios'
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { getAccessToken, getRefreshToken, setTokens, clearAuth } from '@/utils/auth'
+import { getApiBase } from '@/utils/appSettings'
 
 const request = axios.create({
-  baseURL: '/api/v1',
+  baseURL: getApiBase(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ request.interceptors.response.use(
         if (!refreshToken) {
           throw new Error('No refresh token')
         }
-        const res = await axios.post<ApiResponse>('/api/v1/auth/refresh', {
+        const res = await axios.post<ApiResponse>(`${getApiBase()}/auth/refresh`, {
           refresh_token: refreshToken,
         })
         const data = res.data.data as any

@@ -14,6 +14,13 @@
       <NkBreadcrumb v-if="breadcrumbs.length" :items="breadcrumbs" />
     </div>
     <div class="admin-header__right">
+      <NkButton
+        size="sm"
+        variant="ghost"
+        aria-label="打开设置"
+        title="设置"
+        @click="settingsVisible = true"
+      >设置</NkButton>
       <NkAvatar :text="authStore.username" size="sm" />
       <span class="admin-header__username">{{ authStore.username }}</span>
       <NkButton
@@ -27,15 +34,19 @@
       </NkButton>
       <NkButton size="sm" variant="ghost" @click="handleLogout">退出</NkButton>
     </div>
+    <SettingsDialog v-model:visible="settingsVisible" />
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useRoute } from 'vue-router'
+import SettingsDialog from './SettingsDialog.vue'
+
+const settingsVisible = ref(false)
 
 const router = useRouter()
 const route = useRoute()

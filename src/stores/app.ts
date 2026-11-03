@@ -15,10 +15,13 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('theme', mode)
   }
 
+  function setTheme(mode: ThemeMode) {
+    theme.value = mode
+    applyTheme(mode)
+  }
+
   function toggleTheme() {
-    const next = theme.value === 'light' ? 'dark' : 'light'
-    theme.value = next
-    applyTheme(next)
+    setTheme(theme.value === 'light' ? 'dark' : 'light')
   }
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -38,5 +41,5 @@ export const useAppStore = defineStore('app', () => {
     breadcrumbs.value = items
   }
 
-  return { sidebarCollapsed, breadcrumbs, theme, toggleSidebar, setBreadcrumbs, toggleTheme }
+  return { sidebarCollapsed, breadcrumbs, theme, toggleSidebar, setBreadcrumbs, setTheme, toggleTheme }
 })
