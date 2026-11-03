@@ -3653,7 +3653,7 @@ onMounted(async () => {
     }
 
     &--active {
-      background: $nk-color-primary-50;
+      background: $nk-color-neutral-100;
       color: $nk-color-primary-600;
       font-weight: $nk-font-weight-medium;
     }
@@ -3667,7 +3667,7 @@ onMounted(async () => {
     margin-bottom: $nk-spacing-md;
     padding: 8px 12px;
     border-radius: $nk-radius-md;
-    background: $nk-color-primary-50;
+    background: $nk-color-neutral-100;
     font-size: $nk-font-size-sm;
   }
 
@@ -3707,10 +3707,11 @@ onMounted(async () => {
   }
 
   &__product-code {
-    font-size: $nk-font-size-xs;
+    font-size: $nk-font-size-sm;
     color: $nk-color-primary-600;
     font-weight: $nk-font-weight-medium;
     font-family: $nk-font-family-mono;
+    letter-spacing: 0.2px;
   }
 
   &__product-name {
@@ -3790,7 +3791,7 @@ onMounted(async () => {
     }
 
     &--active {
-      background: $nk-color-primary-50;
+      background: $nk-color-neutral-100;
       color: $nk-color-primary-600;
       font-weight: $nk-font-weight-medium;
     }
@@ -3847,11 +3848,11 @@ onMounted(async () => {
     color: $nk-color-neutral-700;
 
     &:hover {
-      background: $nk-color-primary-50;
+      background: $nk-color-neutral-100;
     }
 
     &--selected {
-      background: $nk-color-primary-50;
+      background: $nk-color-neutral-100;
       border-color: $nk-color-primary-400;
       color: $nk-color-primary-700;
       font-weight: $nk-font-weight-medium;
@@ -4474,7 +4475,7 @@ onMounted(async () => {
     }
 
     &--active {
-      background: $nk-color-primary-50;
+      background: $nk-color-neutral-100;
     }
   }
 
@@ -4509,7 +4510,7 @@ onMounted(async () => {
     margin-top: $nk-spacing-sm;
     padding: $nk-spacing-sm $nk-spacing-md;
     border-radius: $nk-radius-md;
-    background: $nk-color-primary-50;
+    background: $nk-color-neutral-100;
   }
 
   &__stat-trend-detail-head {
