@@ -55,7 +55,11 @@
             <NkInput v-model="backendForm.frontend_api_base_url" placeholder="/api/v1" />
           </div>
           <div class="settings-row">
-            <label class="settings-label">n8n 地址</label>
+            <label class="settings-label">Browser 地址</label>
+            <NkInput v-model="backendForm.browser_url" placeholder="ws://chrome-browser:3000" />
+          </div>
+          <div class="settings-row">
+            <label class="settings-label">N8n 地址</label>
             <NkInput v-model="backendForm.n8n_url" placeholder="http://n8n:5678" />
           </div>
           <div class="settings-row">
@@ -136,6 +140,7 @@ const backendForm = reactive<AppSettings>({
   public_base_url: '',
   frontend_title: '',
   frontend_api_base_url: '/api/v1',
+  browser_url: '',
   n8n_url: '',
   openclaw_url: '',
   langbot_url: '',

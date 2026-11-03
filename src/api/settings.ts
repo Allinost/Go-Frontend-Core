@@ -5,6 +5,7 @@ export interface AppSettings {
   public_base_url: string
   frontend_title: string
   frontend_api_base_url: string
+  browser_url: string
   n8n_url: string
   openclaw_url: string
   langbot_url: string
