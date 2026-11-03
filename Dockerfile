@@ -8,6 +8,9 @@ COPY package.json package-lock.json ./
 # 放到 /NKUI/Vue3，满足 ../NKUI/Vue3 相对路径
 COPY nkui/Vue3 /NKUI/Vue3
 RUN npm ci
+# NKUI 以源码方式被引用（realpath 在 /NKUI/Vue3），
+# 让它的 vue / marked 解析到前端已安装的依赖，避免出现两份 Vue。
+RUN ln -s /app/node_modules /NKUI/Vue3/node_modules
 
 COPY src ./src
 COPY public ./public
