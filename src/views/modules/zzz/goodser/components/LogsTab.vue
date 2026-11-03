@@ -1,7 +1,10 @@
 <template>
   <div class="goodser__tab">
     <div class="goodser__tab-header">
-      <span class="goodser__count">共 {{ logs.length }} 条记录</span>
+      <div class="goodser__tab-heading">
+        <span class="goodser__tab-title">入库记录</span>
+        <span class="goodser__count">共 {{ logs.length }} 条</span>
+      </div>
       <div>
         <NkButton size="sm" variant="ghost" style="margin-right: 8px" @click="openInboundSearch">搜索导入</NkButton>
         <NkButton size="sm" @click="openInboundSingle">单品入库</NkButton>

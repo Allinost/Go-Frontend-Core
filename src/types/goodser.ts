@@ -703,6 +703,8 @@ export interface StatsOverview {
   inventory_id: string
   inventory_name: string
   days: number
+  start_date: string
+  end_date: string
   generated_at: string
   stock: StatsStock
   orders: StatsOrderCounts

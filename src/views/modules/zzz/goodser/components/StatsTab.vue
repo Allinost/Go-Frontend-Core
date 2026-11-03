@@ -1,7 +1,10 @@
 <template>
   <div class="goodser__tab">
     <div class="goodser__tab-header">
-      <span class="goodser__count">{{ statsRangeLabel }}</span>
+      <div class="goodser__tab-heading">
+        <span class="goodser__tab-title">统计</span>
+        <span class="goodser__count">{{ statsRangeLabel }}</span>
+      </div>
       <div class="goodser__stats-controls">
         <NkSelect
           v-if="inventories.length"
@@ -12,14 +15,24 @@
           @update:model-value="emit('update:inventoryId', $event)"
         />
         <NkSelect
+          v-if="!customRange"
           v-model="statsDays"
           :options="statsDayOptions"
           style="width: 120px"
           size="sm"
         />
+        <NkButton size="sm" variant="ghost" @click="toggleCustomRange">
+          {{ customRange ? '使用预设区间' : '自定义区间' }}
+        </NkButton>
         <NkButton size="sm" variant="ghost" @click="fetchStats">刷新</NkButton>
         <NkButton size="sm" variant="ghost" :disabled="!stats" @click="exportStatsCSV">导出 CSV</NkButton>
       </div>
+    </div>
+    <div v-if="customRange" class="goodser__custom-range">
+      <input v-model="customStart" type="date" class="goodser__date-input" />
+      <span class="goodser__count">至</span>
+      <input v-model="customEnd" type="date" class="goodser__date-input" />
+      <NkButton size="sm" :loading="loadingStats" @click="applyCustomRange">应用</NkButton>
     </div>
     <NkLoading v-if="loadingStats" />
     <div v-else-if="!stats" class="goodser__empty">
@@ -193,6 +206,9 @@ const emit = defineEmits<{
 const stats = ref<StatsOverview | null>(null)
 const loadingStats = ref(false)
 const statsDays = ref(30)
+const customRange = ref(false)
+const customStart = ref('')
+const customEnd = ref('')
 const statsDayOptions = [
   { label: '近 7 天', value: 7 },
   { label: '近 30 天', value: 30 },
@@ -206,8 +222,14 @@ const inventoryOptions = computed(() =>
   props.inventories.map((inv) => ({ label: inv.name, value: inv._id })),
 )
 const statsRangeLabel = computed(() => {
-  if (!stats.value) return `统计区间：近 ${statsDays.value} 天`
-  return `${stats.value.inventory_name}｜近 ${stats.value.days} 天｜更新于 ${formatDate(stats.value.generated_at)}`
+  if (!stats.value) {
+    return customRange.value ? '自定义区间' : `统计区间：近 ${statsDays.value} 天`
+  }
+  const period =
+    stats.value.start_date && stats.value.end_date
+      ? `${stats.value.start_date} ~ ${stats.value.end_date}`
+      : `近 ${stats.value.days} 天`
+  return `${stats.value.inventory_name}｜${period}｜更新于 ${formatDate(stats.value.generated_at)}`
 })
 const statsMaxTrend = computed(() => {
   if (!stats.value) return 1
@@ -250,12 +272,46 @@ function seriesWidth(total: number) {
   return `${Math.max(total ? 4 : 0, Math.round((total / statsMaxSeries.value) * 100))}%`
 }
 
+function todayString(offsetDays = 0) {
+  const date = new Date()
+  date.setDate(date.getDate() + offsetDays)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function toggleCustomRange() {
+  if (customRange.value) {
+    customRange.value = false
+    fetchStats()
+    return
+  }
+  customRange.value = true
+  customStart.value = stats.value?.start_date || todayString(-(statsDays.value - 1))
+  customEnd.value = stats.value?.end_date || todayString()
+}
+
+function applyCustomRange() {
+  if (!customStart.value || !customEnd.value) {
+    NKMessage.warning('请选择开始和结束日期')
+    return
+  }
+  if (customStart.value > customEnd.value) {
+    NKMessage.warning('结束日期不能早于开始日期')
+    return
+  }
+  fetchStats()
+}
+
 async function fetchStats() {
   if (!props.inventoryId) return
   const seq = ++requestSeq
   loadingStats.value = true
   try {
-    const res = await getInventoryStats(props.inventoryId, statsDays.value)
+    const params =
+      customRange.value && customStart.value && customEnd.value
+        ? { startDate: customStart.value, endDate: customEnd.value }
+        : statsDays.value
+    const res = await getInventoryStats(props.inventoryId, params)
     if (seq !== requestSeq) return
     stats.value = res.data || null
     const trend = stats.value?.trend || []
@@ -274,7 +330,7 @@ function exportStatsCSV() {
   if (!value) return
   const rows: string[][] = []
   const push = (...cells: Array<string | number>) => rows.push(cells.map((cell) => String(cell)))
-  push('统计区间', `近 ${value.days} 天`)
+  push('统计区间', value.start_date && value.end_date ? `${value.start_date} ~ ${value.end_date}` : `近 ${value.days} 天`)
   push('生成时间', formatDate(value.generated_at))
   push('')
   push('库存指标', '数值')
@@ -367,6 +423,30 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     align-items: center;
     gap: $nk-spacing-sm;
     flex-wrap: wrap;
+  }
+
+  &__custom-range {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    flex-wrap: wrap;
+    margin-bottom: $nk-spacing-md;
+  }
+
+  &__date-input {
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid $nk-color-neutral-300;
+    border-radius: $nk-radius-sm;
+    background: $nk-color-neutral-0;
+    color: $nk-color-neutral-900;
+    font-size: $nk-font-size-sm;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: $nk-color-primary-500;
+    }
   }
 
   &__stat-grid {

@@ -1,4 +1,6 @@
 import { getResponse, postResponse, putResponse, deleteResponse } from './request'
+import request from './request'
+import type { ApiResponse } from '@/types/api'
 import type {
   Inventory, CreateInventoryReq, UpdateInventoryReq,
   Product, CreateProductReq, UpdateProductReq, QueryProductsReq, AllocateSeqReq, AllocateSeqResp,
@@ -263,6 +265,28 @@ export function previewBundle(bundleId: string, data: BundlePreviewReq) {
 }
 
 // ---- P1.5: 统计 ----
-export function getInventoryStats(inventoryId: string, days = 30) {
-  return getResponse<StatsOverview>(`zzz-goodser/inventories/${inventoryId}/stats`, { days })
+export function getInventoryStats(
+  inventoryId: string,
+  options: number | { days?: number; startDate?: string; endDate?: string } = 30,
+) {
+  const params =
+    typeof options === 'number'
+      ? { days: options }
+      : {
+          days: options.days,
+          start_date: options.startDate,
+          end_date: options.endDate,
+        }
+  return getResponse<StatsOverview>(`zzz-goodser/inventories/${inventoryId}/stats`, params)
+}
+
+// ---- 图片上传 ----
+export function uploadProductImage(file: File): Promise<ApiResponse<{ url: string }>> {
+  const form = new FormData()
+  form.append('image', file)
+  return request
+    .post<ApiResponse<{ url: string }>>('zzz-goodser/legacy/uploadImage', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((res) => res.data)
 }

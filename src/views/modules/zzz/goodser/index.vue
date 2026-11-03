@@ -22,7 +22,9 @@
         v-if="activeTab === 'series'"
         v-model:inventory-id="currentInventoryId"
         :inventories="inventories"
+        :dictionaries="dictionaries"
         @open-series="openSeriesProducts"
+        @changed="fetchDictionaries"
       />
 
       <!-- ==================== 组合包 Tab ==================== -->

@@ -12,6 +12,21 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: $nk-spacing-md;
+    gap: $nk-spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  &__tab-heading {
+    display: flex;
+    align-items: baseline;
+    gap: $nk-spacing-sm;
+    min-width: 0;
+  }
+
+  &__tab-title {
+    font-size: $nk-font-size-lg;
+    font-weight: $nk-font-weight-semibold;
+    color: $nk-color-neutral-900;
   }
 
   &__count {

@@ -62,6 +62,7 @@
     </div>
     <div v-else class="goodser__product-grid">
       <NkCard v-for="p in products" :key="p._id" class="goodser__product-card" @click="openProductDetail(p)">
+        <img v-if="p.image_url" :src="p.image_url" class="goodser__product-thumb" alt="" loading="lazy" />
         <div class="goodser__product-card-top">
           <div class="goodser__product-card-left">
             <div @click.stop>
@@ -213,6 +214,29 @@
             <NkInput :model-value="productCodePreview" disabled placeholder="自动生成" />
           </div>
         </div>
+        <div class="goodser__form-field">
+          <label class="goodser__form-label">商品图片</label>
+          <div class="goodser__image-field">
+            <img v-if="productForm.image_url" :src="productForm.image_url" class="goodser__image-preview" alt="商品图片" />
+            <div class="goodser__image-actions">
+              <input
+                type="file"
+                accept="image/*"
+                class="goodser__image-input"
+                :disabled="uploadingImage"
+                @change="handleImageUpload"
+              />
+              <NkButton
+                v-if="productForm.image_url"
+                size="xs"
+                variant="ghost"
+                type="danger"
+                @click="removeImage"
+              >移除图片</NkButton>
+            </div>
+          </div>
+          <p class="goodser__return-tip">支持 JPG/PNG，上传后保存商品生效。</p>
+        </div>
         <div class="goodser__form-row">
           <div class="goodser__form-field goodser__form-field--half">
             <label class="goodser__form-label">主分区</label>
@@ -317,6 +341,12 @@
     <!-- Product Detail -->
     <NkDialog v-model:visible="showProductDetail" :title="detailProduct?.name || '商品详情'" :width="500">
       <div v-if="detailProduct" class="goodser__product-detail">
+        <img
+          v-if="detailProduct.image_url"
+          :src="detailProduct.image_url"
+          class="goodser__detail-image"
+          alt="商品图片"
+        />
         <div class="goodser__detail-row"><span class="goodser__detail-label">编码</span><span>{{ detailProduct.code }}</span></div>
         <div class="goodser__detail-row">
           <span class="goodser__detail-label">分区</span>
@@ -392,6 +422,7 @@ import {
   loadProducts,
   queryProducts,
   updateProduct,
+  uploadProductImage,
 } from '@/api/goodser'
 import type { Dictionary, GoodserTag, Inventory, Product, StatusCode } from '@/types/goodser'
 import { formatDate } from '../utils'
@@ -452,9 +483,37 @@ const productForm = ref({
   series_id: '',
   set_type_id: '',
   product_type_id: '',
+  image_url: '',
 })
 const productFormTags = ref<string[]>([])
 const productFormCharacters = ref<string[]>([])
+const uploadingImage = ref(false)
+
+async function handleImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) {
+    NKMessage.warning('图片不能超过 10MB')
+    input.value = ''
+    return
+  }
+  uploadingImage.value = true
+  try {
+    const res = await uploadProductImage(file)
+    productForm.value.image_url = res.data?.url || ''
+    NKMessage.success('图片已上传')
+  } catch (err: any) {
+    NKMessage.error(err.message || '图片上传失败')
+  } finally {
+    uploadingImage.value = false
+    input.value = ''
+  }
+}
+
+function removeImage() {
+  productForm.value.image_url = ''
+}
 
 const sortChips = [
   { key: '', label: '默认' },
@@ -677,6 +736,7 @@ function openCreateProduct() {
     series_id: '',
     set_type_id: '',
     product_type_id: '',
+    image_url: '',
   }
   productFormTags.value = []
   productFormCharacters.value = []
@@ -702,6 +762,7 @@ function openEditProduct() {
     series_id: p.series_id || '',
     set_type_id: p.set_type_id || '',
     product_type_id: p.product_type_id || '',
+    image_url: p.image_url || '',
   }
   productFormTags.value = p.tags ? [...p.tags] : []
   productFormCharacters.value = p.character_ids ? [...p.character_ids] : []
@@ -757,6 +818,7 @@ async function handleSaveProduct() {
         series_id: form.series_id || '',
         set_type_id: form.set_type_id || '',
         product_type_id: form.product_type_id || '',
+        image_url: form.image_url || '',
         character_ids: productFormCharacters.value,
       })
       NKMessage.success('更新成功')
@@ -781,6 +843,7 @@ async function handleSaveProduct() {
         series_id: form.series_id || null,
         set_type_id: form.set_type_id || null,
         product_type_id: form.product_type_id || null,
+        image_url: form.image_url || null,
         character_ids: productFormCharacters.value,
       })
       NKMessage.success('创建成功')
@@ -925,6 +988,52 @@ watch(
       box-shadow: $nk-shadow-md;
       border-color: $nk-color-primary-300;
     }
+  }
+
+  &__product-thumb {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: $nk-radius-md;
+    margin-bottom: $nk-spacing-sm;
+    background: $nk-color-neutral-100;
+  }
+
+  &__image-field {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-md;
+    flex-wrap: wrap;
+  }
+
+  &__image-preview {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: $nk-radius-md;
+    border: 1px solid $nk-color-neutral-200;
+    background: $nk-color-neutral-50;
+  }
+
+  &__image-actions {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-xs;
+    min-width: 0;
+  }
+
+  &__image-input {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-600;
+    max-width: 240px;
+  }
+
+  &__detail-image {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: $nk-radius-md;
+    background: $nk-color-neutral-50;
   }
 
   &__product-card-top {

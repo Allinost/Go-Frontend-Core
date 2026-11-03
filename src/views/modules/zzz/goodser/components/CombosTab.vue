@@ -1,5 +1,12 @@
 <template>
   <div class="goodser__tab">
+    <div class="goodser__tab-header">
+      <div class="goodser__tab-heading">
+        <span class="goodser__tab-title">组合包</span>
+        <span class="goodser__count">共 {{ combos.length }} 个</span>
+      </div>
+      <NkButton size="sm" @click="openCreateCombo">新建组合包</NkButton>
+    </div>
     <div class="goodser__product-toolbar">
       <NkSelect
         v-if="inventories.length"
@@ -9,10 +16,6 @@
         size="sm"
         @update:model-value="emit('update:inventoryId', $event)"
       />
-      <span class="goodser__count">共 {{ combos.length }} 个组合包</span>
-      <div class="goodser__product-toolbar-right">
-        <NkButton size="sm" @click="openCreateCombo">新建组合包</NkButton>
-      </div>
     </div>
     <NkLoading v-if="loading" />
     <div v-else-if="!combos.length" class="goodser__empty">
