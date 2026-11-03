@@ -112,287 +112,38 @@
       </div>
 
       <!-- ==================== 系列视图 Tab ==================== -->
-      <div v-if="activeTab === 'series'" class="goodser__tab">
-        <div class="goodser__product-toolbar">
-          <NkSelect
-            v-if="inventories.length"
-            v-model="currentInventoryId"
-            :options="inventoryOptions"
-            style="width: 200px"
-            size="sm"
-            @change="onInventoryChange"
-          />
-          <span class="goodser__count">共 {{ seriesSummary.length }} 个系列</span>
-        </div>
-        <NkLoading v-if="loadingSeries" />
-        <div v-else-if="!seriesSummary.length" class="goodser__empty">
-          <NkEmpty description="暂无系列数据，请先在设置中维护系列字典，并给商品关联系列" />
-        </div>
-        <div v-else class="goodser__series-grid">
-          <NkCard
-            v-for="s in seriesSummary"
-            :key="s.series_id || s.series_name"
-            class="goodser__series-card"
-            @click="openSeriesProducts(s)"
-          >
-            <div class="goodser__series-name">{{ s.series_name || '未命名系列' }}</div>
-            <div class="goodser__series-meta">
-              <span>商品 {{ s.product_count }}</span>
-              <span>可用 {{ s.available }}</span>
-              <span>总量 {{ s.total_quantity }}</span>
-            </div>
-          </NkCard>
-        </div>
-      </div>
+      <SeriesTab
+        v-if="activeTab === 'series'"
+        v-model:inventory-id="currentInventoryId"
+        :inventories="inventories"
+        @open-series="openSeriesProducts"
+      />
 
       <!-- ==================== 组合包 Tab ==================== -->
-      <div v-if="activeTab === 'combos'" class="goodser__tab">
-        <div class="goodser__product-toolbar">
-          <NkSelect
-            v-if="inventories.length"
-            v-model="currentInventoryId"
-            :options="inventoryOptions"
-            style="width: 200px"
-            size="sm"
-            @change="onInventoryChange"
-          />
-          <span class="goodser__count">共 {{ combos.length }} 个组合包</span>
-          <div class="goodser__product-toolbar-right">
-            <NkButton size="sm" @click="openCreateCombo">新建组合包</NkButton>
-          </div>
-        </div>
-        <NkLoading v-if="loadingCombos" />
-        <div v-else-if="!combos.length" class="goodser__empty">
-          <NkEmpty description="暂无组合包，点击上方按钮创建" />
-        </div>
-        <div v-else class="goodser__combo-list">
-          <NkCard v-for="c in combos" :key="c._id" class="goodser__combo-card">
-            <div class="goodser__order-card-header">
-              <div>
-                <span class="goodser__order-no">{{ c.name }}</span>
-                <NkTag :type="c.status === 'active' ? 'success' : 'info'" size="sm" style="margin-left:8px">
-                  {{ c.status === 'active' ? '启用' : '停用' }}
-                </NkTag>
-              </div>
-              <span class="goodser__order-date">{{ c.code }}</span>
-            </div>
-            <div class="goodser__order-meta">
-              <span>可售 {{ c.availability }}</span>
-              <span v-if="c.price != null">¥{{ c.price }}</span>
-              <span>{{ c.items?.length || 0 }} 个组件</span>
-            </div>
-            <div class="goodser__combo-components">
-              <span v-for="item in c.items" :key="item.product_id" class="goodser__combo-component">
-                {{ item.product_name }} × {{ item.quantity }}（可用 {{ item.available }}）
-              </span>
-            </div>
-            <div class="goodser__order-actions">
-              <NkButton size="xs" variant="ghost" @click="openEditCombo(c)">编辑</NkButton>
-              <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteCombo(c)">删除</NkButton>
-            </div>
-          </NkCard>
-        </div>
-      </div>
+      <CombosTab
+        v-if="activeTab === 'combos'"
+        v-model:inventory-id="currentInventoryId"
+        :inventories="inventories"
+        @changed="fetchCombos"
+      />
 
       <!-- ==================== 捆 Tab ==================== -->
-      <div v-if="activeTab === 'bundles'" class="goodser__tab">
-        <div class="goodser__product-toolbar">
-          <NkSelect
-            v-if="inventories.length"
-            v-model="currentInventoryId"
-            :options="inventoryOptions"
-            style="width: 200px"
-            size="sm"
-            @change="onInventoryChange"
-          />
-          <span class="goodser__count">共 {{ bundles.length }} 个捆</span>
-          <div class="goodser__product-toolbar-right">
-            <NkButton size="sm" @click="openCreateBundle">新建捆</NkButton>
-          </div>
-        </div>
-        <NkLoading v-if="loadingBundles" />
-        <div v-else-if="!bundles.length" class="goodser__empty">
-          <NkEmpty description="暂无捆，点击上方按钮创建" />
-        </div>
-        <div v-else class="goodser__combo-list">
-          <NkCard v-for="b in bundles" :key="b._id" class="goodser__combo-card">
-            <div class="goodser__order-card-header">
-              <div>
-                <span class="goodser__order-no">{{ b.name }}</span>
-                <NkTag :type="b.status === 'active' ? 'success' : 'info'" size="sm" style="margin-left:8px">
-                  {{ b.status === 'active' ? '启用' : '停用' }}
-                </NkTag>
-              </div>
-              <span class="goodser__order-date">{{ b.code }}</span>
-            </div>
-            <div class="goodser__order-meta">
-              <span>{{ bundlePriceModeLabel(b.price_mode) }}</span>
-              <span>主商品 {{ b.main_products.length }}</span>
-              <span>副区商品 {{ b.sub_products.length }}</span>
-              <span v-if="b.price_mode === 'fixed'">¥{{ b.fixed_price }}</span>
-            </div>
-            <div class="goodser__order-meta">
-              <span>主商品 ≥ {{ b.min_main_quantity }} 件</span>
-              <span v-if="b.min_main_amount > 0">主商品金额 ≥ ¥{{ b.min_main_amount }}</span>
-              <span>副区 ≥ {{ b.min_sub_quantity }} 件</span>
-              <span v-if="b.max_sub_quantity > 0">副区 ≤ {{ b.max_sub_quantity }} 件</span>
-              <span v-if="b.min_sub_amount > 0">副区金额 ≥ ¥{{ b.min_sub_amount }}</span>
-            </div>
-            <div class="goodser__combo-components">
-              <span v-for="m in b.main_products.slice(0, 6)" :key="m.product_id" class="goodser__combo-component">
-                主 · {{ m.product_name }}（可用 {{ m.available }}）
-              </span>
-              <span v-if="b.main_products.length > 6" class="goodser__combo-component">
-                +{{ b.main_products.length - 6 }} 个主商品
-              </span>
-              <span v-if="!b.main_products.length" class="goodser__combo-component">仅按筛选条件匹配主商品</span>
-            </div>
-            <div class="goodser__combo-components">
-              <span v-for="s in b.sub_products" :key="s.product_id" class="goodser__combo-component">
-                副 · {{ s.product_name }} × {{ s.default_quantity }}（可用 {{ s.available }}）
-              </span>
-            </div>
-            <div class="goodser__order-actions">
-              <NkButton size="xs" variant="ghost" @click="openCreateOrder('outbound', b._id)">下单</NkButton>
-              <NkButton size="xs" variant="ghost" @click="openEditBundle(b)">编辑</NkButton>
-              <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteBundle(b)">删除</NkButton>
-            </div>
-          </NkCard>
-        </div>
-      </div>
+      <BundlesTab
+        v-if="activeTab === 'bundles'"
+        v-model:inventory-id="currentInventoryId"
+        :inventories="inventories"
+        :dictionaries="dictionaries"
+        :status-codes="statusCodes"
+        @order-bundle="openCreateOrder('outbound', $event)"
+        @changed="fetchBundles"
+      />
 
       <!-- ==================== 统计 Tab ==================== -->
-      <div v-if="activeTab === 'stats'" class="goodser__tab">
-        <div class="goodser__tab-header">
-          <span class="goodser__count">{{ statsRangeLabel }}</span>
-          <div class="goodser__stats-controls">
-            <NkSelect
-              v-if="inventories.length"
-              v-model="currentInventoryId"
-              :options="inventoryOptions"
-              style="width: 200px"
-              size="sm"
-              @change="onInventoryChange"
-            />
-            <NkSelect
-              v-model="statsDays"
-              :options="statsDayOptions"
-              style="width: 120px"
-              size="sm"
-              @change="fetchStats"
-            />
-            <NkButton size="sm" variant="ghost" @click="fetchStats">刷新</NkButton>
-            <NkButton size="sm" variant="ghost" :disabled="!stats" @click="exportStatsCSV">导出 CSV</NkButton>
-          </div>
-        </div>
-        <NkLoading v-if="loadingStats" />
-        <div v-else-if="!stats" class="goodser__empty">
-          <NkEmpty description="暂无统计数据" />
-        </div>
-        <template v-else>
-          <div class="goodser__stat-grid">
-            <NkCard class="goodser__stat-card">
-              <div class="goodser__stat-label">商品数</div>
-              <div class="goodser__stat-value">{{ stats.stock.total_products }}</div>
-              <div class="goodser__stat-hint">缺货 {{ stats.stock.out_of_stock }} 件</div>
-            </NkCard>
-            <NkCard class="goodser__stat-card">
-              <div class="goodser__stat-label">可售库存</div>
-              <div class="goodser__stat-value">{{ stats.stock.available }}</div>
-              <div class="goodser__stat-hint">已锁定 {{ stats.stock.reserved }}</div>
-            </NkCard>
-            <NkCard class="goodser__stat-card">
-              <div class="goodser__stat-label">库存总量</div>
-              <div class="goodser__stat-value">{{ stats.stock.total }}</div>
-              <div class="goodser__stat-hint">可售 + 锁定</div>
-            </NkCard>
-            <NkCard class="goodser__stat-card">
-              <div class="goodser__stat-label">库存总值</div>
-              <div class="goodser__stat-value">¥{{ stats.stock.stock_value.toFixed(2) }}</div>
-              <div class="goodser__stat-hint">按预期价 / 市场价</div>
-            </NkCard>
-          </div>
-
-          <div class="goodser__stat-panels">
-            <NkCard class="goodser__stat-panel">
-              <div class="goodser__stat-panel-title">订单与退货（近 {{ stats.days }} 天）</div>
-              <div class="goodser__stat-kv"><span>待确认出库</span><strong>{{ stats.orders.pending_outbound }}</strong></div>
-              <div class="goodser__stat-kv"><span>已确认出库</span><strong>{{ stats.orders.confirmed_outbound }}</strong></div>
-              <div class="goodser__stat-kv"><span>已取消出库</span><strong>{{ stats.orders.cancelled_outbound }}</strong></div>
-              <div class="goodser__stat-kv"><span>待处理预留</span><strong>{{ stats.orders.pending_reserves }}</strong></div>
-              <div class="goodser__stat-kv"><span>待确认退货</span><strong>{{ stats.orders.pending_returns }}</strong></div>
-              <div class="goodser__stat-kv"><span>已确认退货</span><strong>{{ stats.orders.confirmed_returns }}</strong></div>
-            </NkCard>
-            <NkCard class="goodser__stat-panel">
-              <div class="goodser__stat-panel-title">热销商品（按确认出库量）</div>
-              <NkEmpty v-if="!stats.top_products.length" description="区间内暂无出库记录" />
-              <div v-for="(p, i) in stats.top_products" :key="p.product_id" class="goodser__stat-rank">
-                <span class="goodser__stat-rank-index">{{ i + 1 }}</span>
-                <span class="goodser__stat-rank-name">{{ p.product_name || p.product_code }}</span>
-                <strong>{{ p.outbound_quantity }}</strong>
-              </div>
-            </NkCard>
-          </div>
-
-          <NkCard class="goodser__stat-panel">
-            <div class="goodser__stat-panel-title">出库 / 退货趋势</div>
-            <div class="goodser__stat-legend">
-              <span><i class="goodser__stat-dot goodser__stat-dot--out"></i>出库</span>
-              <span><i class="goodser__stat-dot goodser__stat-dot--ret"></i>退货回库</span>
-              <span class="goodser__stat-legend-hint">点击柱子查看单日明细</span>
-            </div>
-            <div class="goodser__stat-trend">
-              <div
-                v-for="p in stats.trend"
-                :key="p.date"
-                class="goodser__stat-trend-col"
-                :class="{ 'goodser__stat-trend-col--active': p.date === selectedTrendDate }"
-                @click="selectTrendPoint(p.date)"
-              >
-                <div class="goodser__stat-trend-bars">
-                  <div
-                    class="goodser__stat-bar goodser__stat-bar--out"
-                    :style="{ height: trendHeight(p.outbound_quantity) + 'px' }"
-                    :title="`${p.date} 出库 ${p.outbound_quantity}`"
-                  ></div>
-                  <div
-                    class="goodser__stat-bar goodser__stat-bar--ret"
-                    :style="{ height: trendHeight(p.return_quantity) + 'px' }"
-                    :title="`${p.date} 退货 ${p.return_quantity}`"
-                  ></div>
-                </div>
-                <span class="goodser__stat-trend-label">{{ p.date.slice(5) }}</span>
-              </div>
-            </div>
-            <div v-if="selectedTrendPoint" class="goodser__stat-trend-detail">
-              <div class="goodser__stat-trend-detail-head">
-                <strong>{{ selectedTrendPoint.date }}</strong>
-                <span>净变化 {{ selectedTrendPoint.outbound_quantity - selectedTrendPoint.return_quantity }}</span>
-              </div>
-              <div class="goodser__stat-kv"><span>出库数量</span><strong>{{ selectedTrendPoint.outbound_quantity }}</strong></div>
-              <div class="goodser__stat-kv"><span>退货回库</span><strong>{{ selectedTrendPoint.return_quantity }}</strong></div>
-            </div>
-          </NkCard>
-
-          <NkCard class="goodser__stat-panel">
-            <div class="goodser__stat-panel-title">系列分布</div>
-            <NkEmpty v-if="!stats.series.length" description="暂无系列数据" />
-            <div v-for="row in stats.series" :key="row.series_id || row.series_name" class="goodser__stat-series">
-              <div class="goodser__stat-series-head">
-                <span>{{ row.series_name }}</span>
-                <span>{{ row.product_count }} 件 / 可售 {{ row.available }}</span>
-              </div>
-              <div class="goodser__stat-series-bar">
-                <div class="goodser__stat-series-fill" :style="{ width: seriesWidth(row.total) }"></div>
-              </div>
-              <div class="goodser__stat-series-meta">
-                <span>总量 {{ row.total }}（锁定 {{ row.reserved }}）</span>
-                <span>¥{{ row.stock_value.toFixed(2) }}</span>
-              </div>
-            </div>
-          </NkCard>
-        </template>
-      </div>
+      <StatsTab
+        v-if="activeTab === 'stats'"
+        v-model:inventory-id="currentInventoryId"
+        :inventories="inventories"
+      />
 
       <!-- ==================== 出库订单 Tab ==================== -->
       <div v-if="activeTab === 'orders'" class="goodser__tab">
@@ -439,90 +190,20 @@
       </div>
 
       <!-- ==================== 退货单 Tab ==================== -->
-      <div v-if="activeTab === 'returns'" class="goodser__tab">
-        <div class="goodser__tab-header">
-          <span class="goodser__count">共 {{ filteredReturns.length }} 张退货单</span>
-          <div class="goodser__return-toolbar">
-            <NkInput
-              v-model="returnQuery"
-              placeholder="搜索单号/商品/备注..."
-              size="sm"
-              style="width: 220px"
-            />
-            <NkSelect
-              v-model="returnStatusFilter"
-              :options="returnStatusOptions"
-              size="sm"
-              style="width: 140px"
-            />
-            <NkButton size="sm" variant="ghost" @click="fetchReturns">刷新</NkButton>
-          </div>
-        </div>
-        <NkLoading v-if="loadingReturnList" />
-        <div v-else-if="!filteredReturns.length" class="goodser__empty">
-          <NkEmpty :description="returnQuery || returnStatusFilter ? '未匹配退货单' : '暂无退货单'" />
-        </div>
-        <div v-else class="goodser__return-list">
-          <NkCard v-for="ret in filteredReturns" :key="ret._id" class="goodser__return-card">
-            <div class="goodser__order-card-header">
-              <div>
-                <span class="goodser__order-no">{{ ret.order_no }}</span>
-                <NkTag :type="returnStatusType(ret.status)" size="sm" style="margin-left:8px">{{ returnStatusLabel(ret.status) }}</NkTag>
-                <NkTag size="sm" style="margin-left:4px">{{ returnReasonLabel(ret.reason) }}</NkTag>
-              </div>
-              <span class="goodser__order-date">{{ formatDate(ret.created_at) }}</span>
-            </div>
-            <div class="goodser__order-meta">
-              <span>{{ ret.items?.length || 0 }} 种商品</span>
-              <span>合计 {{ returnTotalQty(ret) }} 件</span>
-              <span v-if="ret.remark">{{ ret.remark }}</span>
-            </div>
-            <div class="goodser__return-lines">
-              <div v-for="line in (ret.items || []).slice(0, 3)" :key="line.product_id" class="goodser__return-line">
-                <span class="goodser__return-line-name">{{ line.product_name || line.product_code }}</span>
-                <span class="goodser__return-line-qty">× {{ line.quantity }}</span>
-                <NkTag size="sm" :type="line.restock ? 'success' : 'info'">{{ line.restock ? '回库' : '不回库' }}</NkTag>
-              </div>
-              <span v-if="(ret.items?.length || 0) > 3" class="goodser__return-more">还有 {{ (ret.items?.length || 0) - 3 }} 种商品</span>
-            </div>
-            <div class="goodser__order-actions">
-              <NkButton size="xs" variant="ghost" @click="openReturnOrder(ret)">查看出库单</NkButton>
-              <template v-if="ret.status === 'pending'">
-                <NkButton size="xs" variant="ghost" @click="handleConfirmReturn(ret)">确认退货</NkButton>
-                <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReturn(ret)">取消</NkButton>
-              </template>
-            </div>
-          </NkCard>
-        </div>
-      </div>
+      <ReturnsTab
+        v-if="activeTab === 'returns'"
+        :inventory-id="currentInventoryId"
+        @view-order="openOrderById"
+        @changed="handleReturnsChanged"
+      />
 
       <!-- ==================== 入库记录 Tab ==================== -->
-      <div v-if="activeTab === 'logs'" class="goodser__tab">
-        <div class="goodser__tab-header">
-          <span class="goodser__count">共 {{ logs.length }} 条记录</span>
-          <div>
-            <NkButton size="sm" variant="ghost" style="margin-right:8px" @click="openInboundSearch">搜索导入</NkButton>
-            <NkButton size="sm" @click="openInboundSingle">单品入库</NkButton>
-          </div>
-        </div>
-        <NkLoading v-if="loadingLogs" />
-        <div v-else-if="!logs.length" class="goodser__empty">
-          <NkEmpty description="暂无入库记录" />
-        </div>
-        <div v-else class="goodser__log-list">
-          <NkCard v-for="log in logs" :key="log._id" class="goodser__log-card">
-            <div class="goodser__log-header">
-              <span class="goodser__log-type">{{ log.type === 'single' ? '单品入库' : log.type === 'batch' ? '批量入库' : '搜索导入' }}</span>
-              <span class="goodser__log-date">{{ formatDate(log.created_at) }}</span>
-            </div>
-            <div class="goodser__log-meta">
-              <span v-if="log.order_no">单号: {{ log.order_no }}</span>
-              <span>{{ log.items?.length || 0 }} 件商品</span>
-              <span v-if="log.remark">{{ log.remark }}</span>
-            </div>
-          </NkCard>
-        </div>
-      </div>
+      <LogsTab
+        v-if="activeTab === 'logs'"
+        :inventory-id="currentInventoryId"
+        :status-codes="statusCodes"
+        @changed="searchProducts"
+      />
 
       <!-- ==================== 库存目录 Tab ==================== -->
       <div v-if="activeTab === 'inventories'" class="goodser__tab">
@@ -1044,84 +725,6 @@
       </template>
     </NkDialog>
 
-    <!-- Inbound Single -->
-    <NkDialog v-model:visible="showInboundSingle" title="单品入库" :width="520">
-      <div class="goodser__product-form">
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">商品名称 *</label>
-            <NkInput v-model="inboundForm.name" placeholder="名称" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">编码</label>
-            <NkInput v-model="inboundForm.code" placeholder="例如 A1-0001" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">主分区</label>
-            <NkSelect v-model="inboundForm.main_zone" :options="zoneOptions" placeholder="选择分区" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">子分区</label>
-            <NkSelect v-model="inboundForm.sub_zone" :options="subZoneOptions" placeholder="选择子分区" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">数量 *</label>
-            <NkInput v-model="inboundForm.quantity" type="number" placeholder="0" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">状态</label>
-            <NkSelect v-model="inboundForm.status_code" :options="statusCodeOptions" placeholder="选择状态" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field">
-            <label class="goodser__form-label">备注</label>
-            <NkTextarea v-model="inboundForm.remark" placeholder="备注" />
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <NkButton variant="ghost" @click="showInboundSingle = false">取消</NkButton>
-        <NkButton :loading="saving" :disabled="!inboundForm.name.trim()" @click="handleInboundSingle">入库</NkButton>
-      </template>
-    </NkDialog>
-
-    <!-- Inbound Search Import -->
-    <NkDialog v-model:visible="showInboundSearch" title="搜索导入" :width="520">
-      <div class="goodser__form-field">
-        <label class="goodser__form-label">搜索商品</label>
-        <NkInput v-model="inboundSearchQuery" placeholder="名称/编码..." size="sm" @keyup.enter="doInboundSearch" />
-        <NkButton size="xs" variant="ghost" @click="doInboundSearch" style="margin-top:4px">搜索</NkButton>
-      </div>
-      <div v-if="inboundSearchResults.length" class="goodser__inbound-search-results">
-        <div v-for="r in inboundSearchResults" :key="r._id" class="goodser__inbound-search-item">
-          <div class="goodser__inbound-search-info">
-            <span>{{ r.code }} - {{ r.name }}</span>
-            <span class="goodser__inbound-search-stock">库存: {{ r.quantity }}</span>
-          </div>
-          <div class="goodser__inbound-search-action">
-            <NkInput v-model="r._importQty" type="number" size="xs" style="width:70px" placeholder="数量" />
-            <NkButton size="xs" @click="addToInboundImport(r)">添加</NkButton>
-          </div>
-        </div>
-      </div>
-      <div v-if="inboundImportItems.length" class="goodser__inbound-import-list">
-        <div class="goodser__inbound-import-header">待导入 ({{ inboundImportItems.length }})</div>
-        <div v-for="(item, idx) in inboundImportItems" :key="idx" class="goodser__inbound-import-item">
-          <span>{{ item.product_name }} ({{ item.product_code }}) × {{ item.quantity }}</span>
-          <NkButton size="xs" variant="ghost" type="danger" @click="inboundImportItems.splice(idx, 1)">×</NkButton>
-        </div>
-      </div>
-      <template #footer>
-        <NkButton variant="ghost" @click="showInboundSearch = false">取消</NkButton>
-        <NkButton :loading="saving" :disabled="!inboundImportItems.length" @click="handleInboundSearchImport">导入</NkButton>
-      </template>
-    </NkDialog>
-
     <!-- Settings Dialog -->
     <NkDialog v-model:visible="showSettings" title="Goodser 设置" :width="520">
       <NkTabs v-model="settingsTab" :items="settingsTabs" />
@@ -1220,213 +823,6 @@
       </template>
     </NkDialog>
 
-    <!-- Create/Edit Combo -->
-    <NkDialog
-      v-model:visible="showComboForm"
-      :title="editingCombo ? '编辑组合包' : '新建组合包'"
-      :width="620"
-    >
-      <div class="goodser__order-form">
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">名称 *</label>
-            <NkInput v-model="comboForm.name" placeholder="组合包名称" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">编码</label>
-            <NkInput v-model="comboForm.code" placeholder="留空自动生成" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">价格</label>
-            <NkInput v-model="comboForm.price" type="number" placeholder="0" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">状态</label>
-            <NkSelect v-model="comboForm.status" :options="comboStatusOptions" />
-          </div>
-        </div>
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">描述</label>
-          <NkTextarea v-model="comboForm.description" placeholder="组合包描述" />
-        </div>
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">组件商品（搜索添加）</label>
-          <NkInput v-model="comboProductQuery" size="sm" placeholder="搜索商品..." @keyup.enter="searchComboProducts" />
-          <div v-if="comboSearchResults.length" class="goodser__order-search-results">
-            <div v-for="r in comboSearchResults" :key="r._id" class="goodser__order-search-item" @click="addComboItem(r)">
-              <span>{{ r.code }} - {{ r.name }}</span>
-              <NkButton size="xs" variant="ghost">添加</NkButton>
-            </div>
-          </div>
-          <div v-if="comboFormItems.length" class="goodser__order-items">
-            <div v-for="(item, idx) in comboFormItems" :key="item.product_id" class="goodser__order-item">
-              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
-              <NkInput v-model="item.quantity" type="number" size="xs" style="width:80px" placeholder="数量" />
-              <NkButton size="xs" variant="ghost" type="danger" @click="comboFormItems.splice(idx, 1)">×</NkButton>
-            </div>
-          </div>
-          <p class="goodser__return-tip">组合包不持有独立库存，可售量按组件可用量推导。</p>
-        </div>
-      </div>
-      <template #footer>
-        <NkButton variant="ghost" @click="showComboForm = false">取消</NkButton>
-        <NkButton
-          :loading="saving"
-          :disabled="!comboForm.name.trim() || !comboFormItems.length"
-          @click="handleSaveCombo"
-        >保存</NkButton>
-      </template>
-    </NkDialog>
-
-    <!-- Create/Edit Bundle（捆） -->
-    <NkDialog
-      v-model:visible="showBundleForm"
-      :title="editingBundle ? '编辑捆' : '新建捆'"
-      :width="700"
-    >
-      <div class="goodser__order-form">
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">名称 *</label>
-            <NkInput v-model="bundleForm.name" placeholder="捆名称" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">编码</label>
-            <NkInput v-model="bundleForm.code" placeholder="留空自动生成" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">状态</label>
-            <NkSelect v-model="bundleForm.status" :options="comboStatusOptions" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">价格模式</label>
-            <NkSelect v-model="bundleForm.price_mode" :options="bundlePriceModeOptions" />
-          </div>
-        </div>
-        <div v-if="bundleForm.price_mode === 'fixed'" class="goodser__form-field">
-          <label class="goodser__form-label">固定价格 / 单捆</label>
-          <NkInput v-model="bundleForm.fixed_price" type="number" placeholder="0" />
-        </div>
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">描述</label>
-          <NkTextarea v-model="bundleForm.description" placeholder="捆说明" />
-        </div>
-
-        <label class="goodser__form-label">规则（以下阈值均按单捆计算）</label>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">主商品最少数量</label>
-            <NkInput v-model="bundleForm.min_main_quantity" type="number" placeholder="1" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">主商品最低金额</label>
-            <NkInput v-model="bundleForm.min_main_amount" type="number" placeholder="0" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">副区最少数量</label>
-            <NkInput v-model="bundleForm.min_sub_quantity" type="number" placeholder="0" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">副区最多数量（0 不限）</label>
-            <NkInput v-model="bundleForm.max_sub_quantity" type="number" placeholder="0" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">副区最低金额</label>
-            <NkInput v-model="bundleForm.min_sub_amount" type="number" placeholder="0" />
-          </div>
-        </div>
-
-        <label class="goodser__form-label">主商品条件（可选）</label>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">系列</label>
-            <NkSelect v-model="bundleForm.main_filter.series_id" :options="filterSeriesOptions" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--half">
-            <label class="goodser__form-label">套型</label>
-            <NkSelect v-model="bundleForm.main_filter.set_type_id" :options="filterSetTypeOptions" />
-          </div>
-        </div>
-        <div class="goodser__form-row">
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">商品类型</label>
-            <NkSelect v-model="bundleForm.main_filter.product_type_id" :options="filterProductTypeOptions" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">状态</label>
-            <NkSelect v-model="bundleForm.main_filter.status_code" :options="bundleStatusFilterOptions" />
-          </div>
-          <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">角色</label>
-            <NkSelect v-model="bundleForm.main_filter.character_id" :options="filterCharacterOptions" />
-          </div>
-        </div>
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">主商品关键词（可选）</label>
-          <NkInput v-model="bundleForm.main_filter.keyword" placeholder="名称或编码关键词" />
-        </div>
-        <p class="goodser__return-tip">
-          显式主商品清单与筛选条件同时存在时按 AND 校验；至少配置一种主商品来源。
-        </p>
-
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">显式主商品（可选）</label>
-          <NkInput v-model="bundleMainQuery" size="sm" placeholder="搜索并添加主商品..." @keyup.enter="searchBundleMainProducts" />
-          <div v-if="bundleMainResults.length" class="goodser__order-search-results">
-            <div v-for="r in bundleMainResults" :key="r._id" class="goodser__order-search-item" @click="addBundleMainProduct(r)">
-              <span>{{ r.code }} - {{ r.name }}</span>
-              <NkButton size="xs" variant="ghost">添加</NkButton>
-            </div>
-          </div>
-          <div v-if="bundleFormMainProducts.length" class="goodser__order-items">
-            <div v-for="(item, idx) in bundleFormMainProducts" :key="item.product_id" class="goodser__order-item">
-              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
-              <NkButton size="xs" variant="ghost" type="danger" @click="bundleFormMainProducts.splice(idx, 1)">×</NkButton>
-            </div>
-          </div>
-        </div>
-
-        <div class="goodser__form-field">
-          <label class="goodser__form-label">副区商品（必须，店主选定）</label>
-          <NkInput v-model="bundleSubQuery" size="sm" placeholder="搜索并添加副区商品..." @keyup.enter="searchBundleSubProducts" />
-          <div v-if="bundleSubResults.length" class="goodser__order-search-results">
-            <div v-for="r in bundleSubResults" :key="r._id" class="goodser__order-search-item" @click="addBundleSubProduct(r)">
-              <span>{{ r.code }} - {{ r.name }}</span>
-              <NkButton size="xs" variant="ghost">添加</NkButton>
-            </div>
-          </div>
-          <div v-if="bundleFormSubProducts.length" class="goodser__order-items">
-            <div v-for="(item, idx) in bundleFormSubProducts" :key="item.product_id" class="goodser__order-item">
-              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
-              <NkInput
-                v-model="item.default_quantity"
-                type="number"
-                size="xs"
-                style="width:90px"
-                placeholder="单捆数量"
-              />
-              <NkButton size="xs" variant="ghost" type="danger" @click="bundleFormSubProducts.splice(idx, 1)">×</NkButton>
-            </div>
-          </div>
-          <p class="goodser__return-tip">客户和店主下单时只能从该清单中选择副区商品。</p>
-        </div>
-      </div>
-      <template #footer>
-        <NkButton variant="ghost" @click="showBundleForm = false">取消</NkButton>
-        <NkButton
-          :loading="saving"
-          :disabled="!bundleForm.name.trim() || (!bundleFormMainProducts.length && !hasBundleMainFilter) || !bundleFormSubProducts.length"
-          @click="handleSaveBundle"
-        >保存</NkButton>
-      </template>
-    </NkDialog>
-
     <!-- Create/Edit Dictionary -->
     <NkDialog
       v-model:visible="showDictionaryDialog"
@@ -1479,21 +875,33 @@ import {
   loadProducts, queryProducts, createProduct, updateProduct, deleteProduct,
   loadOutboundOrders, createOutbound, confirmOutbound, cancelOutbound, cancelReserve, reserveToOutbound,
   createReturn, loadReturns, confirmReturn, cancelReturn,
-  loadInboundLogs, inboundSingle, inboundSearchImport,
   loadTags, createTag, deleteTag,
   loadStatusCodes, addStatusCode, removeStatusCode,
   loadDictionaries, createDictionary, updateDictionary, deleteDictionary,
-  loadSeriesSummary,
-  loadCombos, createCombo, updateCombo, deleteCombo,
-  loadBundles, createBundle, updateBundle, deleteBundle, previewBundle,
-  getInventoryStats,
+  loadCombos,
+  loadBundles, previewBundle,
 } from '@/api/goodser'
 import type {
-  Inventory, Product, OutboundOrder, InboundLog, OrderItem, GoodserTag, StatusCode,
+  Inventory, Product, OutboundOrder, OrderItem, GoodserTag, StatusCode,
   ReturnOrder, ReturnReason,
   Dictionary, DictionaryKind, SeriesSummary, Combo,
-  Bundle, BundlePriceMode, BundlePreviewResp, StatsOverview,
+  Bundle, BundlePreviewResp,
 } from '@/types/goodser'
+import ReturnsTab from './components/ReturnsTab.vue'
+import StatsTab from './components/StatsTab.vue'
+import SeriesTab from './components/SeriesTab.vue'
+import CombosTab from './components/CombosTab.vue'
+import BundlesTab from './components/BundlesTab.vue'
+import LogsTab from './components/LogsTab.vue'
+import {
+  bundlePriceModeLabel,
+  formatDate,
+  orderStatusLabel,
+  orderStatusType,
+  returnReasonLabel,
+  returnStatusLabel,
+  returnStatusType,
+} from './utils'
 
 // ---- Tabs ----
 const activeTab = ref('products')
@@ -1720,18 +1128,6 @@ function selectInventory(inv: Inventory) {
 function onInventoryChange() {
   if (activeTab.value === 'orders') {
     fetchOrders()
-  } else if (activeTab.value === 'logs') {
-    fetchLogs()
-  } else if (activeTab.value === 'series') {
-    fetchSeriesSummary()
-  } else if (activeTab.value === 'combos') {
-    fetchCombos()
-  } else if (activeTab.value === 'bundles') {
-    fetchBundles()
-  } else if (activeTab.value === 'stats') {
-    fetchStats()
-  } else if (activeTab.value === 'returns') {
-    fetchReturns()
   } else {
     searchProducts()
   }
@@ -2012,35 +1408,6 @@ const returnReason = ref<ReturnReason>('return_refund')
 const returnRemark = ref('')
 const orderReturns = ref<ReturnOrder[]>([])
 const loadingReturns = ref(false)
-const allReturns = ref<ReturnOrder[]>([])
-const loadingReturnList = ref(false)
-const returnQuery = ref('')
-const returnStatusFilter = ref('')
-const returnStatusOptions = [
-  { label: '全部状态', value: '' },
-  { label: '待确认', value: 'pending' },
-  { label: '已确认', value: 'confirmed' },
-  { label: '已取消', value: 'cancelled' },
-]
-const filteredReturns = computed(() => {
-  let list = allReturns.value
-  if (returnStatusFilter.value) {
-    list = list.filter((ret) => ret.status === returnStatusFilter.value)
-  }
-  const keyword = returnQuery.value.trim().toLowerCase()
-  if (keyword) {
-    list = list.filter((ret) => {
-      if ((ret.order_no || '').toLowerCase().includes(keyword)) return true
-      if ((ret.remark || '').toLowerCase().includes(keyword)) return true
-      if (returnReasonLabel(ret.reason).toLowerCase().includes(keyword)) return true
-      return (ret.items || []).some((item) =>
-        (item.product_name || '').toLowerCase().includes(keyword) ||
-        (item.product_code || '').toLowerCase().includes(keyword),
-      )
-    })
-  }
-  return list
-})
 const returnFormItems = ref<Array<{
   product_id: string
   product_name: string
@@ -2058,38 +1425,8 @@ const returnReasonOptions = [
   { label: '其他', value: 'other' },
 ]
 
-async function fetchReturns() {
+async function fetchOrders() {
   if (!currentInventoryId.value) return
-  loadingReturnList.value = true
-  try {
-    const res = await loadReturns(currentInventoryId.value)
-    allReturns.value = res.data || []
-  } catch (err: any) {
-    allReturns.value = []
-    NKMessage.error(err.message || '加载退货单失败')
-  } finally {
-    loadingReturnList.value = false
-  }
-}
-
-function returnTotalQty(ret: ReturnOrder) {
-  return (ret.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)
-}
-
-async function openReturnOrder(ret: ReturnOrder) {
-  let order = orders.value.find((item) => item._id === ret.outbound_order_id)
-  if (!order) {
-    await fetchOrders()
-    order = orders.value.find((item) => item._id === ret.outbound_order_id)
-  }
-  if (order) {
-    openOrderDetail(order)
-  } else {
-    NKMessage.warning('未找到关联出库单，请刷新后重试')
-  }
-}
-
-async function fetchOrders() {  if (!currentInventoryId.value) return
   loadingOrders.value = true
   try {
     const res = await loadOutboundOrders({ inventory_id: currentInventoryId.value, page: 1, page_size: 50 })
@@ -2099,6 +1436,24 @@ async function fetchOrders() {  if (!currentInventoryId.value) return
   } finally {
     loadingOrders.value = false
   }
+}
+
+async function openOrderById(outboundOrderId: string) {
+  let order = orders.value.find((item) => item._id === outboundOrderId)
+  if (!order) {
+    await fetchOrders()
+    order = orders.value.find((item) => item._id === outboundOrderId)
+  }
+  if (order) {
+    openOrderDetail(order)
+  } else {
+    NKMessage.warning('未找到关联出库单，请刷新后重试')
+  }
+}
+
+async function handleReturnsChanged() {
+  await fetchOrders()
+  await searchProducts()
 }
 
 function openCreateOrder(type: 'outbound' | 'reserve', bundleId?: string) {
@@ -2275,49 +1630,6 @@ function canReturn(order: OutboundOrder | null) {
   return order.status === 'confirmed' || order.status === 'partially_returned'
 }
 
-function orderStatusType(status: string) {
-  if (status === 'confirmed') return 'success'
-  if (status === 'partially_returned') return 'warning'
-  if (status === 'returned' || status === 'cancelled') return 'danger'
-  if (status === 'converted') return 'info'
-  return 'info'
-}
-
-function orderStatusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: '待确认',
-    converted: '已转出库',
-    confirmed: '已确认',
-    partially_returned: '部分退货',
-    returned: '已退货',
-    cancelled: '已取消',
-    reserved: '预留中',
-  }
-  return map[status] || status
-}
-
-function returnStatusType(status: string) {
-  if (status === 'confirmed') return 'success'
-  if (status === 'cancelled') return 'danger'
-  return 'warning'
-}
-
-function returnStatusLabel(status: string) {
-  if (status === 'confirmed') return '已确认'
-  if (status === 'cancelled') return '已取消'
-  return '待确认'
-}
-
-function returnReasonLabel(reason: string) {
-  const map: Record<string, string> = {
-    refund_only: '仅退款',
-    return_refund: '退货退款',
-    shipping_damage: '运损',
-    other: '其他',
-  }
-  return map[reason] || reason
-}
-
 async function loadOrderReturns(order: OutboundOrder) {
   loadingReturns.value = true
   try {
@@ -2429,7 +1741,6 @@ async function handleConfirmReturn(ret: ReturnOrder) {
       detailOrder.value = orders.value.find((o) => o._id === detailOrder.value!._id) || detailOrder.value
       await loadOrderReturns(detailOrder.value)
     }
-    if (activeTab.value === 'returns') await fetchReturns()
     await searchProducts()
   } catch (err: any) {
     NKMessage.error(err.message || '确认退货失败')
@@ -2446,119 +1757,8 @@ async function handleCancelReturn(ret: ReturnOrder) {
     if (detailOrder.value) {
       await loadOrderReturns(detailOrder.value)
     }
-    if (activeTab.value === 'returns') await fetchReturns()
   } catch (err: any) {
     NKMessage.error(err.message || '取消退货失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-// ---- Logs ----
-const logs = ref<InboundLog[]>([])
-const loadingLogs = ref(false)
-const showInboundSingle = ref(false)
-const showInboundSearch = ref(false)
-const inboundForm = ref({ name: '', code: '', main_zone: '', sub_zone: '', quantity: 0, status_code: '', remark: '' })
-const inboundSearchQuery = ref('')
-const inboundSearchResults = ref<(Product & { _importQty?: number })[]>([])
-const inboundImportItems = ref<OrderItem[]>([])
-
-async function fetchLogs() {
-  if (!currentInventoryId.value) return
-  loadingLogs.value = true
-  try {
-    const res = await loadInboundLogs({ inventory_id: currentInventoryId.value, page: 1, page_size: 50 })
-    logs.value = res.data?.items || []
-  } catch (err: any) {
-    NKMessage.error(err.message || '加载入库记录失败')
-  } finally {
-    loadingLogs.value = false
-  }
-}
-
-function openInboundSingle() {
-  inboundForm.value = { name: '', code: '', main_zone: '', sub_zone: '', quantity: 0, status_code: '', remark: '' }
-  showInboundSingle.value = true
-}
-
-async function handleInboundSingle() {
-  if (!currentInventoryId.value || !inboundForm.value.name.trim()) return
-  saving.value = true
-  try {
-    const f = inboundForm.value
-    await inboundSingle({
-      inventory_id: currentInventoryId.value,
-      name: f.name.trim(),
-      code: f.code || `${f.main_zone || 'A'}${f.sub_zone || '1'}-0001`,
-      main_zone: f.main_zone || 'A',
-      sub_zone: f.sub_zone || '1',
-      seq_number: 1,
-      quantity: f.quantity || null,
-      status_code: f.status_code || 'in_stock',
-      remark: f.remark || null,
-    })
-    NKMessage.success('入库成功')
-    showInboundSingle.value = false
-    await fetchLogs()
-  } catch (err: any) {
-    NKMessage.error(err.message || '入库失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-function openInboundSearch() {
-  inboundSearchQuery.value = ''
-  inboundSearchResults.value = []
-  inboundImportItems.value = []
-  showInboundSearch.value = true
-}
-
-async function doInboundSearch() {
-  if (!currentInventoryId.value || !inboundSearchQuery.value.trim()) return
-  try {
-    const res = await queryProducts({
-      inventory_id: currentInventoryId.value,
-      keyword: inboundSearchQuery.value.trim(),
-      page_size: 20,
-    })
-    inboundSearchResults.value = (res.data?.items || []).map((p) => ({ ...p, _importQty: 0 }))
-  } catch {
-    inboundSearchResults.value = []
-  }
-}
-
-function addToInboundImport(product: Product & { _importQty?: number }) {
-  const qty = product._importQty || 1
-  if (qty <= 0) return
-  inboundImportItems.value.push({
-    product_id: product._id,
-    product_name: product.name,
-    product_code: product.code,
-    quantity: qty,
-  })
-  product._importQty = 0
-}
-
-async function handleInboundSearchImport() {
-  if (!currentInventoryId.value || !inboundImportItems.value.length) return
-  saving.value = true
-  try {
-    await inboundSearchImport({
-      inventory_id: currentInventoryId.value,
-      items: inboundImportItems.value.map((i) => ({
-        product_id: i.product_id,
-        product_name: i.product_name,
-        product_code: i.product_code,
-        quantity: i.quantity,
-      })),
-    })
-    NKMessage.success('导入成功')
-    showInboundSearch.value = false
-    await fetchLogs()
-  } catch (err: any) {
-    NKMessage.error(err.message || '导入失败')
   } finally {
     saving.value = false
   }
@@ -2829,23 +2029,6 @@ function characterNames(ids?: string[] | null) {
 }
 
 // ---- P1 Series Summary ----
-const seriesSummary = ref<SeriesSummary[]>([])
-const loadingSeries = ref(false)
-
-async function fetchSeriesSummary() {
-  if (!currentInventoryId.value) return
-  loadingSeries.value = true
-  try {
-    const res = await loadSeriesSummary(currentInventoryId.value)
-    seriesSummary.value = res.data?.items || []
-  } catch (err: any) {
-    seriesSummary.value = []
-    NKMessage.error(err.message || '加载系列视图失败')
-  } finally {
-    loadingSeries.value = false
-  }
-}
-
 function openSeriesProducts(series: SeriesSummary) {
   if (!series.series_id) {
     NKMessage.info('该系列没有关联商品，或为未设置系列的商品')
@@ -2858,28 +2041,6 @@ function openSeriesProducts(series: SeriesSummary) {
 
 // ---- P1 Combos ----
 const combos = ref<Combo[]>([])
-const loadingCombos = ref(false)
-const showComboForm = ref(false)
-const editingCombo = ref<Combo | null>(null)
-const comboForm = ref({
-  name: '',
-  code: '',
-  description: '',
-  price: 0,
-  status: 'active' as 'active' | 'inactive',
-})
-const comboFormItems = ref<Array<{
-  product_id: string
-  product_name: string
-  product_code: string
-  quantity: number
-}>>([])
-const comboProductQuery = ref('')
-const comboSearchResults = ref<Product[]>([])
-const comboStatusOptions = [
-  { label: '启用', value: 'active' },
-  { label: '停用', value: 'inactive' },
-]
 const comboSelectOptions = computed(() =>
   combos.value
     .filter((c) => c.status === 'active')
@@ -2888,188 +2049,17 @@ const comboSelectOptions = computed(() =>
 
 async function fetchCombos() {
   if (!currentInventoryId.value) return
-  loadingCombos.value = true
   try {
     const res = await loadCombos(currentInventoryId.value)
     combos.value = res.data?.items || []
   } catch (err: any) {
     combos.value = []
     NKMessage.error(err.message || '加载组合包失败')
-  } finally {
-    loadingCombos.value = false
-  }
-}
-
-function openCreateCombo() {
-  if (!currentInventoryId.value) {
-    NKMessage.error('请先选择库存目录')
-    return
-  }
-  editingCombo.value = null
-  comboForm.value = { name: '', code: '', description: '', price: 0, status: 'active' }
-  comboFormItems.value = []
-  comboProductQuery.value = ''
-  comboSearchResults.value = []
-  showComboForm.value = true
-}
-
-function openEditCombo(combo: Combo) {
-  editingCombo.value = combo
-  comboForm.value = {
-    name: combo.name,
-    code: combo.code,
-    description: combo.description || '',
-    price: combo.price || 0,
-    status: combo.status,
-  }
-  comboFormItems.value = (combo.items || []).map((item) => ({
-    product_id: item.product_id,
-    product_name: item.product_name,
-    product_code: item.product_code,
-    quantity: item.quantity,
-  }))
-  comboProductQuery.value = ''
-  comboSearchResults.value = []
-  showComboForm.value = true
-}
-
-async function searchComboProducts() {
-  if (!currentInventoryId.value || !comboProductQuery.value.trim()) return
-  try {
-    const res = await queryProducts({
-      inventory_id: currentInventoryId.value,
-      keyword: comboProductQuery.value.trim(),
-      page_size: 10,
-    })
-    comboSearchResults.value = res.data?.items || []
-  } catch {
-    comboSearchResults.value = []
-  }
-}
-
-function addComboItem(product: Product) {
-  const existing = comboFormItems.value.find((i) => i.product_id === product._id)
-  if (existing) {
-    existing.quantity++
-  } else {
-    comboFormItems.value.push({
-      product_id: product._id,
-      product_name: product.name,
-      product_code: product.code,
-      quantity: 1,
-    })
-  }
-  comboProductQuery.value = ''
-  comboSearchResults.value = []
-}
-
-async function handleSaveCombo() {
-  if (!currentInventoryId.value || !comboForm.value.name.trim() || !comboFormItems.value.length) return
-  saving.value = true
-  try {
-    const items = comboFormItems.value.map((item) => ({
-      product_id: item.product_id,
-      quantity: Number(item.quantity) || 1,
-    }))
-    if (editingCombo.value) {
-      await updateCombo({
-        id: editingCombo.value._id,
-        name: comboForm.value.name.trim(),
-        code: comboForm.value.code || null,
-        description: comboForm.value.description || null,
-        price: Number(comboForm.value.price) || 0,
-        status: comboForm.value.status,
-        items,
-      })
-      NKMessage.success('更新成功')
-    } else {
-      await createCombo({
-        inventory_id: currentInventoryId.value,
-        name: comboForm.value.name.trim(),
-        code: comboForm.value.code || null,
-        description: comboForm.value.description || null,
-        price: Number(comboForm.value.price) || 0,
-        status: comboForm.value.status,
-        items,
-      })
-      NKMessage.success('创建成功')
-    }
-    showComboForm.value = false
-    await fetchCombos()
-  } catch (err: any) {
-    NKMessage.error(err.message || '保存组合包失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function handleDeleteCombo(combo: Combo) {
-  saving.value = true
-  try {
-    await deleteCombo(combo._id)
-    NKMessage.success('已删除')
-    await fetchCombos()
-  } catch (err: any) {
-    NKMessage.error(err.message || '删除组合包失败')
-  } finally {
-    saving.value = false
   }
 }
 
 // ---- P1.5 捆 ----
 const bundles = ref<Bundle[]>([])
-const loadingBundles = ref(false)
-const showBundleForm = ref(false)
-const editingBundle = ref<Bundle | null>(null)
-const bundleForm = ref({
-  name: '',
-  code: '',
-  description: '',
-  status: 'active' as 'active' | 'inactive',
-  price_mode: 'sum' as BundlePriceMode,
-  fixed_price: 0,
-  min_main_quantity: 1,
-  min_main_amount: 0,
-  min_sub_quantity: 0,
-  max_sub_quantity: 0,
-  min_sub_amount: 0,
-  main_filter: {
-    series_id: '',
-    set_type_id: '',
-    product_type_id: '',
-    character_id: '',
-    status_code: '',
-    keyword: '',
-  },
-})
-const bundleFormMainProducts = ref<Array<{
-  product_id: string
-  product_name: string
-  product_code: string
-}>>([])
-const bundleFormSubProducts = ref<Array<{
-  product_id: string
-  product_name: string
-  product_code: string
-  default_quantity: number
-}>>([])
-const bundleMainQuery = ref('')
-const bundleSubQuery = ref('')
-const bundleMainResults = ref<Product[]>([])
-const bundleSubResults = ref<Product[]>([])
-const bundlePriceModeOptions = [
-  { label: '合计（主商品 + 副区）', value: 'sum' },
-  { label: '固定价（单捆）', value: 'fixed' },
-  { label: '只收主商品（副区搭配）', value: 'main_only' },
-]
-const bundleStatusFilterOptions = computed(() => [
-  { label: '全部状态', value: '' },
-  ...statusCodeOptions.value,
-])
-const hasBundleMainFilter = computed(() => {
-  const f = bundleForm.value.main_filter
-  return !!(f.series_id || f.set_type_id || f.product_type_id || f.character_id || f.status_code || f.keyword.trim())
-})
 const bundleSelectOptions = computed(() =>
   bundles.value
     .filter((b) => b.status === 'active')
@@ -3085,234 +2075,14 @@ const bundleMainOrderOptions = computed(() =>
   })),
 )
 
-function bundlePriceModeLabel(mode: BundlePriceMode): string {
-  switch (mode) {
-    case 'fixed':
-      return '固定价'
-    case 'main_only':
-      return '只收主商品'
-    default:
-      return '合计计价'
-  }
-}
-
 async function fetchBundles() {
   if (!currentInventoryId.value) return
-  loadingBundles.value = true
   try {
     const res = await loadBundles(currentInventoryId.value)
     bundles.value = res.data?.items || []
   } catch (err: any) {
     bundles.value = []
     NKMessage.error(err.message || '加载捆失败')
-  } finally {
-    loadingBundles.value = false
-  }
-}
-
-function resetBundleForm() {
-  bundleForm.value = {
-    name: '',
-    code: '',
-    description: '',
-    status: 'active',
-    price_mode: 'sum',
-    fixed_price: 0,
-    min_main_quantity: 1,
-    min_main_amount: 0,
-    min_sub_quantity: 0,
-    max_sub_quantity: 0,
-    min_sub_amount: 0,
-    main_filter: {
-      series_id: '',
-      set_type_id: '',
-      product_type_id: '',
-      character_id: '',
-      status_code: '',
-      keyword: '',
-    },
-  }
-  bundleFormMainProducts.value = []
-  bundleFormSubProducts.value = []
-  bundleMainQuery.value = ''
-  bundleSubQuery.value = ''
-  bundleMainResults.value = []
-  bundleSubResults.value = []
-}
-
-function openCreateBundle() {
-  if (!currentInventoryId.value) {
-    NKMessage.error('请先选择库存目录')
-    return
-  }
-  editingBundle.value = null
-  resetBundleForm()
-  showBundleForm.value = true
-}
-
-function openEditBundle(bundle: Bundle) {
-  editingBundle.value = bundle
-  resetBundleForm()
-  bundleForm.value = {
-    name: bundle.name,
-    code: bundle.code,
-    description: bundle.description || '',
-    status: bundle.status,
-    price_mode: bundle.price_mode,
-    fixed_price: bundle.fixed_price || 0,
-    min_main_quantity: bundle.min_main_quantity || 1,
-    min_main_amount: bundle.min_main_amount || 0,
-    min_sub_quantity: bundle.min_sub_quantity || 0,
-    max_sub_quantity: bundle.max_sub_quantity || 0,
-    min_sub_amount: bundle.min_sub_amount || 0,
-    main_filter: {
-      series_id: bundle.main_filter?.series_id || '',
-      set_type_id: bundle.main_filter?.set_type_id || '',
-      product_type_id: bundle.main_filter?.product_type_id || '',
-      character_id: bundle.main_filter?.character_id || '',
-      status_code: bundle.main_filter?.status_code || '',
-      keyword: bundle.main_filter?.keyword || '',
-    },
-  }
-  const mainByID = new Map((bundle.main_products || []).map((p) => [p.product_id, p]))
-  bundleFormMainProducts.value = (bundle.main_product_ids || []).map((id) => {
-    const product = mainByID.get(id)
-    return {
-      product_id: id,
-      product_name: product?.product_name || id,
-      product_code: product?.product_code || '',
-    }
-  })
-  bundleFormSubProducts.value = (bundle.sub_products || []).map((item) => ({
-    product_id: item.product_id,
-    product_name: item.product_name,
-    product_code: item.product_code,
-    default_quantity: item.default_quantity || 1,
-  }))
-  showBundleForm.value = true
-}
-
-async function searchBundleMainProducts() {
-  if (!currentInventoryId.value || !bundleMainQuery.value.trim()) return
-  try {
-    const res = await queryProducts({
-      inventory_id: currentInventoryId.value,
-      keyword: bundleMainQuery.value.trim(),
-      page_size: 10,
-    })
-    bundleMainResults.value = res.data?.items || []
-  } catch {
-    bundleMainResults.value = []
-  }
-}
-
-async function searchBundleSubProducts() {
-  if (!currentInventoryId.value || !bundleSubQuery.value.trim()) return
-  try {
-    const res = await queryProducts({
-      inventory_id: currentInventoryId.value,
-      keyword: bundleSubQuery.value.trim(),
-      page_size: 10,
-    })
-    bundleSubResults.value = res.data?.items || []
-  } catch {
-    bundleSubResults.value = []
-  }
-}
-
-function addBundleMainProduct(product: Product) {
-  if (!bundleFormMainProducts.value.some((p) => p.product_id === product._id)) {
-    bundleFormMainProducts.value.push({
-      product_id: product._id,
-      product_name: product.name,
-      product_code: product.code,
-    })
-  }
-  bundleMainQuery.value = ''
-  bundleMainResults.value = []
-}
-
-function addBundleSubProduct(product: Product) {
-  if (!bundleFormSubProducts.value.some((p) => p.product_id === product._id)) {
-    bundleFormSubProducts.value.push({
-      product_id: product._id,
-      product_name: product.name,
-      product_code: product.code,
-      default_quantity: 1,
-    })
-  }
-  bundleSubQuery.value = ''
-  bundleSubResults.value = []
-}
-
-async function handleSaveBundle() {
-  if (!currentInventoryId.value || !bundleForm.value.name.trim()) return
-  if (!bundleFormMainProducts.value.length && !hasBundleMainFilter.value) {
-    NKMessage.warning('请至少配置显式主商品或主商品筛选条件')
-    return
-  }
-  if (!bundleFormSubProducts.value.length) {
-    NKMessage.warning('请至少选择一个副区商品')
-    return
-  }
-  saving.value = true
-  try {
-    const f = bundleForm.value
-    const filter = hasBundleMainFilter.value
-      ? {
-          series_id: f.main_filter.series_id || undefined,
-          set_type_id: f.main_filter.set_type_id || undefined,
-          product_type_id: f.main_filter.product_type_id || undefined,
-          character_id: f.main_filter.character_id || undefined,
-          status_code: f.main_filter.status_code || undefined,
-          keyword: f.main_filter.keyword.trim() || undefined,
-        }
-      : null
-    const payload = {
-      name: f.name.trim(),
-      code: f.code || null,
-      description: f.description || null,
-      status: f.status,
-      price_mode: f.price_mode,
-      fixed_price: Number(f.fixed_price) || 0,
-      min_main_quantity: Number(f.min_main_quantity) || 0,
-      min_main_amount: Number(f.min_main_amount) || 0,
-      min_sub_quantity: Number(f.min_sub_quantity) || 0,
-      max_sub_quantity: Number(f.max_sub_quantity) || 0,
-      min_sub_amount: Number(f.min_sub_amount) || 0,
-      main_filter: filter,
-      main_product_ids: bundleFormMainProducts.value.map((p) => p.product_id),
-      sub_products: bundleFormSubProducts.value.map((p) => ({
-        product_id: p.product_id,
-        default_quantity: Number(p.default_quantity) || 1,
-      })),
-    }
-    if (editingBundle.value) {
-      await updateBundle({ id: editingBundle.value._id, ...payload })
-      NKMessage.success('更新成功')
-    } else {
-      await createBundle({ inventory_id: currentInventoryId.value, ...payload })
-      NKMessage.success('创建成功')
-    }
-    showBundleForm.value = false
-    await fetchBundles()
-  } catch (err: any) {
-    NKMessage.error(err.message || '保存捆失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function handleDeleteBundle(bundle: Bundle) {
-  saving.value = true
-  try {
-    await deleteBundle(bundle._id)
-    NKMessage.success('已删除')
-    await fetchBundles()
-  } catch (err: any) {
-    NKMessage.error(err.message || '删除捆失败')
-  } finally {
-    saving.value = false
   }
 }
 
@@ -3366,114 +2136,6 @@ async function refreshBundleOrderPreview() {
   }
 }
 
-// ---- Utils ----
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-// ---- 统计 ----
-const stats = ref<StatsOverview | null>(null)
-const loadingStats = ref(false)
-const statsDays = ref(30)
-const statsDayOptions = [
-  { label: '近 7 天', value: 7 },
-  { label: '近 30 天', value: 30 },
-  { label: '近 90 天', value: 90 },
-  { label: '近 365 天', value: 365 },
-]
-const statsRangeLabel = computed(() => {
-  if (!stats.value) return `统计区间：近 ${statsDays.value} 天`
-  return `${stats.value.inventory_name}｜近 ${stats.value.days} 天｜更新于 ${formatDate(stats.value.generated_at)}`
-})
-const statsMaxTrend = computed(() => {
-  if (!stats.value) return 1
-  return Math.max(1, ...stats.value.trend.map(p => Math.max(p.outbound_quantity, p.return_quantity)))
-})
-const statsMaxSeries = computed(() => {
-  if (!stats.value) return 1
-  return Math.max(1, ...stats.value.series.map(r => r.total))
-})
-const selectedTrendDate = ref('')
-const selectedTrendPoint = computed(() => {
-  const value = stats.value
-  if (!value) return null
-  return value.trend.find(p => p.date === selectedTrendDate.value) || null
-})
-function selectTrendPoint(date: string) {
-  selectedTrendDate.value = date
-}
-function trendHeight(value: number) {
-  if (!value) return 2
-  return Math.max(4, Math.round((value / statsMaxTrend.value) * 100))
-}
-function seriesWidth(total: number) {
-  return Math.max(total ? 4 : 0, Math.round((total / statsMaxSeries.value) * 100)) + '%'
-}
-
-async function fetchStats() {
-  if (!currentInventoryId.value) return
-  loadingStats.value = true
-  try {
-    const res = await getInventoryStats(currentInventoryId.value, statsDays.value)
-    stats.value = res.data || null
-    const trend = stats.value?.trend || []
-    const latest = [...trend].reverse().find(p => p.outbound_quantity || p.return_quantity) || trend[trend.length - 1]
-    selectedTrendDate.value = latest?.date || ''
-  } catch (e: any) {
-    NKMessage.error(e?.message || '加载统计失败')
-  } finally {
-    loadingStats.value = false
-  }
-}
-
-function exportStatsCSV() {
-  const value = stats.value
-  if (!value) return
-  const rows: string[][] = []
-  const push = (...cells: Array<string | number>) => rows.push(cells.map((cell) => String(cell)))
-  push('统计区间', `近 ${value.days} 天`)
-  push('生成时间', formatDate(value.generated_at))
-  push('')
-  push('库存指标', '数值')
-  push('商品数', value.stock.total_products)
-  push('可售库存', value.stock.available)
-  push('已锁定', value.stock.reserved)
-  push('库存总量', value.stock.total)
-  push('库存总值', value.stock.stock_value)
-  push('缺货商品数', value.stock.out_of_stock)
-  push('')
-  push('订单与退货', '数量')
-  push('待确认出库', value.orders.pending_outbound)
-  push('已确认出库', value.orders.confirmed_outbound)
-  push('已取消出库', value.orders.cancelled_outbound)
-  push('待处理预留', value.orders.pending_reserves)
-  push('待确认退货', value.orders.pending_returns)
-  push('已确认退货', value.orders.confirmed_returns)
-  push('')
-  push('日期', '出库数量', '退货回库', '净变化')
-  value.trend.forEach((p) => push(p.date, p.outbound_quantity, p.return_quantity, p.outbound_quantity - p.return_quantity))
-  push('')
-  push('系列', '商品数', '可售', '锁定', '总量', '库存价值')
-  value.series.forEach((row) => push(row.series_name, row.product_count, row.available, row.reserved, row.total, row.stock_value))
-  push('')
-  push('商品', '编码', '确认出库量')
-  value.top_products.forEach((p) => push(p.product_name || p.product_code, p.product_code, p.outbound_quantity))
-
-  const escape = (text: string) => `"${text.replace(/"/g, '""')}"`
-  const csv = '\uFEFF' + rows.map((row) => row.map(escape).join(',')).join('\r\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${value.inventory_name}-统计-${value.days}天.csv`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 // ---- Watchers ----
 watch(activeTab, (tab) => {
@@ -3485,13 +2147,7 @@ watch(activeTab, (tab) => {
       searchProducts()
     }
   }
-  if (tab === 'series') fetchSeriesSummary()
-  if (tab === 'combos') fetchCombos()
-  if (tab === 'bundles') fetchBundles()
-  if (tab === 'stats') fetchStats()
   if (tab === 'orders') fetchOrders()
-  if (tab === 'returns') fetchReturns()
-  if (tab === 'logs') fetchLogs()
 })
 
 // ---- Init ----
@@ -3886,56 +2542,6 @@ onMounted(async () => {
   }
 
   // ---- Series / Combos ----
-  &__series-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: $nk-spacing-md;
-  }
-
-  &__series-card {
-    cursor: pointer;
-    transition: box-shadow $nk-duration-fast, border-color $nk-duration-fast;
-    &:hover {
-      box-shadow: $nk-shadow-md;
-      border-color: $nk-color-primary-300;
-    }
-  }
-
-  &__series-name {
-    font-weight: $nk-font-weight-medium;
-    color: $nk-color-neutral-900;
-    font-size: $nk-font-size-base;
-    margin-bottom: $nk-spacing-xs;
-  }
-
-  &__series-meta {
-    display: flex;
-    gap: $nk-spacing-md;
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-500;
-  }
-
-  &__combo-list {
-    display: flex;
-    flex-direction: column;
-    gap: $nk-spacing-md;
-  }
-
-  &__combo-components {
-    display: flex;
-    flex-wrap: wrap;
-    gap: $nk-spacing-xs;
-    margin-top: $nk-spacing-xs;
-  }
-
-  &__combo-component {
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-600;
-    background: $nk-color-neutral-50;
-    border-radius: $nk-radius-md;
-    padding: 2px 8px;
-  }
-
   &__combo-picker {
     display: flex;
     align-items: center;
@@ -3989,59 +2595,6 @@ onMounted(async () => {
   }
 
   // ---- Return list ----
-  &__return-toolbar {
-    display: flex;
-    align-items: center;
-    gap: $nk-spacing-sm;
-    flex-wrap: wrap;
-  }
-
-  &__return-list {
-    display: flex;
-    flex-direction: column;
-    gap: $nk-spacing-md;
-  }
-
-  &__return-card {
-    padding: $nk-spacing-md;
-  }
-
-  &__return-lines {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: $nk-spacing-sm;
-    padding: 8px 10px;
-    border-radius: $nk-radius-md;
-    background: $nk-color-neutral-50;
-  }
-
-  &__return-line {
-    display: flex;
-    align-items: center;
-    gap: $nk-spacing-sm;
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-700;
-  }
-
-  &__return-line-name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__return-line-qty {
-    color: $nk-color-primary-600;
-    font-weight: $nk-font-weight-medium;
-  }
-
-  &__return-more {
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-400;
-  }
-
   // ---- Order Form ----
   &__order-form {
     display: flex;
@@ -4174,98 +2727,7 @@ onMounted(async () => {
   }
 
   // ---- Logs ----
-  &__log-list {
-    display: flex;
-    flex-direction: column;
-    gap: $nk-spacing-md;
-  }
-
-  &__log-card {
-    transition: box-shadow $nk-duration-fast;
-    &:hover {
-      box-shadow: $nk-shadow-md;
-    }
-  }
-
-  &__log-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: $nk-spacing-xs;
-  }
-
-  &__log-type {
-    font-weight: $nk-font-weight-medium;
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-900;
-  }
-
-  &__log-date {
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-500;
-  }
-
-  &__log-meta {
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-500;
-    display: flex;
-    gap: $nk-spacing-md;
-    flex-wrap: wrap;
-  }
-
   // ---- Inbound Search ----
-  &__inbound-search-results {
-    margin-top: $nk-spacing-sm;
-    border: 1px solid $nk-color-neutral-200;
-    border-radius: $nk-radius-md;
-    max-height: 240px;
-    overflow-y: auto;
-  }
-
-  &__inbound-search-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $nk-spacing-xs $nk-spacing-sm;
-    font-size: $nk-font-size-sm;
-    border-bottom: 1px solid $nk-color-neutral-100;
-  }
-
-  &__inbound-search-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__inbound-search-stock {
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-500;
-  }
-
-  &__inbound-search-action {
-    display: flex;
-    align-items: center;
-    gap: $nk-spacing-xs;
-  }
-
-  &__inbound-import-list {
-    margin-top: $nk-spacing-md;
-  }
-
-  &__inbound-import-header {
-    font-size: $nk-font-size-sm;
-    font-weight: $nk-font-weight-medium;
-    color: $nk-color-neutral-700;
-    margin-bottom: $nk-spacing-xs;
-  }
-
-  &__inbound-import-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    font-size: $nk-font-size-sm;
-  }
-
   // ---- Settings ----
   &__settings-section {
     margin-top: $nk-spacing-md;
@@ -4316,252 +2778,6 @@ onMounted(async () => {
     font-size: $nk-font-size-xs;
     color: $nk-color-neutral-400;
     font-family: $nk-font-family-mono;
-  }
-
-  // ---- 统计 ----
-  &__stats-controls {
-    display: flex;
-    align-items: center;
-    gap: $nk-spacing-sm;
-  }
-
-  &__stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: $nk-spacing-md;
-    margin-bottom: $nk-spacing-md;
-  }
-
-  &__stat-card {
-    padding: $nk-spacing-md;
-  }
-
-  &__stat-label {
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-500;
-  }
-
-  &__stat-value {
-    margin-top: 6px;
-    font-size: 26px;
-    font-weight: $nk-font-weight-semibold;
-    color: $nk-color-neutral-900;
-  }
-
-  &__stat-hint {
-    margin-top: 4px;
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-400;
-  }
-
-  &__stat-panels {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $nk-spacing-md;
-    margin-bottom: $nk-spacing-md;
-
-    @media (max-width: 720px) {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  &__stat-panel {
-    padding: $nk-spacing-md;
-    margin-bottom: $nk-spacing-md;
-  }
-
-  &__stat-panel-title {
-    margin-bottom: $nk-spacing-sm;
-    font-size: $nk-font-size-base;
-    font-weight: $nk-font-weight-semibold;
-    color: $nk-color-neutral-800;
-  }
-
-  &__stat-kv {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-600;
-    border-bottom: 1px dashed $nk-color-neutral-100;
-
-    strong {
-      color: $nk-color-neutral-900;
-    }
-  }
-
-  &__stat-rank {
-    display: flex;
-    align-items: center;
-    gap: $nk-spacing-sm;
-    padding: 6px 0;
-    font-size: $nk-font-size-sm;
-  }
-
-  &__stat-rank-index {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: $nk-color-neutral-100;
-    color: $nk-color-neutral-600;
-    font-size: $nk-font-size-xs;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  &__stat-rank-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__stat-legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $nk-spacing-md;
-    margin-bottom: $nk-spacing-sm;
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-500;
-  }
-
-  &__stat-legend-hint {
-    margin-left: auto;
-    color: $nk-color-primary-600;
-  }
-
-  &__stat-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 4px;
-    border-radius: 2px;
-
-    &--out {
-      background: #1677ff;
-    }
-
-    &--ret {
-      background: #52c41a;
-    }
-  }
-
-  &__stat-trend {
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    height: 140px;
-    padding: 0 2px;
-    overflow-x: auto;
-  }
-
-  &__stat-trend-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 22px;
-    flex: 1;
-    padding: 4px 2px;
-    border-radius: $nk-radius-sm;
-    cursor: pointer;
-    transition: background $nk-duration-fast;
-
-    &:hover {
-      background: $nk-color-neutral-50;
-    }
-
-    &--active {
-      background: $nk-color-neutral-100;
-    }
-  }
-
-  &__stat-trend-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 110px;
-  }
-
-  &__stat-bar {
-    width: 7px;
-    min-height: 2px;
-    border-radius: 2px 2px 0 0;
-
-    &--out {
-      background: #1677ff;
-    }
-
-    &--ret {
-      background: #52c41a;
-    }
-  }
-
-  &__stat-trend-label {
-    font-size: 10px;
-    color: $nk-color-neutral-400;
-    white-space: nowrap;
-  }
-
-  &__stat-trend-detail {
-    margin-top: $nk-spacing-sm;
-    padding: $nk-spacing-sm $nk-spacing-md;
-    border-radius: $nk-radius-md;
-    background: $nk-color-neutral-100;
-  }
-
-  &__stat-trend-detail-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-    font-size: $nk-font-size-sm;
-
-    span {
-      color: $nk-color-neutral-500;
-      font-size: $nk-font-size-xs;
-    }
-  }
-
-  &__stat-series {
-    padding: $nk-spacing-sm 0;
-    border-bottom: 1px dashed $nk-color-neutral-100;
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  &__stat-series-head,
-  &__stat-series-meta {
-    display: flex;
-    justify-content: space-between;
-    gap: $nk-spacing-sm;
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-600;
-  }
-
-  &__stat-series-meta {
-    margin-top: 4px;
-    font-size: $nk-font-size-xs;
-    color: $nk-color-neutral-400;
-  }
-
-  &__stat-series-bar {
-    height: 6px;
-    margin-top: 6px;
-    border-radius: 3px;
-    background: $nk-color-neutral-100;
-    overflow: hidden;
-  }
-
-  &__stat-series-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #1677ff, #69b1ff);
   }
 }
 </style>

@@ -1,0 +1,240 @@
+@use "@/styles/tokens" as *;
+
+// Shared Goodser tab styles. Imported by extracted tab components so that
+// scoped styles still apply to their own DOM.
+.goodser {
+  &__tab {
+    min-height: 200px;
+  }
+
+  &__tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $nk-spacing-md;
+  }
+
+  &__count {
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-500;
+  }
+
+  &__empty {
+    padding: $nk-spacing-3xl 0;
+  }
+
+  // ---- Product toolbar ----
+  &__product-toolbar {
+    display: flex;
+    gap: $nk-spacing-sm;
+    align-items: center;
+    margin-bottom: $nk-spacing-md;
+    flex-wrap: wrap;
+  }
+
+  &__product-toolbar-right {
+    margin-left: auto;
+    display: flex;
+    gap: $nk-spacing-sm;
+  }
+
+  // ---- Order cards ----
+  &__order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $nk-spacing-xs;
+  }
+
+  &__order-no {
+    font-weight: $nk-font-weight-medium;
+    font-family: $nk-font-family-mono;
+    color: $nk-color-neutral-900;
+  }
+
+  &__order-date {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+  }
+
+  &__order-meta {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+    display: flex;
+    gap: $nk-spacing-md;
+  }
+
+  &__order-actions {
+    margin-top: $nk-spacing-sm;
+    display: flex;
+    gap: $nk-spacing-xs;
+  }
+
+  // ---- Return list ----
+  &__return-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  &__return-list {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-md;
+  }
+
+  &__return-card {
+    padding: $nk-spacing-md;
+  }
+
+  &__return-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: $nk-spacing-sm;
+    padding: 8px 10px;
+    border-radius: $nk-radius-md;
+    background: $nk-color-neutral-50;
+  }
+
+  &__return-line {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-line-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__return-line-qty {
+    color: $nk-color-primary-600;
+    font-weight: $nk-font-weight-medium;
+  }
+
+  &__return-more {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+  }
+
+  // ---- Combo / bundle cards ----
+  &__combo-list {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-md;
+  }
+
+  &__combo-card {
+    padding: $nk-spacing-md;
+  }
+
+  &__combo-components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $nk-spacing-xs;
+    margin-top: $nk-spacing-xs;
+  }
+
+  &__combo-component {
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-600;
+    background: $nk-color-neutral-50;
+    border-radius: $nk-radius-md;
+    padding: 2px 8px;
+  }
+
+  &__combo-picker {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+  }
+
+  // ---- Forms ----
+  &__order-form {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-sm;
+  }
+
+  &__form-row {
+    display: flex;
+    gap: $nk-spacing-sm;
+  }
+
+  &__form-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    &--half {
+      flex: 0 0 calc(50% - #{$nk-spacing-sm} / 2);
+    }
+
+    &--third {
+      flex: 0 0 calc(33.33% - #{$nk-spacing-sm} * 2 / 3);
+    }
+  }
+
+  &__form-label {
+    font-size: $nk-font-size-xs;
+    font-weight: $nk-font-weight-medium;
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-tip {
+    margin: 0;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+  }
+
+  &__order-search-results {
+    margin-top: 4px;
+    border: 1px solid $nk-color-neutral-200;
+    border-radius: $nk-radius-md;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  &__order-search-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $nk-spacing-xs $nk-spacing-sm;
+    cursor: pointer;
+    font-size: $nk-font-size-sm;
+    transition: background $nk-duration-fast;
+
+    &:hover {
+      background: $nk-color-neutral-100;
+    }
+  }
+
+  &__order-items {
+    margin-top: $nk-spacing-sm;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__order-item {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: $nk-spacing-xs $nk-spacing-sm;
+    background: $nk-color-neutral-50;
+    border-radius: $nk-radius-md;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__order-item-name {
+    flex: 1;
+  }
+}
