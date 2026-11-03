@@ -430,10 +430,15 @@ export interface SeriesSummary {
 }
 
 // ---- P1: 组合包 BOM ----
+export type ComboItemType = 'product' | 'bundle'
+
 export interface ComboItem {
-  product_id: string
-  product_name: string
-  product_code: string
+  item_type: ComboItemType
+  product_id?: string
+  product_name?: string
+  product_code?: string
+  bundle_id?: string
+  bundle_name?: string
   quantity: number
   available: number
   image_url?: string | null
@@ -455,7 +460,9 @@ export interface Combo {
 }
 
 export interface ComboItemReq {
-  product_id: string
+  item_type?: ComboItemType
+  product_id?: string
+  bundle_id?: string
   quantity: number
 }
 
@@ -521,6 +528,62 @@ export interface BundleSubProduct {
   total_quantity: number
 }
 
+// ---- 捆物池 ----
+export type BundlePoolStatus = 'active' | 'inactive'
+
+export interface BundlePoolItem {
+  product_id: string
+  product_name: string
+  product_code: string
+  image_url?: string | null
+  default_quantity: number
+  expected_price: number
+  available: number
+  reserved_quantity: number
+  total_quantity: number
+}
+
+export interface BundlePool {
+  _id: string
+  inventory_id: string
+  code: string
+  name: string
+  description?: string | null
+  status: BundlePoolStatus
+  min_item_count: number
+  min_amount: number
+  items: BundlePoolItem[]
+  created_at: string
+  updated_at: string
+}
+
+export interface BundlePoolItemReq {
+  product_id: string
+  default_quantity: number
+}
+
+export interface CreateBundlePoolReq {
+  inventory_id: string
+  code?: string | null
+  name: string
+  description?: string | null
+  status?: BundlePoolStatus | null
+  min_item_count?: number
+  min_amount?: number
+  items: BundlePoolItemReq[]
+}
+
+export interface UpdateBundlePoolReq {
+  id: string
+  code?: string | null
+  name?: string | null
+  description?: string | null
+  status?: BundlePoolStatus | null
+  min_item_count?: number
+  min_amount?: number
+  items?: BundlePoolItemReq[]
+}
+
 export interface Bundle {
   _id: string
   inventory_id: string
@@ -532,6 +595,9 @@ export interface Bundle {
   main_product_ids: string[]
   main_products: BundleMainProduct[]
   sub_products: BundleSubProduct[]
+  pool_id?: string | null
+  pool?: BundlePool | null
+  availability: number
   min_main_quantity: number
   min_main_amount: number
   min_sub_quantity: number
@@ -556,7 +622,8 @@ export interface CreateBundleReq {
   status?: BundleStatus | null
   main_filter?: BundleMainFilter | null
   main_product_ids?: string[]
-  sub_products: BundleSubItemReq[]
+  sub_products?: BundleSubItemReq[]
+  pool_id?: string | null
   min_main_quantity?: number
   min_main_amount?: number
   min_sub_quantity?: number
@@ -575,6 +642,7 @@ export interface UpdateBundleReq {
   main_filter?: BundleMainFilter | null
   main_product_ids?: string[]
   sub_products?: BundleSubItemReq[]
+  pool_id?: string | null
   min_main_quantity?: number
   min_main_amount?: number
   min_sub_quantity?: number

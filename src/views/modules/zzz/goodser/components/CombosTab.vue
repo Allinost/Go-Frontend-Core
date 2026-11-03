@@ -38,8 +38,11 @@
           <span>{{ c.items?.length || 0 }} 个组件</span>
         </div>
         <div class="goodser__combo-components">
-          <span v-for="item in c.items" :key="item.product_id" class="goodser__combo-component">
-            {{ item.product_name }} × {{ item.quantity }}（可用 {{ item.available }}）
+          <span v-for="item in c.items" :key="item.item_type + ':' + (item.product_id || item.bundle_id)" class="goodser__combo-component">
+            <NkTag size="sm" :type="item.item_type === 'bundle' ? 'warning' : 'info'">
+              {{ item.item_type === 'bundle' ? '捆' : '商品' }}
+            </NkTag>
+            {{ item.item_type === 'bundle' ? item.bundle_name : item.product_name }} × {{ item.quantity }}（可用 {{ item.available }}）
           </span>
         </div>
         <div class="goodser__order-actions">
@@ -80,6 +83,10 @@
           <NkTextarea v-model="comboForm.description" placeholder="组合包描述" />
         </div>
         <div class="goodser__form-field">
+          <label class="goodser__form-label">组件类型</label>
+          <NkSelect v-model="comboItemType" :options="comboItemTypeOptions" style="width: 200px" />
+        </div>
+        <div v-if="comboItemType === 'product'" class="goodser__form-field">
           <label class="goodser__form-label">组件商品（搜索添加）</label>
           <NkInput v-model="comboProductQuery" size="sm" placeholder="搜索商品..." @keyup.enter="searchComboProducts" />
           <div v-if="comboSearchResults.length" class="goodser__order-search-results">
@@ -88,14 +95,34 @@
               <NkButton size="xs" variant="ghost">添加</NkButton>
             </div>
           </div>
-          <div v-if="comboFormItems.length" class="goodser__order-items">
-            <div v-for="(item, idx) in comboFormItems" :key="item.product_id" class="goodser__order-item">
-              <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
+        </div>
+        <div v-else class="goodser__form-field">
+          <label class="goodser__form-label">组件捆</label>
+          <NkSelect v-model="comboBundleId" :options="comboBundleOptions" placeholder="选择捆" />
+          <NkButton size="sm" style="margin-top: 8px" :disabled="!comboBundleId" @click="addComboBundle">
+            添加捆组件
+          </NkButton>
+        </div>
+        <div v-if="comboFormItems.length" class="goodser__form-field">
+          <label class="goodser__form-label">已选组件</label>
+          <div class="goodser__order-items">
+            <div
+              v-for="(item, idx) in comboFormItems"
+              :key="item.item_type + ':' + (item.product_id || item.bundle_id)"
+              class="goodser__order-item"
+            >
+              <NkTag size="sm" :type="item.item_type === 'bundle' ? 'warning' : 'info'">
+                {{ item.item_type === 'bundle' ? '捆' : '商品' }}
+              </NkTag>
+              <span class="goodser__order-item-name">
+                {{ item.item_type === 'bundle' ? item.bundle_name : item.product_name }}
+                <template v-if="item.item_type === 'product'"> ({{ item.product_code }})</template>
+              </span>
               <NkInput v-model="item.quantity" type="number" size="xs" style="width: 80px" placeholder="数量" />
               <NkButton size="xs" variant="ghost" type="danger" @click="comboFormItems.splice(idx, 1)">×</NkButton>
             </div>
           </div>
-          <p class="goodser__return-tip">组合包不持有独立库存，可售量按组件可用量推导。</p>
+          <p class="goodser__return-tip">组合包不持有独立库存，可售量按组件（商品/捆）可用量推导。</p>
         </div>
       </div>
       <template #footer>
@@ -126,11 +153,12 @@ import { NKMessage } from '@nkui/vue/src/utils/message'
 import {
   createCombo,
   deleteCombo,
+  loadBundles,
   loadCombos,
   queryProducts,
   updateCombo,
 } from '@/api/goodser'
-import type { Combo, Inventory, Product } from '@/types/goodser'
+import type { Bundle, Combo, ComboItemType, Inventory, Product } from '@/types/goodser'
 import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
@@ -158,11 +186,29 @@ const comboForm = ref({
   status: 'active' as 'active' | 'inactive',
 })
 const comboFormItems = ref<Array<{
+  item_type: ComboItemType
   product_id: string
   product_name: string
   product_code: string
+  bundle_id: string
+  bundle_name: string
   quantity: number
 }>>([])
+const comboItemType = ref<ComboItemType>('product')
+const comboItemTypeOptions = [
+  { label: '商品组件', value: 'product' },
+  { label: '捆组件', value: 'bundle' },
+]
+const comboBundles = ref<Bundle[]>([])
+const comboBundleId = ref('')
+const comboBundleOptions = computed(() =>
+  comboBundles.value
+    .filter((bundle) => bundle.status === 'active')
+    .map((bundle) => ({
+      label: `${bundle.name}（可售 ${bundle.availability}）`,
+      value: bundle._id,
+    })),
+)
 const comboProductQuery = ref('')
 const comboSearchResults = ref<Product[]>([])
 const comboStatusOptions = [
@@ -202,6 +248,9 @@ function openCreateCombo() {
   comboFormItems.value = []
   comboProductQuery.value = ''
   comboSearchResults.value = []
+  comboItemType.value = 'product'
+  comboBundleId.value = ''
+  void fetchComboBundles()
   showComboForm.value = true
 }
 
@@ -215,14 +264,30 @@ function openEditCombo(combo: Combo) {
     status: combo.status,
   }
   comboFormItems.value = (combo.items || []).map((item) => ({
-    product_id: item.product_id,
-    product_name: item.product_name,
-    product_code: item.product_code,
+    item_type: item.item_type || 'product',
+    product_id: item.product_id || '',
+    product_name: item.product_name || '',
+    product_code: item.product_code || '',
+    bundle_id: item.bundle_id || '',
+    bundle_name: item.bundle_name || '',
     quantity: item.quantity,
   }))
   comboProductQuery.value = ''
   comboSearchResults.value = []
+  comboItemType.value = 'product'
+  comboBundleId.value = ''
+  void fetchComboBundles()
   showComboForm.value = true
+}
+
+async function fetchComboBundles() {
+  if (!props.inventoryId) return
+  try {
+    const res = await loadBundles(props.inventoryId, 'active')
+    comboBundles.value = res.data?.items || []
+  } catch {
+    comboBundles.value = []
+  }
 }
 
 async function searchComboProducts() {
@@ -240,14 +305,19 @@ async function searchComboProducts() {
 }
 
 function addComboItem(product: Product) {
-  const existing = comboFormItems.value.find((item) => item.product_id === product._id)
+  const existing = comboFormItems.value.find(
+    (item) => item.item_type === 'product' && item.product_id === product._id,
+  )
   if (existing) {
     existing.quantity++
   } else {
     comboFormItems.value.push({
+      item_type: 'product',
       product_id: product._id,
       product_name: product.name,
       product_code: product.code,
+      bundle_id: '',
+      bundle_name: '',
       quantity: 1,
     })
   }
@@ -255,12 +325,36 @@ function addComboItem(product: Product) {
   comboSearchResults.value = []
 }
 
+function addComboBundle() {
+  const bundle = comboBundles.value.find((item) => item._id === comboBundleId.value)
+  if (!bundle) return
+  const existing = comboFormItems.value.find(
+    (item) => item.item_type === 'bundle' && item.bundle_id === bundle._id,
+  )
+  if (existing) {
+    existing.quantity++
+  } else {
+    comboFormItems.value.push({
+      item_type: 'bundle',
+      product_id: '',
+      product_name: bundle.name,
+      product_code: '',
+      bundle_id: bundle._id,
+      bundle_name: bundle.name,
+      quantity: 1,
+    })
+  }
+  comboBundleId.value = ''
+}
+
 async function handleSaveCombo() {
   if (!props.inventoryId || !comboForm.value.name.trim() || !comboFormItems.value.length) return
   saving.value = true
   try {
     const items = comboFormItems.value.map((item) => ({
-      product_id: item.product_id,
+      item_type: item.item_type,
+      product_id: item.item_type === 'product' ? item.product_id : '',
+      bundle_id: item.item_type === 'bundle' ? item.bundle_id : '',
       quantity: Number(item.quantity) || 1,
     }))
     if (editingCombo.value) {

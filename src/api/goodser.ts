@@ -15,6 +15,7 @@ import type {
   SeriesSummary, Combo, CreateComboReq, UpdateComboReq,
   Bundle, CreateBundleReq, UpdateBundleReq, BundleMainProduct, BundleSubProduct,
   BundlePreviewReq, BundlePreviewResp, StatsOverview,
+  BundlePool, CreateBundlePoolReq, UpdateBundlePoolReq,
 } from '@/types/goodser'
 
 // Inventories
@@ -243,6 +244,33 @@ export function deleteBundle(bundleId: string) {
   return deleteResponse<any>(`zzz-goodser/bundles/${bundleId}`)
 }
 
+// ---- 捆物池 ----
+export function loadBundlePools(
+  inventoryId: string,
+  status?: 'active' | 'inactive',
+) {
+  return getResponse<{ items: BundlePool[] }>('zzz-goodser/bundle-pools', {
+    inventory_id: inventoryId,
+    ...(status ? { status } : {}),
+  })
+}
+
+export function getBundlePool(poolId: string) {
+  return getResponse<BundlePool>(`zzz-goodser/bundle-pools/${poolId}`)
+}
+
+export function createBundlePool(data: CreateBundlePoolReq) {
+  return postResponse<BundlePool>('zzz-goodser/bundle-pools', data)
+}
+
+export function updateBundlePool(data: UpdateBundlePoolReq) {
+  return putResponse<BundlePool>(`zzz-goodser/bundle-pools/${data.id}`, data)
+}
+
+export function deleteBundlePool(poolId: string) {
+  return deleteResponse<any>(`zzz-goodser/bundle-pools/${poolId}`)
+}
+
 export function loadBundleMainProducts(bundleId: string, keyword?: string) {
   return getResponse<{ items: BundleMainProduct[] }>(
     `zzz-goodser/bundles/${bundleId}/main-products`,
@@ -260,8 +288,7 @@ export function loadBundleSubProducts(
   )
 }
 
-export function previewBundle(bundleId: string, data: BundlePreviewReq) {
-  return postResponse<BundlePreviewResp>(`zzz-goodser/bundles/${bundleId}/preview`, data)
+export function previewBundle(bundleId: string, data: BundlePreviewReq) {  return postResponse<BundlePreviewResp>(`zzz-goodser/bundles/${bundleId}/preview`, data)
 }
 
 // ---- P1.5: 统计 ----
