@@ -78,6 +78,15 @@ request.interceptors.response.use(
         isRefreshing = false
       }
     }
+    // 后端在非 2xx 时仍返回统一结构 { code, message }，优先透出服务端文案，
+    // 避免前端只显示 "Request failed with status code 502"。
+    const serverMessage = error.response?.data?.message
+    if (serverMessage) {
+      const wrapped = new Error(serverMessage) as Error & { response?: unknown; config?: unknown }
+      wrapped.response = error.response
+      wrapped.config = error.config
+      return Promise.reject(wrapped)
+    }
     return Promise.reject(error)
   },
 )

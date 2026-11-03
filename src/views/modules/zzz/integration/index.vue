@@ -39,6 +39,17 @@
               <span>超时 {{ item.timeout_seconds || 10 }}s</span>
               <span>订阅 {{ topicsLabel(item) }}</span>
             </div>
+            <div v-if="testResults[item.id]" class="integration__test">
+              <NkTag size="sm" :type="testResults[item.id].ok ? 'success' : 'danger'">
+                {{ testResults[item.id].ok ? '测试成功' : '测试失败' }}
+              </NkTag>
+              <span class="integration__test-time">{{ formatDate(testResults[item.id].at) }}</span>
+              <span
+                v-if="testResults[item.id].message"
+                class="integration__test-msg"
+                :title="testResults[item.id].message"
+              >{{ testResults[item.id].message }}</span>
+            </div>
             <div class="integration__actions">
               <NkButton size="xs" variant="ghost" :loading="testingId === item.id" @click="handleTest(item)">发送测试</NkButton>
               <NkButton size="xs" variant="ghost" @click="openEdit(item)">编辑</NkButton>
@@ -51,14 +62,16 @@
       <!-- 事件 -->
       <div v-if="activeTab === 'events'" class="integration__tab">
         <div class="integration__toolbar">
-          <NkSelect v-model="eventStatus" :options="statusOptions" size="sm" style="width:160px" @change="fetchEvents" />
+          <NkSelect v-model="eventStatus" :options="statusOptions" size="sm" style="width: 130px" @change="fetchEvents" />
+          <NkSelect v-model="eventTopic" :options="topicOptions" size="sm" style="width: 220px" @change="fetchEvents" />
           <NkButton size="sm" variant="ghost" :loading="loadingEvents" @click="fetchEvents">刷新</NkButton>
+          <NkButton v-if="hasEventFilter" size="sm" variant="ghost" @click="resetEventFilter">清空筛选</NkButton>
           <span class="integration__count">共 {{ events.length }} 条</span>
         </div>
 
         <NkLoading v-if="loadingEvents" />
         <div v-else-if="!events.length" class="integration__empty">
-          <NkEmpty description="暂无外盒事件" />
+          <NkEmpty :description="hasEventFilter ? '未匹配事件，试试清空筛选' : '暂无外盒事件，触发一次库存或订单操作后再来查看'" />
         </div>
         <div v-else class="integration__event-list">
           <NkCard v-for="event in events" :key="event.id" class="integration__event">
@@ -117,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import {
   loadConnectors, createConnector, updateConnector, deleteConnector,
@@ -136,12 +149,17 @@ const loadingConnectors = ref(false)
 const events = ref<IntegrationEvent[]>([])
 const loadingEvents = ref(false)
 const eventStatus = ref('')
+const eventTopic = ref('')
+const topicOptions = ref<Array<{ label: string; value: string }>>([{ label: '全部主题', value: '' }])
 const statusOptions = [
   { label: '全部状态', value: '' },
   { label: '待投递', value: 'pending' },
   { label: '已投递', value: 'delivered' },
   { label: '失败', value: 'failed' },
 ]
+const hasEventFilter = computed(() => !!eventStatus.value || !!eventTopic.value)
+const testResults = ref<Record<string, { ok: boolean; message: string; at: string }>>({})
+const TEST_RESULT_KEY = 'goodser_integration_test_results'
 
 const dispatching = ref(false)
 const testingId = ref('')
@@ -174,12 +192,59 @@ async function fetchConnectors() {
 async function fetchEvents() {
   loadingEvents.value = true
   try {
-    const res = await loadEvents({ status: eventStatus.value || undefined, limit: 100 })
+    const res = await loadEvents({
+      status: eventStatus.value || undefined,
+      topic: eventTopic.value || undefined,
+      limit: 100,
+    })
     events.value = res.data?.items || []
   } catch (e: any) {
     NKMessage.error(e?.message || '加载事件失败')
   } finally {
     loadingEvents.value = false
+  }
+}
+
+async function fetchTopicOptions() {
+  try {
+    const res = await loadEvents({ limit: 200 })
+    const topics = Array.from(
+      new Set((res.data?.items || []).map((event) => event.topic).filter(Boolean)),
+    ).sort()
+    topicOptions.value = [
+      { label: '全部主题', value: '' },
+      ...topics.map((topic) => ({ label: topic, value: topic })),
+    ]
+  } catch {
+    topicOptions.value = [{ label: '全部主题', value: '' }]
+  }
+}
+
+function resetEventFilter() {
+  eventStatus.value = ''
+  eventTopic.value = ''
+  fetchEvents()
+}
+
+function loadTestResults() {
+  try {
+    const raw = localStorage.getItem(TEST_RESULT_KEY)
+    if (raw) testResults.value = JSON.parse(raw)
+  } catch {
+    testResults.value = {}
+  }
+}
+
+function recordTest(id: string, ok: boolean, message: string) {
+  const next = {
+    ...testResults.value,
+    [id]: { ok, message, at: new Date().toISOString() },
+  }
+  testResults.value = next
+  try {
+    localStorage.setItem(TEST_RESULT_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore quota errors */
   }
 }
 
@@ -253,9 +318,12 @@ async function handleDelete() {
 async function handleTest(item: IntegrationConnector) {
   testingId.value = item.id
   try {
-    await testConnector(item.id)
-    NKMessage.success('测试事件已发送')
+    const res = await testConnector(item.id)
+    const sent = res.data?.sent !== false
+    recordTest(item.id, sent, sent ? '' : '服务端未发送测试事件')
+    NKMessage[sent ? 'success' : 'warning'](sent ? '测试事件已发送' : '测试事件未发送')
   } catch (e: any) {
+    recordTest(item.id, false, e?.message || '测试事件发送失败')
     NKMessage.error(e?.message || '测试事件发送失败')
   } finally {
     testingId.value = ''
@@ -303,11 +371,17 @@ function formatDate(value: string) {
 }
 
 watch(activeTab, (tab) => {
-  if (tab === 'events') fetchEvents()
+  if (tab === 'events') {
+    fetchEvents()
+    fetchTopicOptions()
+  }
   if (tab === 'connectors') fetchConnectors()
 })
 
-onMounted(fetchConnectors)
+onMounted(() => {
+  loadTestResults()
+  fetchConnectors()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -317,6 +391,9 @@ onMounted(fetchConnectors)
   &__header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: $nk-spacing-sm;
+    flex-wrap: wrap;
     align-items: flex-start;
     margin-bottom: $nk-spacing-lg;
   }
@@ -406,6 +483,7 @@ onMounted(fetchConnectors)
     align-items: center;
     gap: $nk-spacing-sm;
     margin-bottom: $nk-spacing-md;
+    flex-wrap: wrap;
   }
 
   &__count {
@@ -449,6 +527,30 @@ onMounted(fetchConnectors)
     color: #cf1322;
     font-size: $nk-font-size-xs;
     word-break: break-all;
+  }
+
+  &__test {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-xs;
+    margin-top: $nk-spacing-sm;
+    padding-top: $nk-spacing-sm;
+    border-top: 1px dashed $nk-color-neutral-100;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-500;
+    min-width: 0;
+  }
+
+  &__test-time {
+    flex-shrink: 0;
+  }
+
+  &__test-msg {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $nk-color-error;
   }
 
   &__payload {
