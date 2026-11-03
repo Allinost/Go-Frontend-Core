@@ -83,7 +83,12 @@
               placeholder="数量"
             />
           </div>
-          <p v-if="orderForm.combo_id" class="goodser__return-tip">提交后会按组件明细展开并扣减组件库存。</p>
+          <p v-if="orderForm.combo_id && comboGuardMessage" class="goodser__return-tip" style="color: #d4380d">
+            {{ comboGuardMessage }}
+          </p>
+          <p v-else-if="orderForm.combo_id" class="goodser__return-tip">
+            可售 {{ comboAvailability }} 套 · 提交后会按组件明细展开并扣减组件库存。
+          </p>
         </div>
         <div class="goodser__form-field">
           <label class="goodser__form-label">捆（可选）</label>
@@ -172,7 +177,8 @@
           :disabled="
             !orderForm.order_no.trim() ||
             (!orderFormItems.length && !orderForm.combo_id && !bundleOrder.bundle_id) ||
-            (!!bundleOrder.bundle_id && !bundlePreview)
+            (!!bundleOrder.bundle_id && !bundlePreview) ||
+            !!comboGuardMessage
           "
           @click="handleCreateOrder"
         >
@@ -424,6 +430,18 @@ const comboSelectOptions = computed(() =>
     .filter((c) => c.status === 'active')
     .map((c) => ({ label: `${c.name}（可售 ${c.availability}）`, value: c._id })),
 )
+const selectedCombo = computed(
+  () => combos.value.find((c) => c._id === orderForm.value.combo_id) || null,
+)
+const comboAvailability = computed(() => Number(selectedCombo.value?.availability) || 0)
+const comboGuardMessage = computed(() => {
+  if (!orderForm.value.combo_id) return ''
+  if (!selectedCombo.value) return '组合包不存在或已删除，请重新选择'
+  if (comboAvailability.value <= 0) return '该组合包可售为 0，请先补货或改选其他商品'
+  const quantity = Number(orderForm.value.combo_quantity) || 1
+  if (quantity > comboAvailability.value) return `组合包最多可下单 ${comboAvailability.value} 套`
+  return ''
+})
 const bundleSelectOptions = computed(() =>
   bundles.value
     .filter((b) => b.status === 'active')
@@ -523,6 +541,10 @@ function addOrderItem(product: Product) {
 async function handleCreateOrder() {
   if (!props.inventoryId || !orderForm.value.order_no.trim()) return
   if (!orderFormItems.value.length && !orderForm.value.combo_id && !bundleOrder.value.bundle_id) return
+  if (comboGuardMessage.value) {
+    NKMessage.warning(comboGuardMessage.value)
+    return
+  }
   if (bundleOrder.value.bundle_id && !bundlePreview.value) return
   saving.value = true
   try {

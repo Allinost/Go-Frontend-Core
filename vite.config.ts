@@ -9,6 +9,10 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  // @nkui/vue 以源码（junction）方式链接，跳过预构建，避免 dev 使用过期缓存。
+  optimizeDeps: {
+    exclude: ['@nkui/vue'],
+  },
   css: {
     preprocessorOptions: {
       scss: {
