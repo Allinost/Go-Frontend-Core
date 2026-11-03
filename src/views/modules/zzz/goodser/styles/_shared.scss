@@ -157,6 +157,113 @@
   }
 
   // ---- Forms ----
+  &__detail-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-md;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__detail-label {
+    color: $nk-color-neutral-500;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  &__detail-item {
+    padding-left: 80px;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+  }
+
+  &__order-list {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-md;
+  }
+
+  &__order-card {
+    cursor: pointer;
+    transition: box-shadow $nk-duration-fast;
+
+    &:hover {
+      box-shadow: $nk-shadow-md;
+    }
+  }
+
+  &__order-detail {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-sm;
+  }
+
+  &__return-form {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-sm;
+  }
+
+  &__return-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    padding: $nk-spacing-xs $nk-spacing-sm;
+    background: $nk-color-neutral-50;
+    border-radius: $nk-radius-md;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__return-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__return-max {
+    color: $nk-color-neutral-500;
+    font-size: $nk-font-size-xs;
+    flex-shrink: 0;
+  }
+
+  &__return-item {
+    padding: $nk-spacing-sm;
+    border: 1px solid $nk-color-neutral-200;
+    border-radius: $nk-radius-md;
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-xs;
+  }
+
+  &__return-item-head {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    font-size: $nk-font-size-xs;
+  }
+
+  &__return-reason {
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-date {
+    margin-left: auto;
+    color: $nk-color-neutral-500;
+  }
+
+  &__return-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: $nk-font-size-sm;
+    color: $nk-color-neutral-700;
+  }
+
+  &__return-item-line {
+    display: block;
+  }
+
   &__order-form {
     display: flex;
     flex-direction: column;
