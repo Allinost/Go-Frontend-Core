@@ -946,25 +946,6 @@ watch(
     margin-top: 4px;
   }
 
-  &__pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: $nk-spacing-md;
-    padding: $nk-spacing-lg;
-  }
-
-  &__page-jump {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  &__page-info {
-    font-size: $nk-font-size-sm;
-    color: $nk-color-neutral-600;
-  }
-
   &__filter-section {
     margin-bottom: $nk-spacing-md;
   }

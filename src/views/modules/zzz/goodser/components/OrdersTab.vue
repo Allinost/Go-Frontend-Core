@@ -43,11 +43,39 @@
           <NkButton size="xs" variant="ghost" @click="openReturnDialog(o)">退货</NkButton>
         </div>
       </NkCard>
-      <div v-if="ordersHasMore" class="goodser__load-more">
-        <NkButton size="sm" variant="ghost" :loading="loadingMoreOrders" @click="fetchOrders(true)">
-          加载更多
-        </NkButton>
+    </div>
+    <div v-if="orders.length" class="goodser__pagination">
+      <NkButton size="sm" variant="ghost" :disabled="ordersPage <= 1" @click="fetchOrders(ordersPage - 1)">
+        上一页
+      </NkButton>
+      <NkSelect
+        :model-value="ordersPageSize"
+        :options="pageSizeOptions"
+        size="sm"
+        style="width: 110px"
+        @update:model-value="onPageSizeChange"
+      />
+      <div class="goodser__page-jump">
+        <NkInput
+          v-model="jumpPage"
+          type="number"
+          size="xs"
+          style="width: 60px"
+          :min="1"
+          :max="ordersTotalPages"
+          @keyup.enter="handleJumpPage"
+        />
+        <NkButton size="xs" variant="ghost" :disabled="!jumpPage" @click="handleJumpPage">跳转</NkButton>
       </div>
+      <span class="goodser__page-info">{{ ordersPage }} / {{ ordersTotalPages }}</span>
+      <NkButton
+        size="sm"
+        variant="ghost"
+        :disabled="ordersPage >= ordersTotalPages"
+        @click="fetchOrders(ordersPage + 1)"
+      >
+        下一页
+      </NkButton>
     </div>
 
     <!-- Create Order (Outbound/Reserve) -->
@@ -399,10 +427,11 @@ const emit = defineEmits<{
 
 const orders = ref<OutboundOrder[]>([])
 const loadingOrders = ref(false)
-const loadingMoreOrders = ref(false)
 const ordersPage = ref(1)
-const ordersHasMore = ref(false)
+const ordersPageSize = ref(20)
 const ordersTotal = ref(0)
+const jumpPage = ref<number | null>(null)
+const pageSizeOptions = [10, 20, 50, 100].map((value) => ({ label: `${value} 条/页`, value }))
 const saving = ref(false)
 const showOrderForm = ref(false)
 const showOrderDetail = ref(false)
@@ -557,24 +586,51 @@ async function runConfirmAction() {
   else await handleConfirmReturn(action.ret)
 }
 
-async function fetchOrders(append = false) {
+async function fetchOrders(page = ordersPage.value) {
   if (!props.inventoryId) return
-  const page = append ? ordersPage.value + 1 : 1
-  if (append) loadingMoreOrders.value = true
-  else loadingOrders.value = true
+  loadingOrders.value = true
   try {
-    const res = await loadOutboundOrders({ inventory_id: props.inventoryId, page, page_size: 50 })
-    const items = res.data?.items || []
-    orders.value = append ? [...orders.value, ...items] : items
+    const request = (target: number) =>
+      loadOutboundOrders({
+        inventory_id: props.inventoryId,
+        page: target,
+        page_size: ordersPageSize.value,
+      })
+    let res = await request(page)
+    let items = res.data?.items || []
+    let total = res.data?.total || 0
+    let totalPages = Math.max(1, Math.ceil(total / ordersPageSize.value))
+    // 删除/取消后当前页可能已空，回退到最后一页。
+    if (page > totalPages) {
+      page = totalPages
+      res = await request(page)
+      items = res.data?.items || []
+      total = res.data?.total || 0
+      totalPages = Math.max(1, Math.ceil(total / ordersPageSize.value))
+    }
+    orders.value = items
     ordersPage.value = page
-    ordersHasMore.value = !!res.data?.has_more
-    ordersTotal.value = res.data?.total || orders.value.length
+    ordersTotal.value = total
+    jumpPage.value = null
   } catch (err: any) {
     NKMessage.error(err.message || '加载订单失败')
   } finally {
     loadingOrders.value = false
-    loadingMoreOrders.value = false
   }
+}
+
+const ordersTotalPages = computed(() => Math.max(1, Math.ceil(ordersTotal.value / ordersPageSize.value)))
+
+function onPageSizeChange(value: number) {
+  ordersPageSize.value = Number(value) || 20
+  fetchOrders(1)
+}
+
+function handleJumpPage() {
+  const target = Number(jumpPage.value)
+  if (!target) return
+  const page = Math.min(Math.max(1, Math.round(target)), ordersTotalPages.value)
+  fetchOrders(page)
 }
 
 async function fetchCombos() {
@@ -698,7 +754,7 @@ async function handleCreateOrder() {
     })
     NKMessage.success('创建成功')
     showOrderForm.value = false
-    await fetchOrders()
+    await fetchOrders(1)
     emit('changed')
   } catch (err: any) {
     NKMessage.error(err.message || '创建失败')
@@ -716,9 +772,21 @@ function openOrderDetail(order: OutboundOrder) {
 
 async function openOrderById(outboundOrderId: string) {
   let order = orders.value.find((item) => item._id === outboundOrderId)
-  if (!order) {
-    await fetchOrders()
-    order = orders.value.find((item) => item._id === outboundOrderId)
+  if (!order && props.inventoryId) {
+    // 关联单可能不在当前页，逐页按 100 条回查。
+    let page = 1
+    while (page <= 50) {
+      const res = await loadOutboundOrders({
+        inventory_id: props.inventoryId,
+        page,
+        page_size: 100,
+      })
+      const items = res.data?.items || []
+      order = items.find((item) => item._id === outboundOrderId)
+      if (order) break
+      if (!res.data?.has_more) break
+      page++
+    }
   }
   if (order) {
     openOrderDetail(order)
@@ -999,19 +1067,11 @@ onMounted(async () => {
 watch(
   () => props.inventoryId,
   () => {
-    fetchOrders()
+    fetchOrders(1)
   },
 )
 </script>
 
 <style lang="scss" scoped>
 @use '../styles/shared';
-
-.goodser {
-  &__load-more {
-    display: flex;
-    justify-content: center;
-    padding-top: $nk-spacing-md;
-  }
-}
 </style>
