@@ -54,6 +54,17 @@
           </div>
         </div>
 
+        <div class="goodser__batch-bar" v-if="products.length">
+          <div @click.stop>
+            <NkCheckbox size="sm" :model-value="allPageSelected" @change="toggleSelectAllProducts">全选本页</NkCheckbox>
+          </div>
+          <span v-if="selectedProductIds.length" class="goodser__count">已选 {{ selectedProductIds.length }} 件</span>
+          <div v-if="selectedProductIds.length" class="goodser__batch-actions">
+            <NkButton size="xs" variant="ghost" @click="clearProductSelection">取消选择</NkButton>
+            <NkButton size="xs" variant="ghost" type="danger" @click="showBatchDeleteDialog = true">批量删除</NkButton>
+          </div>
+        </div>
+
         <NkLoading v-if="loadingProducts" />
         <div v-else-if="!products.length" class="goodser__empty">
           <NkEmpty :description="productQuery || hasProductFilter ? '未匹配商品' : '暂无商品，点击上方按钮新建'" />
@@ -66,7 +77,16 @@
             @click="openProductDetail(p)"
           >
             <div class="goodser__product-card-top">
-              <div class="goodser__product-code">{{ p.code }}</div>
+              <div class="goodser__product-card-left">
+                <div @click.stop>
+                  <NkCheckbox
+                    size="sm"
+                    :model-value="selectedProductIds.includes(p._id)"
+                    @change="toggleProductSelection(p._id, $event)"
+                  />
+                </div>
+                <div class="goodser__product-code">{{ p.code }}</div>
+              </div>
               <NkTag size="sm">{{ p.status_code }}</NkTag>
             </div>
             <div class="goodser__product-name">{{ p.name }}</div>
@@ -262,6 +282,7 @@
               @change="fetchStats"
             />
             <NkButton size="sm" variant="ghost" @click="fetchStats">刷新</NkButton>
+            <NkButton size="sm" variant="ghost" :disabled="!stats" @click="exportStatsCSV">导出 CSV</NkButton>
           </div>
         </div>
         <NkLoading v-if="loadingStats" />
@@ -318,9 +339,16 @@
             <div class="goodser__stat-legend">
               <span><i class="goodser__stat-dot goodser__stat-dot--out"></i>出库</span>
               <span><i class="goodser__stat-dot goodser__stat-dot--ret"></i>退货回库</span>
+              <span class="goodser__stat-legend-hint">点击柱子查看单日明细</span>
             </div>
             <div class="goodser__stat-trend">
-              <div v-for="p in stats.trend" :key="p.date" class="goodser__stat-trend-col">
+              <div
+                v-for="p in stats.trend"
+                :key="p.date"
+                class="goodser__stat-trend-col"
+                :class="{ 'goodser__stat-trend-col--active': p.date === selectedTrendDate }"
+                @click="selectTrendPoint(p.date)"
+              >
                 <div class="goodser__stat-trend-bars">
                   <div
                     class="goodser__stat-bar goodser__stat-bar--out"
@@ -335,6 +363,14 @@
                 </div>
                 <span class="goodser__stat-trend-label">{{ p.date.slice(5) }}</span>
               </div>
+            </div>
+            <div v-if="selectedTrendPoint" class="goodser__stat-trend-detail">
+              <div class="goodser__stat-trend-detail-head">
+                <strong>{{ selectedTrendPoint.date }}</strong>
+                <span>净变化 {{ selectedTrendPoint.outbound_quantity - selectedTrendPoint.return_quantity }}</span>
+              </div>
+              <div class="goodser__stat-kv"><span>出库数量</span><strong>{{ selectedTrendPoint.outbound_quantity }}</strong></div>
+              <div class="goodser__stat-kv"><span>退货回库</span><strong>{{ selectedTrendPoint.return_quantity }}</strong></div>
             </div>
           </NkCard>
 
@@ -539,6 +575,15 @@
       <template #footer>
         <NkButton variant="ghost" @click="showDeleteInvDialog = false">取消</NkButton>
         <NkButton type="danger" :loading="saving" @click="handleDeleteInventory">删除</NkButton>
+      </template>
+    </NkDialog>
+
+    <!-- Product Filter -->
+    <NkDialog v-model:visible="showBatchDeleteDialog" title="批量删除商品" :width="420">
+      <p>确定删除已选的 <strong>{{ selectedProductIds.length }}</strong> 件商品吗？仅可用与锁定库存均为 0 的商品可删除，删除后不可恢复。</p>
+      <template #footer>
+        <NkButton variant="ghost" @click="showBatchDeleteDialog = false">取消</NkButton>
+        <NkButton type="danger" :loading="batchDeleting" @click="handleBatchDeleteProducts">删除</NkButton>
       </template>
     </NkDialog>
 
@@ -1700,10 +1745,52 @@ async function searchProducts() {
 
 const pageSize = 20
 const productTotalPages = computed(() => Math.ceil(productTotal.value / pageSize) || 1)
+const selectedProductIds = ref<string[]>([])
+const allPageSelected = computed(() => products.value.length > 0 && products.value.every((p) => selectedProductIds.value.includes(p._id)))
+const showBatchDeleteDialog = ref(false)
+const batchDeleting = ref(false)
+
+function toggleProductSelection(id: string, checked: boolean) {
+  if (checked) {
+    if (!selectedProductIds.value.includes(id)) selectedProductIds.value.push(id)
+  } else {
+    selectedProductIds.value = selectedProductIds.value.filter((item) => item !== id)
+  }
+}
+
+function toggleSelectAllProducts(checked: boolean) {
+  selectedProductIds.value = checked ? products.value.map((p) => p._id) : []
+}
+
+function clearProductSelection() {
+  selectedProductIds.value = []
+}
+
+async function handleBatchDeleteProducts() {
+  if (!selectedProductIds.value.length) return
+  batchDeleting.value = true
+  let success = 0
+  let failed = 0
+  for (const id of [...selectedProductIds.value]) {
+    try {
+      await deleteProduct({ id })
+      success++
+    } catch {
+      failed++
+    }
+  }
+  batchDeleting.value = false
+  showBatchDeleteDialog.value = false
+  selectedProductIds.value = []
+  if (success) NKMessage.success(`已删除 ${success} 件商品`)
+  if (failed) NKMessage.error(`${failed} 件商品删除失败，请检查库存或关联数据`)
+  await searchProducts()
+}
 
 async function goToPage(page: number) {
   if (!currentInventoryId.value || page < 1) return
   productPage.value = page
+  selectedProductIds.value = []
   loadingProducts.value = true
   try {
     const hasFilters = hasProductFilter.value || !!productSortBy.value || !!productQuery.value
@@ -3309,6 +3396,15 @@ const statsMaxSeries = computed(() => {
   if (!stats.value) return 1
   return Math.max(1, ...stats.value.series.map(r => r.total))
 })
+const selectedTrendDate = ref('')
+const selectedTrendPoint = computed(() => {
+  const value = stats.value
+  if (!value) return null
+  return value.trend.find(p => p.date === selectedTrendDate.value) || null
+})
+function selectTrendPoint(date: string) {
+  selectedTrendDate.value = date
+}
 function trendHeight(value: number) {
   if (!value) return 2
   return Math.max(4, Math.round((value / statsMaxTrend.value) * 100))
@@ -3323,11 +3419,60 @@ async function fetchStats() {
   try {
     const res = await getInventoryStats(currentInventoryId.value, statsDays.value)
     stats.value = res.data || null
+    const trend = stats.value?.trend || []
+    const latest = [...trend].reverse().find(p => p.outbound_quantity || p.return_quantity) || trend[trend.length - 1]
+    selectedTrendDate.value = latest?.date || ''
   } catch (e: any) {
     NKMessage.error(e?.message || '加载统计失败')
   } finally {
     loadingStats.value = false
   }
+}
+
+function exportStatsCSV() {
+  const value = stats.value
+  if (!value) return
+  const rows: string[][] = []
+  const push = (...cells: Array<string | number>) => rows.push(cells.map((cell) => String(cell)))
+  push('统计区间', `近 ${value.days} 天`)
+  push('生成时间', formatDate(value.generated_at))
+  push('')
+  push('库存指标', '数值')
+  push('商品数', value.stock.total_products)
+  push('可售库存', value.stock.available)
+  push('已锁定', value.stock.reserved)
+  push('库存总量', value.stock.total)
+  push('库存总值', value.stock.stock_value)
+  push('缺货商品数', value.stock.out_of_stock)
+  push('')
+  push('订单与退货', '数量')
+  push('待确认出库', value.orders.pending_outbound)
+  push('已确认出库', value.orders.confirmed_outbound)
+  push('已取消出库', value.orders.cancelled_outbound)
+  push('待处理预留', value.orders.pending_reserves)
+  push('待确认退货', value.orders.pending_returns)
+  push('已确认退货', value.orders.confirmed_returns)
+  push('')
+  push('日期', '出库数量', '退货回库', '净变化')
+  value.trend.forEach((p) => push(p.date, p.outbound_quantity, p.return_quantity, p.outbound_quantity - p.return_quantity))
+  push('')
+  push('系列', '商品数', '可售', '锁定', '总量', '库存价值')
+  value.series.forEach((row) => push(row.series_name, row.product_count, row.available, row.reserved, row.total, row.stock_value))
+  push('')
+  push('商品', '编码', '确认出库量')
+  value.top_products.forEach((p) => push(p.product_name || p.product_code, p.product_code, p.outbound_quantity))
+
+  const escape = (text: string) => `"${text.replace(/"/g, '""')}"`
+  const csv = '\uFEFF' + rows.map((row) => row.map(escape).join(',')).join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${value.inventory_name}-统计-${value.days}天.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 // ---- Watchers ----
@@ -3515,6 +3660,23 @@ onMounted(async () => {
   }
 
   // ---- Product Cards ----
+  &__batch-bar {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-md;
+    margin-bottom: $nk-spacing-md;
+    padding: 8px 12px;
+    border-radius: $nk-radius-md;
+    background: $nk-color-primary-50;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__batch-actions {
+    display: flex;
+    gap: $nk-spacing-xs;
+    margin-left: auto;
+  }
+
   &__product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -3535,6 +3697,13 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: $nk-spacing-xs;
+  }
+
+  &__product-card-left {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+    min-width: 0;
   }
 
   &__product-code {
@@ -4250,10 +4419,17 @@ onMounted(async () => {
 
   &__stat-legend {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: $nk-spacing-md;
     margin-bottom: $nk-spacing-sm;
     font-size: $nk-font-size-xs;
     color: $nk-color-neutral-500;
+  }
+
+  &__stat-legend-hint {
+    margin-left: auto;
+    color: $nk-color-primary-600;
   }
 
   &__stat-dot {
@@ -4288,6 +4464,18 @@ onMounted(async () => {
     gap: 4px;
     min-width: 22px;
     flex: 1;
+    padding: 4px 2px;
+    border-radius: $nk-radius-sm;
+    cursor: pointer;
+    transition: background $nk-duration-fast;
+
+    &:hover {
+      background: $nk-color-neutral-50;
+    }
+
+    &--active {
+      background: $nk-color-primary-50;
+    }
   }
 
   &__stat-trend-bars {
@@ -4315,6 +4503,26 @@ onMounted(async () => {
     font-size: 10px;
     color: $nk-color-neutral-400;
     white-space: nowrap;
+  }
+
+  &__stat-trend-detail {
+    margin-top: $nk-spacing-sm;
+    padding: $nk-spacing-sm $nk-spacing-md;
+    border-radius: $nk-radius-md;
+    background: $nk-color-primary-50;
+  }
+
+  &__stat-trend-detail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: $nk-font-size-sm;
+
+    span {
+      color: $nk-color-neutral-500;
+      font-size: $nk-font-size-xs;
+    }
   }
 
   &__stat-series {
