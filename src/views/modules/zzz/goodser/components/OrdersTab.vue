@@ -1,7 +1,7 @@
 <template>
   <div class="goodser__tab">
     <div class="goodser__tab-header">
-      <span class="goodser__count">共 {{ orders.length }} 个订单</span>
+      <span class="goodser__count">共 {{ ordersTotal || orders.length }} 个订单</span>
       <div>
         <NkButton size="sm" variant="ghost" style="margin-right: 8px" @click="openCreateOrder('reserve')">
           新建预留
@@ -32,17 +32,22 @@
         <div v-if="o.status === 'pending'" class="goodser__order-actions" @click.stop>
           <template v-if="o.type === 'reserve'">
             <NkButton size="xs" variant="ghost" @click="openConvertReserve(o)">转出库</NkButton>
-            <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReserve(o)">取消预留</NkButton>
+            <NkButton size="xs" variant="ghost" type="danger" @click="askOrderAction(o, 'cancelReserve')">取消预留</NkButton>
           </template>
           <template v-else>
-            <NkButton size="xs" variant="ghost" @click="handleConfirmOrder(o)">确认出库</NkButton>
-            <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelOrder(o)">取消</NkButton>
+            <NkButton size="xs" variant="ghost" @click="askOrderAction(o, 'confirm')">确认出库</NkButton>
+            <NkButton size="xs" variant="ghost" type="danger" @click="askOrderAction(o, 'cancel')">取消</NkButton>
           </template>
         </div>
         <div v-else-if="canReturn(o)" class="goodser__order-actions" @click.stop>
           <NkButton size="xs" variant="ghost" @click="openReturnDialog(o)">退货</NkButton>
         </div>
       </NkCard>
+      <div v-if="ordersHasMore" class="goodser__load-more">
+        <NkButton size="sm" variant="ghost" :loading="loadingMoreOrders" @click="fetchOrders(true)">
+          加载更多
+        </NkButton>
+      </div>
     </div>
 
     <!-- Create Order (Outbound/Reserve) -->
@@ -154,7 +159,14 @@
         </div>
         <div v-if="!bundleOrder.bundle_id" class="goodser__form-field">
           <label class="goodser__form-label">商品 (搜索添加)</label>
-          <NkInput v-model="orderProductQuery" placeholder="搜索商品..." size="sm" @keyup.enter="searchOrderProducts" />
+          <NkInput
+            v-model="orderProductQuery"
+            placeholder="搜索商品..."
+            size="sm"
+            clearable
+            @clear="orderSearchResults = []"
+            @keyup.enter="searchOrderProducts"
+          />
           <div v-if="orderSearchResults.length" class="goodser__order-search-results">
             <div v-for="r in orderSearchResults" :key="r._id" class="goodser__order-search-item" @click="addOrderItem(r)">
               <span>{{ r.code }} - {{ r.name }}</span>
@@ -248,7 +260,7 @@
               </span>
             </div>
             <div v-if="ret.status === 'pending'" class="goodser__order-actions">
-              <NkButton size="xs" variant="ghost" @click="handleConfirmReturn(ret)">确认退货</NkButton>
+              <NkButton size="xs" variant="ghost" @click="askConfirmReturn(ret)">确认退货</NkButton>
               <NkButton size="xs" variant="ghost" type="danger" @click="handleCancelReturn(ret)">取消</NkButton>
             </div>
           </div>
@@ -320,6 +332,16 @@
         <NkButton :loading="saving" :disabled="!convertOrderNo.trim()" @click="handleConvertReserve">确定</NkButton>
       </template>
     </NkDialog>
+
+    <ConfirmDialog
+      v-model:visible="confirmVisible"
+      :title="confirmTitle"
+      :message="confirmMessage"
+      :confirm-text="confirmButtonText"
+      :danger="confirmDanger"
+      :loading="saving"
+      @confirm="runConfirmAction"
+    />
   </div>
 </template>
 
@@ -361,6 +383,7 @@ import {
   returnStatusLabel,
   returnStatusType,
 } from '../utils'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -376,6 +399,10 @@ const emit = defineEmits<{
 
 const orders = ref<OutboundOrder[]>([])
 const loadingOrders = ref(false)
+const loadingMoreOrders = ref(false)
+const ordersPage = ref(1)
+const ordersHasMore = ref(false)
+const ordersTotal = ref(0)
 const saving = ref(false)
 const showOrderForm = ref(false)
 const showOrderDetail = ref(false)
@@ -457,16 +484,96 @@ const bundleMainOrderOptions = computed(() =>
   })),
 )
 
-async function fetchOrders() {
+// ---- Confirm dialog ----
+type ConfirmAction =
+  | { kind: 'confirm'; order: OutboundOrder }
+  | { kind: 'cancel'; order: OutboundOrder }
+  | { kind: 'cancelReserve'; order: OutboundOrder }
+  | { kind: 'confirmReturn'; ret: ReturnOrder }
+const pendingAction = ref<ConfirmAction | null>(null)
+const confirmVisible = computed({
+  get: () => !!pendingAction.value,
+  set: (value: boolean) => {
+    if (!value) pendingAction.value = null
+  },
+})
+const confirmTitle = computed(() => {
+  switch (pendingAction.value?.kind) {
+    case 'confirm':
+      return '确认出库'
+    case 'cancel':
+      return '取消订单'
+    case 'cancelReserve':
+      return '取消预留'
+    case 'confirmReturn':
+      return '确认退货'
+    default:
+      return '确认操作'
+  }
+})
+const confirmMessage = computed(() => {
+  const action = pendingAction.value
+  if (!action) return ''
+  if (action.kind === 'confirm') {
+    return `确认出库单「${action.order.order_no}」吗？确认后将扣减可用库存。`
+  }
+  if (action.kind === 'cancel') {
+    return `确定取消出库单「${action.order.order_no}」吗？取消后不可恢复。`
+  }
+  if (action.kind === 'cancelReserve') {
+    return `确定取消预留「${action.order.order_no}」吗？释放的库存将回到可用库存。`
+  }
+  return `确认退货单「${action.ret.order_no}」吗？将按明细中的「回库」设置调整库存。`
+})
+const confirmButtonText = computed(() => {
+  switch (pendingAction.value?.kind) {
+    case 'confirm':
+      return '确认出库'
+    case 'confirmReturn':
+      return '确认退货'
+    default:
+      return '确定'
+  }
+})
+const confirmDanger = computed(
+  () => pendingAction.value?.kind === 'cancel' || pendingAction.value?.kind === 'cancelReserve',
+)
+
+function askOrderAction(order: OutboundOrder, kind: 'confirm' | 'cancel' | 'cancelReserve') {
+  pendingAction.value = kind === 'confirm' ? { kind, order } : { kind, order }
+}
+
+function askConfirmReturn(ret: ReturnOrder) {
+  pendingAction.value = { kind: 'confirmReturn', ret }
+}
+
+async function runConfirmAction() {
+  const action = pendingAction.value
+  if (!action) return
+  pendingAction.value = null
+  if (action.kind === 'confirm') await handleConfirmOrder(action.order)
+  else if (action.kind === 'cancel') await handleCancelOrder(action.order)
+  else if (action.kind === 'cancelReserve') await handleCancelReserve(action.order)
+  else await handleConfirmReturn(action.ret)
+}
+
+async function fetchOrders(append = false) {
   if (!props.inventoryId) return
-  loadingOrders.value = true
+  const page = append ? ordersPage.value + 1 : 1
+  if (append) loadingMoreOrders.value = true
+  else loadingOrders.value = true
   try {
-    const res = await loadOutboundOrders({ inventory_id: props.inventoryId, page: 1, page_size: 50 })
-    orders.value = res.data?.items || []
+    const res = await loadOutboundOrders({ inventory_id: props.inventoryId, page, page_size: 50 })
+    const items = res.data?.items || []
+    orders.value = append ? [...orders.value, ...items] : items
+    ordersPage.value = page
+    ordersHasMore.value = !!res.data?.has_more
+    ordersTotal.value = res.data?.total || orders.value.length
   } catch (err: any) {
     NKMessage.error(err.message || '加载订单失败')
   } finally {
     loadingOrders.value = false
+    loadingMoreOrders.value = false
   }
 }
 
@@ -490,9 +597,22 @@ async function fetchBundles() {
   }
 }
 
+function nextOrderNo(type: 'outbound' | 'reserve') {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return `${type === 'reserve' ? 'RSV' : 'OUT'}-${stamp}`
+}
+
 function openCreateOrder(type: 'outbound' | 'reserve', bundleId?: string) {
   orderFormType.value = type
-  orderForm.value = { order_no: '', order_info: '', remark: '', combo_id: '', combo_quantity: 1 }
+  orderForm.value = {
+    order_no: nextOrderNo(type),
+    order_info: '',
+    remark: '',
+    combo_id: '',
+    combo_quantity: 1,
+  }
   orderFormItems.value = []
   orderProductQuery.value = ''
   orderSearchResults.value = []
@@ -886,4 +1006,12 @@ watch(
 
 <style lang="scss" scoped>
 @use '../styles/shared';
+
+.goodser {
+  &__load-more {
+    display: flex;
+    justify-content: center;
+    padding-top: $nk-spacing-md;
+  }
+}
 </style>

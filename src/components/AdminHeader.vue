@@ -1,12 +1,28 @@
 <template>
   <header class="admin-header">
     <div class="admin-header__left">
+      <NkButton
+        class="admin-header__menu"
+        size="sm"
+        variant="ghost"
+        aria-label="打开导航菜单"
+        title="打开导航菜单"
+        @click="emit('toggle-sidebar')"
+      >
+        <NkIcon name="menu" />
+      </NkButton>
       <NkBreadcrumb v-if="breadcrumbs.length" :items="breadcrumbs" />
     </div>
     <div class="admin-header__right">
       <NkAvatar :text="authStore.username" size="sm" />
       <span class="admin-header__username">{{ authStore.username }}</span>
-      <NkButton size="sm" variant="ghost" @click="appStore.toggleTheme()">
+      <NkButton
+        size="sm"
+        variant="ghost"
+        :aria-label="appStore.theme === 'light' ? '切换到深色主题' : '切换到浅色主题'"
+        :title="appStore.theme === 'light' ? '切换到深色主题' : '切换到浅色主题'"
+        @click="appStore.toggleTheme()"
+      >
         <NkIcon :name="appStore.theme === 'light' ? 'moon' : 'sun'" />
       </NkButton>
       <NkButton size="sm" variant="ghost" @click="handleLogout">退出</NkButton>
@@ -33,6 +49,10 @@ const breadcrumbs = computed(() => {
   }
   return items
 })
+
+const emit = defineEmits<{
+  (e: 'toggle-sidebar'): void
+}>()
 
 async function handleLogout() {
   await authStore.logout()
@@ -64,6 +84,32 @@ async function handleLogout() {
   &__username {
     font-size: $nk-font-size-sm;
     color: $nk-color-neutral-700;
+  }
+
+  &__menu {
+    display: none;
+  }
+
+  // 用后代选择器提高优先级，覆盖 NkButton 的 display:inline-flex。
+  & &__menu {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 $nk-spacing-md;
+
+    & &__menu {
+      display: inline-flex;
+      margin-right: 4px;
+    }
+
+    & &__menu[hidden] {
+      display: none;
+    }
+
+    &__username {
+      display: none;
+    }
   }
 }
 </style>

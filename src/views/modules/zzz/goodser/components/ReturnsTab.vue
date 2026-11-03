@@ -8,6 +8,7 @@
           placeholder="搜索单号/商品/备注..."
           size="sm"
           style="width: 220px"
+          clearable
         />
         <NkSelect
           v-model="returnStatusFilter"
@@ -56,7 +57,7 @@
             查看出库单
           </NkButton>
           <template v-if="ret.status === 'pending'">
-            <NkButton size="xs" variant="ghost" :loading="actingId === ret._id" @click="handleConfirm(ret)">
+            <NkButton size="xs" variant="ghost" :loading="actingId === ret._id" @click="askConfirm(ret)">
               确认退货
             </NkButton>
             <NkButton
@@ -70,6 +71,15 @@
         </div>
       </NkCard>
     </div>
+
+    <ConfirmDialog
+      v-model:visible="showConfirmDialog"
+      title="确认退货"
+      :message="`确认退货单「${confirmingReturn?.order_no || ''}」吗？将按明细中的「回库」设置调整库存。`"
+      confirm-text="确认退货"
+      :loading="actingId === confirmingReturn?._id"
+      @confirm="handleConfirm"
+    />
   </div>
 </template>
 
@@ -85,6 +95,7 @@ import {
   returnStatusType,
   returnTotalQty,
 } from '../utils'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -98,6 +109,8 @@ const emit = defineEmits<{
 const allReturns = ref<ReturnOrder[]>([])
 const loading = ref(false)
 const actingId = ref('')
+const showConfirmDialog = ref(false)
+const confirmingReturn = ref<ReturnOrder | null>(null)
 const returnQuery = ref('')
 const returnStatusFilter = ref('')
 const returnStatusOptions = [
@@ -141,11 +154,20 @@ async function fetchReturns() {
   }
 }
 
-async function handleConfirm(ret: ReturnOrder) {
+function askConfirm(ret: ReturnOrder) {
+  confirmingReturn.value = ret
+  showConfirmDialog.value = true
+}
+
+async function handleConfirm() {
+  const ret = confirmingReturn.value
+  if (!ret) return
   actingId.value = ret._id
   try {
     await confirmReturn(ret.inventory_id, ret._id)
     NKMessage.success('退货已确认')
+    showConfirmDialog.value = false
+    confirmingReturn.value = null
     await fetchReturns()
     emit('changed')
   } catch (err: any) {

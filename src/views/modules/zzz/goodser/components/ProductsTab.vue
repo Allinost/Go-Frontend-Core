@@ -9,14 +9,17 @@
         size="sm"
         @update:model-value="onInventoryChange"
       />
-      <NkInput
-        v-model="productQuery"
-        placeholder="搜索商品名称/编码..."
-        size="sm"
-        style="width: 240px"
-        @keyup.enter="searchProducts"
-      />
-      <NkButton size="sm" variant="ghost" @click="searchProducts">搜索</NkButton>
+      <div class="goodser__search-row">
+        <NkInput
+          v-model="productQuery"
+          placeholder="搜索商品名称/编码..."
+          size="sm"
+          clearable
+          @clear="searchProducts"
+          @keyup.enter="searchProducts"
+        />
+        <NkButton size="sm" variant="ghost" @click="searchProducts">搜索</NkButton>
+      </div>
       <div class="goodser__product-toolbar-right">
         <NkButton
           size="sm"
@@ -351,10 +354,20 @@
         <div class="goodser__detail-row"><span class="goodser__detail-label">创建时间</span><span>{{ formatDate(detailProduct.created_at) }}</span></div>
       </div>
       <template #footer>
-        <NkButton variant="ghost" type="danger" @click="handleDeleteProductFromDetail">删除</NkButton>
+        <NkButton variant="ghost" type="danger" @click="askDeleteProduct">删除</NkButton>
         <NkButton @click="openEditProduct">编辑</NkButton>
       </template>
     </NkDialog>
+
+    <ConfirmDialog
+      v-model:visible="showDeleteProductDialog"
+      title="删除商品"
+      :message="`确定删除「${detailProduct?.name || ''}」吗？删除后不可恢复。`"
+      confirm-text="删除"
+      danger
+      :loading="saving"
+      @confirm="handleDeleteProductFromDetail"
+    />
   </div>
 </template>
 
@@ -370,6 +383,7 @@ import {
 } from '@/api/goodser'
 import type { Dictionary, GoodserTag, Inventory, Product, StatusCode } from '@/types/goodser'
 import { formatDate } from '../utils'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -405,6 +419,7 @@ const jumpPage = ref<number | null>(null)
 const showProductFilter = ref(false)
 const showProductForm = ref(false)
 const showProductDetail = ref(false)
+const showDeleteProductDialog = ref(false)
 const showBatchDeleteDialog = ref(false)
 const batchDeleting = ref(false)
 const editingProduct = ref<Product | null>(null)
@@ -752,12 +767,18 @@ async function handleSaveProduct() {
   }
 }
 
+function askDeleteProduct() {
+  if (!detailProduct.value) return
+  showDeleteProductDialog.value = true
+}
+
 async function handleDeleteProductFromDetail() {
   if (!detailProduct.value) return
   saving.value = true
   try {
     await deleteProduct({ id: detailProduct.value._id })
     NKMessage.success('删除成功')
+    showDeleteProductDialog.value = false
     showProductDetail.value = false
     await searchProducts()
   } catch (err: any) {
@@ -791,6 +812,27 @@ watch(
 @use '../styles/shared';
 
 .goodser {
+  &__search-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+
+    .nk-input {
+      width: 240px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__search-row {
+      width: 100%;
+
+      .nk-input {
+        flex: 1;
+        width: auto;
+      }
+    }
+  }
+
   &__sort-row {
     display: flex;
     align-items: center;

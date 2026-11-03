@@ -41,7 +41,7 @@
         </div>
         <div class="goodser__order-actions">
           <NkButton size="xs" variant="ghost" @click="openEditCombo(c)">编辑</NkButton>
-          <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteCombo(c)">删除</NkButton>
+          <NkButton size="xs" variant="ghost" type="danger" @click="askDeleteCombo(c)">删除</NkButton>
         </div>
       </NkCard>
     </div>
@@ -104,6 +104,16 @@
         >保存</NkButton>
       </template>
     </NkDialog>
+
+    <ConfirmDialog
+      v-model:visible="showDeleteDialog"
+      title="删除组合包"
+      :message="`确定删除「${deletingCombo?.name || ''}」吗？删除后不可恢复。`"
+      confirm-text="删除"
+      danger
+      :loading="saving"
+      @confirm="handleDeleteCombo"
+    />
   </div>
 </template>
 
@@ -118,6 +128,7 @@ import {
   updateCombo,
 } from '@/api/goodser'
 import type { Combo, Inventory, Product } from '@/types/goodser'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -133,6 +144,8 @@ const combos = ref<Combo[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const showComboForm = ref(false)
+const showDeleteDialog = ref(false)
+const deletingCombo = ref<Combo | null>(null)
 const editingCombo = ref<Combo | null>(null)
 const comboForm = ref({
   name: '',
@@ -280,11 +293,19 @@ async function handleSaveCombo() {
   }
 }
 
-async function handleDeleteCombo(combo: Combo) {
+function askDeleteCombo(combo: Combo) {
+  deletingCombo.value = combo
+  showDeleteDialog.value = true
+}
+
+async function handleDeleteCombo() {
+  if (!deletingCombo.value) return
   saving.value = true
   try {
-    await deleteCombo(combo._id)
+    await deleteCombo(deletingCombo.value._id)
     NKMessage.success('已删除')
+    showDeleteDialog.value = false
+    deletingCombo.value = null
     await fetchCombos()
     emit('changed')
   } catch (err: any) {

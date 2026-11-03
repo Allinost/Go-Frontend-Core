@@ -1,5 +1,8 @@
 <template>
-  <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': collapsed }">
+  <aside
+    class="admin-sidebar"
+    :class="{ 'admin-sidebar--collapsed': collapsed, 'admin-sidebar--mobile-open': mobileOpen }"
+  >
     <div class="admin-sidebar__logo">
       <span class="admin-sidebar__logo-text">{{ collapsed ? 'M' : 'Monitor Controller' }}</span>
     </div>
@@ -111,7 +114,15 @@ const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 
-const collapsed = computed(() => appStore.sidebarCollapsed)
+const props = defineProps<{
+  mobileOpen?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'navigate'): void
+}>()
+
+const collapsed = computed(() => appStore.sidebarCollapsed && !props.mobileOpen)
 
 const filteredGroups = computed(() =>
   menuGroups.filter((g) => {
@@ -127,6 +138,7 @@ function isActive(path: string): boolean {
 
 function navigate(item: MenuItem) {
   router.push(item.path)
+  emit('navigate')
 }
 
 function toggle() {
@@ -254,6 +266,30 @@ function isGroupActive(group: MenuGroup): boolean {
     &-children {
       overflow: hidden;
       transition: max-height $nk-duration-normal;
+    }
+  }
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 240px;
+    z-index: 1041;
+    transform: translateX(-100%);
+    transition: transform $nk-duration-normal;
+    box-shadow: $nk-shadow-lg;
+
+    &--collapsed {
+      width: 240px;
+    }
+
+    &--mobile-open {
+      transform: translateX(0);
+    }
+
+    &__footer {
+      display: none;
     }
   }
 }

@@ -75,7 +75,7 @@
     <NkDialog v-model:visible="showInboundSearch" title="搜索导入" :width="520">
       <div class="goodser__form-field">
         <label class="goodser__form-label">搜索商品</label>
-        <NkInput v-model="inboundSearchQuery" placeholder="名称/编码..." size="sm" @keyup.enter="doInboundSearch" />
+        <NkInput v-model="inboundSearchQuery" placeholder="名称/编码..." size="sm" clearable @keyup.enter="doInboundSearch" />
         <NkButton size="xs" variant="ghost" @click="doInboundSearch" style="margin-top: 4px">搜索</NkButton>
       </div>
       <div v-if="inboundSearchResults.length" class="goodser__inbound-search-results">

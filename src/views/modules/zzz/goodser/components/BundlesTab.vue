@@ -59,7 +59,7 @@
         <div class="goodser__order-actions">
           <NkButton size="xs" variant="ghost" @click="emit('order-bundle', b._id)">下单</NkButton>
           <NkButton size="xs" variant="ghost" @click="openEditBundle(b)">编辑</NkButton>
-          <NkButton size="xs" variant="ghost" type="danger" @click="handleDeleteBundle(b)">删除</NkButton>
+          <NkButton size="xs" variant="ghost" type="danger" @click="askDeleteBundle(b)">删除</NkButton>
         </div>
       </NkCard>
     </div>
@@ -209,6 +209,16 @@
         >保存</NkButton>
       </template>
     </NkDialog>
+
+    <ConfirmDialog
+      v-model:visible="showDeleteDialog"
+      title="删除捆"
+      :message="`确定删除「${deletingBundle?.name || ''}」吗？删除后不可恢复。`"
+      confirm-text="删除"
+      danger
+      :loading="saving"
+      @confirm="handleDeleteBundle"
+    />
   </div>
 </template>
 
@@ -231,6 +241,7 @@ import type {
   StatusCode,
 } from '@/types/goodser'
 import { bundlePriceModeLabel } from '../utils'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -249,6 +260,8 @@ const bundles = ref<Bundle[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const showBundleForm = ref(false)
+const showDeleteDialog = ref(false)
+const deletingBundle = ref<Bundle | null>(null)
 const editingBundle = ref<Bundle | null>(null)
 const bundleForm = ref({
   name: '',
@@ -541,11 +554,19 @@ async function handleSaveBundle() {
   }
 }
 
-async function handleDeleteBundle(bundle: Bundle) {
+function askDeleteBundle(bundle: Bundle) {
+  deletingBundle.value = bundle
+  showDeleteDialog.value = true
+}
+
+async function handleDeleteBundle() {
+  if (!deletingBundle.value) return
   saving.value = true
   try {
-    await deleteBundle(bundle._id)
+    await deleteBundle(deletingBundle.value._id)
     NKMessage.success('已删除')
+    showDeleteDialog.value = false
+    deletingBundle.value = null
     await fetchBundles()
     emit('changed')
   } catch (err: any) {
