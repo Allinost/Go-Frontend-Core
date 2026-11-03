@@ -45,7 +45,7 @@
         <div class="goodser__order-meta">
           <span>主商品 ≥ {{ b.min_main_quantity }} 件</span>
           <span v-if="b.min_main_amount > 0">主商品金额 ≥ ¥{{ b.min_main_amount }}</span>
-          <span>捆物 ≥ {{ b.pool?.min_item_count || b.min_sub_quantity }} 种</span>
+          <span>捆物 ≥ {{ b.pool?.min_item_count || b.min_sub_quantity }} 件</span>
           <span v-if="b.max_sub_quantity > 0">捆物 ≤ {{ b.max_sub_quantity }} 件</span>
           <span v-if="(b.pool?.min_amount || b.min_sub_amount) > 0">捆物金额 ≥ ¥{{ b.pool?.min_amount || b.min_sub_amount }}</span>
         </div>
@@ -109,7 +109,7 @@
           <label class="goodser__form-label">捆物池</label>
           <NkSelect v-model="bundleForm.pool_id" :options="bundlePoolOptions" placeholder="选择捆物池（可选）" />
           <p v-if="selectedPool" class="goodser__return-tip">
-            池规则：至少选择 {{ selectedPool.min_item_count }} 种商品，最低金额 ¥{{ selectedPool.min_amount }}；
+            池规则：至少选择 {{ selectedPool.min_item_count }} 件商品，最低金额 ¥{{ selectedPool.min_amount }}；
             共 {{ selectedPool.items.length }} 个成员。
           </p>
           <p v-else class="goodser__return-tip">
@@ -265,7 +265,7 @@
             <strong>{{ pool.name }}</strong>
             <span class="goodser__count">{{ pool.code }}</span>
             <span class="goodser__count">
-              至少 {{ pool.min_item_count }} 种 · 最低 ¥{{ pool.min_amount }} · {{ pool.items.length }} 个成员
+              至少 {{ pool.min_item_count }} 件 · 最低 ¥{{ pool.min_amount }} · {{ pool.items.length }} 个成员
             </span>
           </div>
           <div class="goodser__pool-actions">
@@ -298,7 +298,7 @@
             <NkSelect v-model="poolForm.status" :options="comboStatusOptions" />
           </div>
           <div class="goodser__form-field goodser__form-field--third">
-            <label class="goodser__form-label">最少选择商品种数</label>
+            <label class="goodser__form-label">最少选择商品数量</label>
             <NkInput v-model="poolForm.min_item_count" type="number" placeholder="1" />
           </div>
           <div class="goodser__form-field goodser__form-field--third">

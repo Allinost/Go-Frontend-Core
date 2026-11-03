@@ -10,11 +10,13 @@ export interface Inventory {
 
 export interface CreateInventoryReq {
   name: string
+  sort_order?: number
 }
 
 export interface UpdateInventoryReq {
   id: string
   name?: string
+  sort_order?: number
 }
 
 // Product (商品)
@@ -266,6 +268,7 @@ export interface CreateOutboundReq {
   source_reserve_id?: string | null
   combo_id?: string | null
   combo_quantity?: number | null
+  combo_bundles?: ComboBundleSelection[] | null
   /** 使用捆下单时 items 必须为空，由服务端展开 */
   bundle?: BundleOrderSelection | null
 }
@@ -662,6 +665,14 @@ export interface BundleOrderSelection {
   main_product_id: string
   main_quantity: number
   quantity: number
+  sub_items: BundleOrderSubItem[]
+}
+
+/** 组合包中捆组件的手工选择，数量均按单捆计 */
+export interface ComboBundleSelection {
+  bundle_id: string
+  main_product_id: string
+  main_quantity: number
   sub_items: BundleOrderSubItem[]
 }
 

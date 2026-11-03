@@ -20,22 +20,36 @@
           <div class="goodser__inv-meta">排序: {{ inv.sort_order }} · {{ formatDate(inv.created_at) }}</div>
         </div>
         <div class="goodser__inv-actions" @click.stop>
-          <NkButton size="xs" variant="ghost" @click="openRename(inv)">重命名</NkButton>
+          <NkButton size="xs" variant="ghost" @click="openRename(inv)">编辑</NkButton>
           <NkButton size="xs" variant="ghost" type="danger" @click="openDelete(inv)">删除</NkButton>
         </div>
       </NkCard>
     </div>
 
     <NkDialog v-model:visible="showCreateDialog" title="新建库存目录" :width="420">
-      <NkInput v-model="newName" placeholder="目录名称" />
+      <div class="goodser__form-field">
+        <label class="goodser__form-label">目录名称 *</label>
+        <NkInput v-model="newName" placeholder="目录名称" />
+      </div>
+      <div class="goodser__form-field">
+        <label class="goodser__form-label">排序（数字越小越靠前）</label>
+        <NkInput v-model="newSortOrder" type="number" placeholder="0" />
+      </div>
       <template #footer>
         <NkButton variant="ghost" @click="showCreateDialog = false">取消</NkButton>
         <NkButton :disabled="!newName.trim()" :loading="saving" @click="handleCreate">确定</NkButton>
       </template>
     </NkDialog>
 
-    <NkDialog v-model:visible="showRenameDialog" title="重命名目录" :width="420">
-      <NkInput v-model="renameName" placeholder="新名称" />
+    <NkDialog v-model:visible="showRenameDialog" title="编辑目录" :width="420">
+      <div class="goodser__form-field">
+        <label class="goodser__form-label">目录名称 *</label>
+        <NkInput v-model="renameName" placeholder="新名称" />
+      </div>
+      <div class="goodser__form-field">
+        <label class="goodser__form-label">排序（数字越小越靠前）</label>
+        <NkInput v-model="renameSortOrder" type="number" placeholder="0" />
+      </div>
       <template #footer>
         <NkButton variant="ghost" @click="showRenameDialog = false">取消</NkButton>
         <NkButton :disabled="!renameName.trim()" :loading="saving" @click="handleRename">确定</NkButton>
@@ -74,12 +88,15 @@ const showCreateDialog = ref(false)
 const showRenameDialog = ref(false)
 const showDeleteDialog = ref(false)
 const newName = ref('')
+const newSortOrder = ref(0)
 const renameName = ref('')
+const renameSortOrder = ref(0)
 const deleting = ref<Inventory | null>(null)
 const renaming = ref<Inventory | null>(null)
 
 function openCreate() {
   newName.value = ''
+  newSortOrder.value = 0
   showCreateDialog.value = true
 }
 
@@ -88,7 +105,7 @@ async function handleCreate() {
   if (!name) return
   saving.value = true
   try {
-    await createInventory({ name })
+    await createInventory({ name, sort_order: Number(newSortOrder.value) || 0 })
     NKMessage.success('新建成功')
     showCreateDialog.value = false
     emit('refresh')
@@ -102,6 +119,7 @@ async function handleCreate() {
 function openRename(inv: Inventory) {
   renaming.value = inv
   renameName.value = inv.name
+  renameSortOrder.value = inv.sort_order || 0
   showRenameDialog.value = true
 }
 
@@ -109,8 +127,12 @@ async function handleRename() {
   if (!renaming.value || !renameName.value.trim()) return
   saving.value = true
   try {
-    await updateInventory({ id: renaming.value._id, name: renameName.value.trim() })
-    NKMessage.success('重命名成功')
+    await updateInventory({
+      id: renaming.value._id,
+      name: renameName.value.trim(),
+      sort_order: Number(renameSortOrder.value) || 0,
+    })
+    NKMessage.success('保存成功')
     showRenameDialog.value = false
     emit('refresh')
   } catch (err: any) {

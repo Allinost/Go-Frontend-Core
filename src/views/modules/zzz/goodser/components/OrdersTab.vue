@@ -133,6 +133,51 @@
           <p v-else-if="orderForm.combo_id" class="goodser__return-tip">
             可售 {{ comboAvailability }} 套 · 提交后会按组件明细展开并扣减组件库存。
           </p>
+          <div v-if="orderForm.combo_id && comboBundleComponents.length" class="goodser__combo-bundle-configs">
+            <p class="goodser__return-tip" style="color: #d4380d">组合包含捆，请手动选择每套捆的主商品与捆物</p>
+            <div
+              v-for="bc in comboBundleComponents"
+              :key="bc.bundle_id"
+              class="goodser__combo-bundle-config"
+            >
+              <div class="goodser__form-label">捆：{{ bc.bundle_name }} × {{ bc.quantity }}</div>
+              <div class="goodser__form-row">
+                <div class="goodser__form-field goodser__form-field--half">
+                  <label class="goodser__form-label">主商品</label>
+                  <NkSelect
+                    v-model="comboSelection(bc.bundle_id || '').main_product_id"
+                    :options="comboBundleMainOptions(bc.bundle_id || '')"
+                    placeholder="选择主商品"
+                  />
+                </div>
+                <div class="goodser__form-field goodser__form-field--half">
+                  <label class="goodser__form-label">主商品数量 / 单捆</label>
+                  <NkInput v-model="comboSelection(bc.bundle_id || '').main_quantity" type="number" size="sm" />
+                </div>
+              </div>
+              <div class="goodser__order-items">
+                <div
+                  v-for="s in comboBundleByID(bc.bundle_id || '')?.sub_products || []"
+                  :key="s.product_id"
+                  class="goodser__order-item"
+                >
+                  <span class="goodser__order-item-name">
+                    {{ s.product_name }}（可用 {{ s.available }}）
+                  </span>
+                  <NkButton size="xs" variant="ghost" @click="incComboSubItem(bc.bundle_id || '', s.product_id)">
+                    +1
+                  </NkButton>
+                  <NkInput
+                    v-model="comboSelection(bc.bundle_id || '').sub_quantities[s.product_id]"
+                    type="number"
+                    size="xs"
+                    style="width: 70px"
+                  />
+                </div>
+              </div>
+            </div>
+            <p class="goodser__return-tip">可重复选择同一捆物，数量按单捆计。</p>
+          </div>
         </div>
         <div class="goodser__form-field">
           <label class="goodser__form-label">捆（可选）</label>
@@ -462,6 +507,9 @@ const bundleOrder = ref({
   sub_quantities: {} as Record<string, number>,
 })
 const bundlePreview = ref<BundlePreviewResp | null>(null)
+const comboBundleSelections = ref<
+  Record<string, { main_product_id: string; main_quantity: number; sub_quantities: Record<string, number> }>
+>({})
 const bundlePreviewLoading = ref(false)
 const bundlePreviewError = ref('')
 const detailOrder = ref<OutboundOrder | null>(null)
@@ -524,6 +572,74 @@ const bundleMainOrderOptions = computed(() =>
     value: p.product_id,
   })),
 )
+const comboBundleComponents = computed(() =>
+  (selectedCombo.value?.items || []).filter((item) => item.item_type === 'bundle' && item.bundle_id),
+)
+function comboBundleByID(bundleId: string) {
+  return bundles.value.find((bundle) => bundle._id === bundleId) || null
+}
+function comboSelection(bundleId: string) {
+  if (!comboBundleSelections.value[bundleId]) {
+    comboBundleSelections.value[bundleId] = {
+      main_product_id: '',
+      main_quantity: 1,
+      sub_quantities: {},
+    }
+  }
+  return comboBundleSelections.value[bundleId]
+}
+function comboBundleMainOptions(bundleId: string) {
+  return (comboBundleByID(bundleId)?.main_products || []).map((p) => ({
+    label: `${p.product_name}（${p.product_code} · 可用 ${p.available}）`,
+    value: p.product_id,
+  }))
+}
+function ensureComboBundleSelections() {
+  const next: typeof comboBundleSelections.value = {}
+  for (const item of comboBundleComponents.value) {
+    const bundle = comboBundleByID(item.bundle_id || '')
+    if (!bundle) continue
+    const existing = comboBundleSelections.value[item.bundle_id || '']
+    const main =
+      existing?.main_product_id ||
+      (bundle.main_products || []).find((p) => p.available > 0)?.product_id ||
+      bundle.main_products?.[0]?.product_id ||
+      ''
+    const subQuantities: Record<string, number> = {}
+    for (const sub of bundle.sub_products || []) {
+      subQuantities[sub.product_id] = existing?.sub_quantities?.[sub.product_id] ?? 0
+    }
+    next[item.bundle_id || ''] = {
+      main_product_id: main,
+      main_quantity: existing?.main_quantity || bundle.min_main_quantity || 1,
+      sub_quantities: subQuantities,
+    }
+  }
+  comboBundleSelections.value = next
+}
+function comboSubSelection(bundleId: string, productId: string) {
+  const selection = comboBundleSelections.value[bundleId]
+  if (!selection) return 0
+  return Number(selection.sub_quantities[productId]) || 0
+}
+function incComboSubItem(bundleId: string, productId: string) {
+  const selection = comboBundleSelections.value[bundleId]
+  if (!selection) return
+  selection.sub_quantities[productId] = (Number(selection.sub_quantities[productId]) || 0) + 1
+}
+function comboBundleSelectionsPayload() {
+  return comboBundleComponents.value.map((item) => {
+    const selection = comboBundleSelections.value[item.bundle_id || '']
+    return {
+      bundle_id: item.bundle_id || '',
+      main_product_id: selection?.main_product_id || '',
+      main_quantity: Number(selection?.main_quantity) || 1,
+      sub_items: Object.entries(selection?.sub_quantities || {})
+        .map(([product_id, quantity]) => ({ product_id, quantity: Number(quantity) || 0 }))
+        .filter((sub) => sub.quantity > 0),
+    }
+  })
+}
 
 // ---- Confirm dialog ----
 type ConfirmAction =
@@ -692,6 +808,7 @@ function openCreateOrder(type: 'outbound' | 'reserve', bundleId?: string) {
   bundleOrder.value = { bundle_id: '', main_product_id: '', main_quantity: 1, quantity: 1, sub_quantities: {} }
   bundlePreview.value = null
   bundlePreviewError.value = ''
+  comboBundleSelections.value = {}
   if (!combos.value.length) fetchCombos()
   if (!bundles.value.length) fetchBundles()
   showOrderForm.value = true
@@ -739,6 +856,15 @@ async function handleCreateOrder() {
     return
   }
   if (bundleOrder.value.bundle_id && !bundlePreview.value) return
+  const comboBundles = orderForm.value.combo_id ? comboBundleSelectionsPayload() : []
+  if (comboBundleComponents.value.length) {
+    for (const selection of comboBundles) {
+      if (!selection.main_product_id || !selection.sub_items.length) {
+        NKMessage.warning('请为组合包中的每个捆选择主商品和捆物')
+        return
+      }
+    }
+  }
   saving.value = true
   try {
     const items = orderFormItems.value.map((i) => ({
@@ -767,6 +893,7 @@ async function handleCreateOrder() {
       items: bundleSelection ? [] : items,
       combo_id: orderForm.value.combo_id || null,
       combo_quantity: orderForm.value.combo_id ? Number(orderForm.value.combo_quantity) || 1 : null,
+      combo_bundles: comboBundles.length ? comboBundles : null,
       bundle: bundleSelection,
     })
     NKMessage.success('创建成功')
@@ -1020,11 +1147,18 @@ async function handleCancelReturn(ret: ReturnOrder) {
   }
 }
 
-function onComboChange() {
-  if (!orderForm.value.combo_id) return
+async function onComboChange() {
+  if (!orderForm.value.combo_id) {
+    comboBundleSelections.value = {}
+    return
+  }
   bundleOrder.value = { bundle_id: '', main_product_id: '', main_quantity: 1, quantity: 1, sub_quantities: {} }
   bundlePreview.value = null
   bundlePreviewError.value = ''
+  if (!bundles.value.length) {
+    await fetchBundles()
+  }
+  ensureComboBundleSelections()
 }
 
 function onBundleOrderChange() {
@@ -1110,6 +1244,19 @@ watch(
         width: auto;
       }
     }
+  }
+
+  &__combo-bundle-configs {
+    display: flex;
+    flex-direction: column;
+    gap: $nk-spacing-sm;
+    margin-top: $nk-spacing-sm;
+  }
+
+  &__combo-bundle-config {
+    padding: $nk-spacing-sm;
+    border: 1px dashed $nk-color-neutral-200;
+    border-radius: $nk-radius-md;
   }
 }
 </style>
