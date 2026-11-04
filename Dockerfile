@@ -15,6 +15,17 @@ RUN ln -s /app/node_modules /NKUI/Vue3/node_modules
 COPY src ./src
 COPY public ./public
 COPY index.html env.d.ts tsconfig.json vite.config.ts ./
+
+# 构建时前端默认值（不写入镜像层之外的秘密；均为可公开的展示配置）
+ARG VITE_API_BASE_URL=
+ARG VITE_APP_TITLE=
+ARG VITE_INTRANET_HOST=
+ARG VITE_EASYTIER_HOST=
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_APP_TITLE=$VITE_APP_TITLE \
+    VITE_INTRANET_HOST=$VITE_INTRANET_HOST \
+    VITE_EASYTIER_HOST=$VITE_EASYTIER_HOST
+
 RUN npm run build
 
 FROM nginx:1.27-alpine

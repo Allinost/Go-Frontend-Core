@@ -66,6 +66,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # 构建时前端默认值；在仓库 Variables 中配置，未配置则使用代码内兜底
+          build-args: |
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
+            VITE_APP_TITLE=${{ vars.VITE_APP_TITLE }}
+            VITE_INTRANET_HOST=${{ vars.VITE_INTRANET_HOST }}
+            VITE_EASYTIER_HOST=${{ vars.VITE_EASYTIER_HOST }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

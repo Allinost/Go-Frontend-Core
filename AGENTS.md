@@ -51,6 +51,7 @@ src/
 - CI：`.github/workflows/ci.yml`（手动触发；仓库变量 `ENABLE_GHCR_BUILD=true` 才执行）
 - 镜像：`ghcr.io/allinost/go-frontend-core:<tag>`
 - 依赖 `@nkui/vue` 是 `file:../NKUI/Vue3`：CI 会把 NKUI 检出到 `nkui/`；本地构建可先创建 `nkui -> ../NKUI` 链接
+- 构建时默认值通过 Docker build args 注入：`VITE_API_BASE_URL` / `VITE_APP_TITLE` / `VITE_INTRANET_HOST` / `VITE_EASYTIER_HOST`；CI 从仓库 Variables 读取，未配置时使用代码兜底
 
 ## 已接入模块
 - `developmentManager`（项目开发管理）：`/modules/zzz/developmentmanager`
@@ -60,9 +61,17 @@ src/
   - 容器管理（运维管理菜单）：`/modules/zzz/containers`，管理 `container_project` 类型项目并直达部署 Tab
 
 ## 全局设置
-- 顶部导航「设置」（用户名左侧）：前端 API 地址/站点标题/主题；管理员可见「后端设置」（公开地址、外部工具地址、依赖状态）
+- 顶部导航「设置」（用户名左侧）：前端 API 地址/站点标题/内网域名/EasyTier 域名/主题；管理员可见「后端设置」（公开地址、Browser 地址、外部工具地址、依赖状态）
 - 实现：`src/components/SettingsDialog.vue`、`src/api/settings.ts`、`src/utils/appSettings.ts`
-- API 地址保存在 localStorage（`go_admin_api_base`），修改后刷新生效
+- 前端默认值来自构建时 `.env`，真实域名/地址不写进代码：
+  - `VITE_API_BASE_URL`、`VITE_APP_TITLE`
+  - `VITE_INTRANET_HOST`、`VITE_EASYTIER_HOST`
+- 浏览器覆盖值保存在 localStorage（`go_admin_api_base` 等），修改后刷新生效
+- `.env` 已被 `.gitignore` 排除；提交前用 `.env.example` 作为模板
+
+## 纯前端项目
+- `developmentManager` 支持 `template` / `frontend_base` / `frontend_module` 三类前端项目，允许不绑定后端
+- 前端项目生成代码为 Vue 3 + TypeScript + 本地 mock（`PageView.vue` / `api.ts` / `types.ts`），不引入后端依赖
 
 ## 开发规范
 - 所有组件使用 `<script setup lang="ts">`

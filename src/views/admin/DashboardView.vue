@@ -75,6 +75,7 @@ import { useAuthStore } from '@/stores/auth'
 import { listServices } from '@/api/servicenav'
 import type { ServiceItem } from '@/api/servicenav'
 import { NKMessage } from '@nkui/vue/src/utils/message'
+import { getIntranetHost, getEasytierHost } from '@/utils/appSettings'
 
 const authStore = useAuthStore()
 const loading = ref(false)
@@ -94,12 +95,12 @@ async function fetchServices() {
 
 function intranetHref(item: ServiceItem): string {
   const proto = item.protocol || 'http'
-  return `${proto}://nas.hailong.site:${item.intranet_port}`
+  return `${proto}://${getIntranetHost()}:${item.intranet_port}`
 }
 
 function easytierHref(item: ServiceItem): string {
   const proto = item.protocol || 'http'
-  return `${proto}://et.hailong.site:${item.easytier_port}`
+  return `${proto}://${getEasytierHost()}:${item.easytier_port}`
 }
 
 onMounted(fetchServices)

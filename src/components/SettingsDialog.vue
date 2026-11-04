@@ -5,12 +5,23 @@
     <div v-if="activeTab === 'frontend'" class="settings-panel">
       <div class="settings-row">
         <label class="settings-label">后端 API 地址</label>
-        <NkInput v-model="frontendForm.apiBase" placeholder="http://localhost:29090 或 /api/v1" />
-        <div class="settings-hint">修改后需刷新页面生效；留空恢复默认 `/api/v1`。</div>
+        <NkInput v-model="frontendForm.apiBase" :placeholder="DEFAULT_API_BASE" />
+        <div class="settings-hint">默认值来自构建时 `.env` 的 `VITE_API_BASE_URL`；修改后需刷新页面生效。</div>
       </div>
       <div class="settings-row">
         <label class="settings-label">站点标题</label>
-        <NkInput v-model="frontendForm.siteTitle" placeholder="Monitor Controller" />
+        <NkInput v-model="frontendForm.siteTitle" :placeholder="DEFAULT_SITE_TITLE" />
+        <div class="settings-hint">默认值来自 `VITE_APP_TITLE`，仅保存在当前浏览器。</div>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label">内网访问域名</label>
+        <NkInput v-model="frontendForm.intranetHost" :placeholder="DEFAULT_INTRANET_HOST || 'nas.example.com'" />
+        <div class="settings-hint">服务导航“内网”链接使用，只填主机名，不带协议和端口。</div>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label">EasyTier 访问域名</label>
+        <NkInput v-model="frontendForm.easytierHost" :placeholder="DEFAULT_EASYTIER_HOST || 'et.example.com'" />
+        <div class="settings-hint">服务导航“EasyTier”链接使用，只填主机名，不带协议和端口。</div>
       </div>
       <div class="settings-row">
         <label class="settings-label">主题</label>
@@ -44,7 +55,8 @@
         <div class="settings-form">
           <div class="settings-row">
             <label class="settings-label">公开访问地址（回调/远程登录）</label>
-            <NkInput v-model="backendForm.public_base_url" placeholder="https://et.hailong.site:29090" />
+            <NkInput v-model="backendForm.public_base_url" placeholder="https://api.example.com:29090" />
+            <div class="settings-hint">真实地址默认来自后端 `.env` 的 `APP_SERVER_PUBLIC_BASE_URL`。</div>
           </div>
           <div class="settings-row">
             <label class="settings-label">前端默认标题</label>
@@ -56,7 +68,7 @@
           </div>
           <div class="settings-row">
             <label class="settings-label">Browser 地址</label>
-            <NkInput v-model="backendForm.browser_url" placeholder="ws://chrome-browser:3000" />
+            <NkInput v-model="backendForm.browser_url" placeholder="ws://browser:3000" />
           </div>
           <div class="settings-row">
             <label class="settings-label">N8n 地址</label>
@@ -73,7 +85,8 @@
         </div>
 
         <div class="settings-hint">
-          数据库、Redis、JWT、Chrome 等连接/密钥仍由 `.env` 管理，修改后需重启后端；此处只展示状态与外部工具地址。
+          数据库、Redis、JWT、Browser 等连接/密钥仍由后端 `.env`（`APP_*` / `CHROME_REMOTE_URL`）管理，修改后需重启后端；
+          此处只保存非敏感的展示配置与外部工具地址。
         </div>
 
         <div class="settings-actions">
@@ -97,11 +110,19 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import type { ThemeMode } from '@/stores/app'
 import {
+  DEFAULT_API_BASE,
+  DEFAULT_SITE_TITLE,
+  DEFAULT_INTRANET_HOST,
+  DEFAULT_EASYTIER_HOST,
   getApiBase,
   setApiBase,
   resetApiBase,
   getSiteTitle,
   setSiteTitle,
+  getIntranetHost,
+  setIntranetHost,
+  getEasytierHost,
+  setEasytierHost,
 } from '@/utils/appSettings'
 import { getAppSettings, updateAppSettings } from '@/api/settings'
 import type { AppSettings, SettingsView } from '@/api/settings'
@@ -130,6 +151,8 @@ const themeOptions = [
 const frontendForm = reactive({
   apiBase: getApiBase(),
   siteTitle: getSiteTitle(),
+  intranetHost: getIntranetHost(),
+  easytierHost: getEasytierHost(),
   theme: appStore.theme as ThemeMode,
 })
 
@@ -160,6 +183,8 @@ function statusLabel(name: string): string {
 function resetFrontendForm() {
   frontendForm.apiBase = getApiBase()
   frontendForm.siteTitle = getSiteTitle()
+  frontendForm.intranetHost = getIntranetHost()
+  frontendForm.easytierHost = getEasytierHost()
   frontendForm.theme = appStore.theme
 }
 
@@ -198,6 +223,8 @@ function saveFrontend() {
   const normalized = setApiBase(frontendForm.apiBase)
   frontendForm.apiBase = normalized
   setSiteTitle(frontendForm.siteTitle)
+  setIntranetHost(frontendForm.intranetHost)
+  setEasytierHost(frontendForm.easytierHost)
   appStore.setTheme(frontendForm.theme)
   if (normalized !== previous) {
     NKMessage.success('已保存，刷新页面后生效')
@@ -209,6 +236,8 @@ function saveFrontend() {
 function resetFrontend() {
   resetApiBase()
   setSiteTitle('')
+  setIntranetHost('')
+  setEasytierHost('')
   appStore.setTheme('light')
   resetFrontendForm()
   NKMessage.success('已恢复默认，刷新页面后生效')

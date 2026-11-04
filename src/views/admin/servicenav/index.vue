@@ -376,6 +376,7 @@ import type {
 } from '@/api/servicenav'
 import { listProjects, listContainers } from '@/api/developmentManager'
 import type { Project, Container } from '@/types/developmentManager'
+import { getIntranetHost, getEasytierHost } from '@/utils/appSettings'
 
 const router = useRouter()
 
@@ -854,12 +855,12 @@ function addressHref(item: ServiceItem): string {
 
 function intranetHref(item: ServiceItem): string {
   const proto = item.protocol || 'http'
-  return `${proto}://nas.hailong.site:${item.intranet_port}`
+  return `${proto}://${getIntranetHost()}:${item.intranet_port}`
 }
 
 function easytierHref(item: ServiceItem): string {
   const proto = item.protocol || 'http'
-  return `${proto}://et.hailong.site:${item.easytier_port}`
+  return `${proto}://${getEasytierHost()}:${item.easytier_port}`
 }
 
 function formatDate(dateStr: string): string {
