@@ -33,6 +33,18 @@
     <div v-else-if="project && activeTab === 'insights'">
       <V3InsightsTab :project="project" />
     </div>
+    <div v-else-if="project && activeTab === 'risks'">
+      <V3RisksTab :project="project" />
+    </div>
+    <div v-else-if="project && activeTab === 'releases'">
+      <V3ReleasesTab :project="project" />
+    </div>
+    <div v-else-if="project && activeTab === 'iterations'">
+      <V3IterationsTab :project="project" />
+    </div>
+    <div v-else-if="project && activeTab === 'baselines'">
+      <V3BaselinesTab :project="project" />
+    </div>
     <div v-else-if="project && activeTab === 'deployment'">
       <DeploymentTab :project="project" />
     </div>
@@ -60,6 +72,10 @@ import type { Project } from '@/types/developmentManager'
 import OverviewTab from './tabs/OverviewTab.vue'
 import V3TasksTab from './tabs/V3TasksTab.vue'
 import V3InsightsTab from './tabs/V3InsightsTab.vue'
+import V3RisksTab from './tabs/V3RisksTab.vue'
+import V3ReleasesTab from './tabs/V3ReleasesTab.vue'
+import V3IterationsTab from './tabs/V3IterationsTab.vue'
+import V3BaselinesTab from './tabs/V3BaselinesTab.vue'
 import DeploymentTab from './tabs/DeploymentTab.vue'
 import DictionaryTab from './tabs/DictionaryTab.vue'
 import RequirementsTab from './tabs/RequirementsTab.vue'
@@ -75,6 +91,10 @@ const tabs = [
   { label: '概览', value: 'overview' },
   { label: 'V3 任务', value: 'plan' },
   { label: 'V3 看板', value: 'insights' },
+  { label: 'V3 风险', value: 'risks' },
+  { label: 'V3 发布', value: 'releases' },
+  { label: 'V3 迭代', value: 'iterations' },
+  { label: 'V3 基线', value: 'baselines' },
   { label: '部署', value: 'deployment' },
   { label: '数据字典', value: 'dictionary' },
   { label: '需求', value: 'requirements' },

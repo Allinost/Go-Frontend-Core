@@ -37,11 +37,29 @@
 
     <NkCard class="v3pm-card">
       <div class="v3pm-card-title">
+        <span>标签</span>
+      </div>
+      <div class="v3pm-form-row">
+        <NkInput v-model="newLabelName" placeholder="标签名称" size="sm" style="width: 160px" />
+        <NkInput v-model="newLabelColor" placeholder="#1677ff" size="sm" style="width: 110px" />
+        <NkButton size="sm" @click="createProjectLabel">创建标签</NkButton>
+      </div>
+      <div v-if="projectLabels.length === 0" class="v3pm-muted">暂无标签</div>
+      <div v-else class="v3pm-inline">
+        <NkTag v-for="label in projectLabels" :key="label.id" size="sm" type="neutral" closable @close="deleteProjectLabel(label)">
+          {{ label.name }}
+        </NkTag>
+      </div>
+    </NkCard>
+
+    <NkCard class="v3pm-card">
+      <div class="v3pm-card-title">
         <span>任务</span>
         <div class="v3pm-inline">
           <NkSelect v-model="filterStatus" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: 130px" @change="loadTasks" />
           <NkSelect v-model="filterMilestone" :options="milestoneOptions" placeholder="里程碑" clearable size="sm" style="width: 150px" @change="loadTasks" />
           <NkButton size="sm" @click="showTaskForm = !showTaskForm">新建任务</NkButton>
+          <NkButton size="sm" variant="ghost" @click="openImport">导入任务</NkButton>
         </div>
       </div>
       <div v-if="showTaskForm" class="v3pm-form-grid">
@@ -153,6 +171,55 @@
         </div>
 
         <div class="v3pm-section">
+          <div class="v3pm-section-title">标签</div>
+          <div class="v3pm-form-row">
+            <NkSelect
+              v-model="selectedLabelId"
+              :options="availableLabelOptions"
+              placeholder="选择标签"
+              size="sm"
+              style="width: 180px"
+              @change="attachLabel"
+            />
+          </div>
+          <div v-if="taskLabels.length === 0" class="v3pm-muted">暂无标签</div>
+          <div v-else class="v3pm-inline">
+            <NkTag
+              v-for="label in taskLabels"
+              :key="label.id"
+              size="sm"
+              :type="'neutral'"
+              closable
+              @close="detachLabel(label)"
+            >
+              {{ label.name }}
+            </NkTag>
+          </div>
+        </div>
+
+        <div class="v3pm-section">
+          <div class="v3pm-section-title">关联资产</div>
+          <div class="v3pm-form-row">
+            <NkSelect
+              v-model="assetForm.asset_id"
+              :options="assetOptions"
+              placeholder="选择项目资产"
+              size="sm"
+              style="width: 240px"
+              filterable
+            />
+            <NkSelect v-model="assetForm.relation_type" :options="assetRelationOptions" size="sm" style="width: 120px" />
+            <NkButton size="sm" @click="attachAsset">添加</NkButton>
+          </div>
+          <div v-if="taskAssets.length === 0" class="v3pm-muted">暂无关联资产</div>
+          <div v-for="a in taskAssets" :key="a.id" class="v3pm-list-item">
+            <span>{{ assetName(a.asset_id) }}</span>
+            <NkTag size="sm" type="neutral">{{ a.relation_type }}</NkTag>
+            <NkButton size="sm" variant="ghost" type="danger" @click="detachAsset(a)">移除</NkButton>
+          </div>
+        </div>
+
+        <div class="v3pm-section">
           <div class="v3pm-section-title">评论</div>
           <div class="v3pm-form-row">
             <NkInput v-model="commentText" placeholder="写评论" size="sm" />
@@ -165,6 +232,17 @@
         </div>
       </div>
     </NkDrawer>
+
+    <NkDialog v-model:visible="importVisible" title="导入任务" width="720">
+      <div class="v3pm-muted" style="margin-bottom: 8px">
+        粘贴 JSON 数组，每项至少包含 title；可选 code / milestone_id / type / priority / owner / estimate_hours。
+      </div>
+      <NkTextarea v-model="importText" :rows="14" placeholder='[{"code":"V3-P0-01","title":"任务标题","priority":"P1"}]' />
+      <template #footer>
+        <NkButton variant="ghost" @click="importVisible = false">取消</NkButton>
+        <NkButton :loading="importing" @click="doImport">导入</NkButton>
+      </template>
+    </NkDialog>
   </div>
 </template>
 
@@ -172,25 +250,48 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import type { Project } from '@/types/developmentManager'
-import type { Milestone, Task, TaskDependency, TaskLog, ChecklistItem, Comment, MilestoneProgress, ProjectDashboard } from '@/types/developmentManager'
+import type {
+  Milestone,
+  Task,
+  TaskDependency,
+  TaskLog,
+  ChecklistItem,
+  Comment,
+  MilestoneProgress,
+  ProjectDashboard,
+  Label,
+  TaskAsset,
+  ProjectAsset,
+} from '@/types/developmentManager'
 import {
   addDependency,
+  addTaskAsset,
   addTaskComment,
+  addTaskLabel,
   addTaskLog,
   changeTaskStatus,
   createChecklistItem,
+  createLabel,
   createMilestone,
   createTask,
   deleteChecklistItem,
+  deleteLabel,
   getDashboard,
   getMilestoneProgress,
+  importTasks,
+  listAssets,
   listChecklist,
   listDependencies,
+  listLabels,
   listMilestones,
+  listTaskAssets,
   listTaskComments,
+  listTaskLabels,
   listTaskLogs,
   listTasks,
   removeDependency,
+  removeTaskAsset,
+  removeTaskLabel,
   updateChecklistItem,
 } from '@/api/developmentManager'
 
@@ -223,6 +324,22 @@ const logForm = reactive({ hours: 1, note: '' })
 const depForm = reactive({ depends_on_task_id: '' as number | '', dep_type: 'FS' })
 const checkForm = ref('')
 const commentText = ref('')
+const projectLabels = ref<Label[]>([])
+const taskLabels = ref<Label[]>([])
+const selectedLabelId = ref<number | ''>('')
+const newLabelName = ref('')
+const newLabelColor = ref('#1677ff')
+const projectAssets = ref<ProjectAsset[]>([])
+const taskAssets = ref<TaskAsset[]>([])
+const assetForm = reactive({ asset_id: '' as number | '', relation_type: 'input' })
+const assetRelationOptions = [
+  { label: '输入', value: 'input' },
+  { label: '输出', value: 'output' },
+  { label: '参考', value: 'reference' },
+]
+const importVisible = ref(false)
+const importText = ref('')
+const importing = ref(false)
 
 const statusOptions = [
   { label: 'todo', value: 'todo' },
@@ -255,6 +372,18 @@ const milestoneOptions = computed(() => milestones.value.map((m) => ({ label: `$
 const dependencyOptions = computed(() =>
   tasks.value.filter((t) => t.id !== currentTask.value?.id).map((t) => ({ label: `${t.code} ${t.title}`, value: t.id })),
 )
+const availableLabelOptions = computed(() => {
+  const attached = new Set(taskLabels.value.map((l) => l.id))
+  return projectLabels.value.filter((l) => !attached.has(l.id)).map((l) => ({ label: l.name, value: l.id }))
+})
+const assetOptions = computed(() =>
+  projectAssets.value.map((a) => ({ label: `${a.title || a.uri || a.id} (${a.category})`, value: a.id })),
+)
+
+function assetName(id: number) {
+  const asset = projectAssets.value.find((a) => a.id === id)
+  return asset ? asset.title || asset.uri || `#${id}` : `#${id}`
+}
 
 function progressOf(id: number) {
   return progressMap.value[id]?.percent || 0
@@ -282,12 +411,16 @@ function taskCode(id: number) {
 async function load() {
   loading.value = true
   try {
-    const [dash, ms] = await Promise.all([
+    const [dash, ms, labels, assets] = await Promise.all([
       getDashboard(props.project.id),
       listMilestones(props.project.id, { page: 1, page_size: 100 }),
+      listLabels(props.project.id),
+      listAssets(props.project.id, { page: 1, page_size: 100 }),
     ])
     dashboard.value = dash.data
     milestones.value = ms.data.items || []
+    projectLabels.value = labels.data.items || []
+    projectAssets.value = assets.data.items || []
     progressMap.value = {}
     await Promise.all(milestones.value.map(async (m) => {
       const p = await getMilestoneProgress(m.id)
@@ -395,16 +528,20 @@ async function openTask(task: Task) {
 
 async function loadTaskDetail(id: number) {
   try {
-    const [l, d, c, cm] = await Promise.all([
+    const [l, d, c, cm, tl, ta] = await Promise.all([
       listTaskLogs(id, 100),
       listDependencies(id),
       listChecklist(id),
       listTaskComments(id),
+      listTaskLabels(id),
+      listTaskAssets(id),
     ])
     logs.value = l.data.items || []
     deps.value = d.data.items || []
     checklist.value = c.data.items || []
     comments.value = cm.data.items || []
+    taskLabels.value = tl.data.items || []
+    taskAssets.value = ta.data.items || []
   } catch (err: any) {
     NKMessage.error(err.message || '加载任务详情失败')
   }
@@ -486,6 +623,113 @@ async function saveComment() {
     await loadTaskDetail(currentTask.value.id)
   } catch (err: any) {
     NKMessage.error(err.message || '发送评论失败')
+  }
+}
+
+async function createProjectLabel() {
+  if (!newLabelName.value.trim()) {
+    NKMessage.warning('标签名称不能为空')
+    return
+  }
+  try {
+    await createLabel(props.project.id, {
+      name: newLabelName.value.trim(),
+      color: newLabelColor.value || '#1677ff',
+    })
+    newLabelName.value = ''
+    const labels = await listLabels(props.project.id)
+    projectLabels.value = labels.data.items || []
+    NKMessage.success('标签已创建')
+  } catch (err: any) {
+    NKMessage.error(err.message || '创建标签失败')
+  }
+}
+
+async function deleteProjectLabel(label: Label) {
+  if (!window.confirm(`确认删除标签「${label.name}」？`)) return
+  try {
+    await deleteLabel(label.id)
+    projectLabels.value = projectLabels.value.filter((l) => l.id !== label.id)
+    taskLabels.value = taskLabels.value.filter((l) => l.id !== label.id)
+    NKMessage.success('标签已删除')
+  } catch (err: any) {
+    NKMessage.error(err.message || '删除标签失败')
+  }
+}
+
+async function attachLabel(labelId: number | string) {
+  if (!currentTask.value || !labelId) return
+  try {
+    await addTaskLabel(currentTask.value.id, Number(labelId))
+    selectedLabelId.value = ''
+    await loadTaskDetail(currentTask.value.id)
+  } catch (err: any) {
+    NKMessage.error(err.message || '添加标签失败')
+  }
+}
+
+async function detachLabel(label: Label) {
+  if (!currentTask.value) return
+  try {
+    await removeTaskLabel(currentTask.value.id, label.id)
+    await loadTaskDetail(currentTask.value.id)
+  } catch (err: any) {
+    NKMessage.error(err.message || '移除标签失败')
+  }
+}
+
+async function attachAsset() {
+  if (!currentTask.value || !assetForm.asset_id) {
+    NKMessage.warning('请选择项目资产')
+    return
+  }
+  try {
+    await addTaskAsset(currentTask.value.id, Number(assetForm.asset_id), assetForm.relation_type)
+    assetForm.asset_id = ''
+    await loadTaskDetail(currentTask.value.id)
+  } catch (err: any) {
+    NKMessage.error(err.message || '关联资产失败')
+  }
+}
+
+async function detachAsset(asset: TaskAsset) {
+  if (!currentTask.value) return
+  try {
+    await removeTaskAsset(currentTask.value.id, asset.asset_id)
+    await loadTaskDetail(currentTask.value.id)
+  } catch (err: any) {
+    NKMessage.error(err.message || '移除资产失败')
+  }
+}
+
+function openImport() {
+  importText.value = ''
+  importVisible.value = true
+}
+
+async function doImport() {
+  let parsed: any
+  try {
+    parsed = JSON.parse(importText.value)
+  } catch {
+    NKMessage.error('JSON 格式不正确')
+    return
+  }
+  const list = Array.isArray(parsed) ? parsed : parsed?.tasks
+  if (!Array.isArray(list) || list.length === 0) {
+    NKMessage.warning('请提供非空任务数组')
+    return
+  }
+  importing.value = true
+  try {
+    const res = await importTasks(props.project.id, list)
+    NKMessage.success(`导入完成：新增 ${res.data.created}，更新 ${res.data.updated}，跳过 ${res.data.skipped}`)
+    importVisible.value = false
+    await load()
+  } catch (err: any) {
+    NKMessage.error(err.message || '导入任务失败')
+  } finally {
+    importing.value = false
   }
 }
 

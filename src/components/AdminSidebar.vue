@@ -106,6 +106,7 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
       { label: '数据库迁移', path: '/modules/migrate' },
       { label: '主机台账', path: '/ops/hosts', requiresAdmin: true },
       { label: '系统维护', path: '/ops/maintenance', requiresAdmin: true },
+      { label: '配置中心', path: '/settings/config', requiresAdmin: true },
       { label: 'Webhook', path: '/webhook' },
     ],
   },

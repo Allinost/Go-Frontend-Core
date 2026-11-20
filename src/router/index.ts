@@ -145,6 +145,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '主机台账', requiresAdmin: true },
       },
       {
+        path: 'settings/config',
+        name: 'ConfigCenter',
+        component: () => import('@/views/admin/settings/ConfigCenterView.vue'),
+        meta: { title: '配置中心', requiresAdmin: true },
+      },
+      {
         path: 'modules/net',
         name: 'Net',
         component: () => import('@/views/admin/net/index.vue'),
