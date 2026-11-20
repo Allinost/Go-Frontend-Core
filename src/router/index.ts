@@ -133,6 +133,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '数据库迁移' },
       },
       {
+        path: 'ops/maintenance',
+        name: 'Maintenance',
+        component: () => import('@/views/admin/ops/MaintenanceView.vue'),
+        meta: { title: '系统维护', requiresAdmin: true },
+      },
+      {
+        path: 'ops/hosts',
+        name: 'Hosts',
+        component: () => import('@/views/admin/ops/HostsView.vue'),
+        meta: { title: '主机台账', requiresAdmin: true },
+      },
+      {
         path: 'modules/net',
         name: 'Net',
         component: () => import('@/views/admin/net/index.vue'),

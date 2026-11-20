@@ -10,7 +10,7 @@
         <div v-if="project" class="dm-tag-row" style="margin-top: 6px">
           <span class="dm-code">{{ project.project_key }}</span>
           <NkTag size="sm">{{ typeLabel(project.type) }}</NkTag>
-          <NkTag size="sm" :type="project.deleted ? 'danger' : project.status === 'active' ? 'success' : 'default'">
+          <NkTag size="sm" :type="project.deleted ? 'danger' : project.status === 'active' ? 'success' : 'neutral'">
             {{ project.deleted ? '已删除' : project.status === 'active' ? '启用' : '归档' }}
           </NkTag>
         </div>
@@ -26,6 +26,12 @@
 
     <div v-if="project && activeTab === 'overview'">
       <OverviewTab :project="project" />
+    </div>
+    <div v-else-if="project && activeTab === 'plan'">
+      <V3TasksTab :project="project" />
+    </div>
+    <div v-else-if="project && activeTab === 'insights'">
+      <V3InsightsTab :project="project" />
     </div>
     <div v-else-if="project && activeTab === 'deployment'">
       <DeploymentTab :project="project" />
@@ -52,6 +58,8 @@ import { NKMessage } from '@nkui/vue/src/utils/message'
 import { getProject } from '@/api/developmentManager'
 import type { Project } from '@/types/developmentManager'
 import OverviewTab from './tabs/OverviewTab.vue'
+import V3TasksTab from './tabs/V3TasksTab.vue'
+import V3InsightsTab from './tabs/V3InsightsTab.vue'
 import DeploymentTab from './tabs/DeploymentTab.vue'
 import DictionaryTab from './tabs/DictionaryTab.vue'
 import RequirementsTab from './tabs/RequirementsTab.vue'
@@ -65,6 +73,8 @@ const activeTab = ref('overview')
 
 const tabs = [
   { label: '概览', value: 'overview' },
+  { label: 'V3 任务', value: 'plan' },
+  { label: 'V3 看板', value: 'insights' },
   { label: '部署', value: 'deployment' },
   { label: '数据字典', value: 'dictionary' },
   { label: '需求', value: 'requirements' },

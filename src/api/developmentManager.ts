@@ -19,6 +19,23 @@ import type {
   ScanImportResp,
   ExpandAssetResp,
   PaginatedResp,
+  Milestone,
+  Task,
+  TaskDependency,
+  TaskLog,
+  MilestoneProgress,
+  Risk,
+  Release,
+  Baseline,
+  Iteration,
+  Comment,
+  ChecklistItem,
+  Label,
+  TaskAsset,
+  ProjectDashboard,
+  BoardColumn,
+  RoadmapItem,
+  WeeklyReport,
 } from '@/types/developmentManager'
 
 const BASE = 'developmentmanager'
@@ -272,4 +289,243 @@ export function getGeneration(id: number | string) {
 
 export function retryGeneration(id: number | string) {
   return postResponse<Generation>(`${BASE}/generations/${id}/retry`)
+}
+
+// ---------- V3 里程碑/任务 ----------
+
+export function listMilestones(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<PaginatedResp<Milestone>>(`${BASE}/projects/${projectId}/milestones`, params)
+}
+
+export function createMilestone(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Milestone>(`${BASE}/projects/${projectId}/milestones`, data)
+}
+
+export function getMilestone(id: number | string) {
+  return getResponse<Milestone>(`${BASE}/milestones/${id}`)
+}
+
+export function updateMilestone(id: number | string, data: Record<string, any>) {
+  return putResponse<Milestone>(`${BASE}/milestones/${id}`, data)
+}
+
+export function deleteMilestone(id: number | string) {
+  return deleteResponse<any>(`${BASE}/milestones/${id}`)
+}
+
+export function getMilestoneProgress(id: number | string) {
+  return getResponse<MilestoneProgress>(`${BASE}/milestones/${id}/progress`)
+}
+
+export function listTasks(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<PaginatedResp<Task>>(`${BASE}/projects/${projectId}/tasks`, params)
+}
+
+export function createTask(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Task>(`${BASE}/projects/${projectId}/tasks`, data)
+}
+
+export function importTasks(projectId: number | string, tasks: Record<string, any>[]) {
+  return postResponse<{ created: number; updated: number; skipped: number }>(
+    `${BASE}/projects/${projectId}/tasks/import`,
+    { tasks },
+  )
+}
+
+export function getTask(id: number | string) {
+  return getResponse<Task>(`${BASE}/tasks/${id}`)
+}
+
+export function updateTask(id: number | string, data: Record<string, any>) {
+  return putResponse<Task>(`${BASE}/tasks/${id}`, data)
+}
+
+export function deleteTask(id: number | string) {
+  return deleteResponse<any>(`${BASE}/tasks/${id}`)
+}
+
+export function changeTaskStatus(id: number | string, data: Record<string, any>) {
+  return postResponse<Task>(`${BASE}/tasks/${id}/status`, data)
+}
+
+export function listTaskLogs(id: number | string, limit = 100) {
+  return getResponse<{ items: TaskLog[] }>(`${BASE}/tasks/${id}/logs`, { limit })
+}
+
+export function addTaskLog(id: number | string, data: Record<string, any>) {
+  return postResponse<TaskLog>(`${BASE}/tasks/${id}/logs`, data)
+}
+
+export function listDependencies(taskId: number | string) {
+  return getResponse<{ items: TaskDependency[] }>(`${BASE}/tasks/${taskId}/dependencies`)
+}
+
+export function addDependency(taskId: number | string, data: Record<string, any>) {
+  return postResponse<TaskDependency>(`${BASE}/tasks/${taskId}/dependencies`, data)
+}
+
+export function removeDependency(taskId: number | string, depId: number | string) {
+  return deleteResponse<any>(`${BASE}/tasks/${taskId}/dependencies/${depId}`)
+}
+
+// ---------- V3 迭代/风险/发布/基线 ----------
+
+export function listIterations(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<PaginatedResp<Iteration>>(`${BASE}/projects/${projectId}/iterations`, params)
+}
+
+export function createIteration(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Iteration>(`${BASE}/projects/${projectId}/iterations`, data)
+}
+
+export function getIteration(id: number | string) {
+  return getResponse<Iteration>(`${BASE}/iterations/${id}`)
+}
+
+export function updateIteration(id: number | string, data: Record<string, any>) {
+  return putResponse<Iteration>(`${BASE}/iterations/${id}`, data)
+}
+
+export function deleteIteration(id: number | string) {
+  return deleteResponse<any>(`${BASE}/iterations/${id}`)
+}
+
+export function listRisks(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<PaginatedResp<Risk>>(`${BASE}/projects/${projectId}/risks`, params)
+}
+
+export function createRisk(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Risk>(`${BASE}/projects/${projectId}/risks`, data)
+}
+
+export function getRisk(id: number | string) {
+  return getResponse<Risk>(`${BASE}/risks/${id}`)
+}
+
+export function updateRisk(id: number | string, data: Record<string, any>) {
+  return putResponse<Risk>(`${BASE}/risks/${id}`, data)
+}
+
+export function deleteRisk(id: number | string) {
+  return deleteResponse<any>(`${BASE}/risks/${id}`)
+}
+
+export function listReleases(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<PaginatedResp<Release>>(`${BASE}/projects/${projectId}/releases`, params)
+}
+
+export function createRelease(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Release>(`${BASE}/projects/${projectId}/releases`, data)
+}
+
+export function getRelease(id: number | string) {
+  return getResponse<Release>(`${BASE}/releases/${id}`)
+}
+
+export function updateRelease(id: number | string, data: Record<string, any>) {
+  return putResponse<Release>(`${BASE}/releases/${id}`, data)
+}
+
+export function deleteRelease(id: number | string) {
+  return deleteResponse<any>(`${BASE}/releases/${id}`)
+}
+
+export function listBaselines(projectId: number | string) {
+  return getResponse<{ items: Baseline[] }>(`${BASE}/projects/${projectId}/baselines`)
+}
+
+export function createBaseline(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Baseline>(`${BASE}/projects/${projectId}/baselines`, data)
+}
+
+export function getBaseline(id: number | string) {
+  return getResponse<Baseline>(`${BASE}/baselines/${id}`)
+}
+
+export function deleteBaseline(id: number | string) {
+  return deleteResponse<any>(`${BASE}/baselines/${id}`)
+}
+
+// ---------- V3 评论/检查项/标签/资产 ----------
+
+export function listTaskComments(taskId: number | string) {
+  return getResponse<{ items: Comment[] }>(`${BASE}/tasks/${taskId}/comments`)
+}
+
+export function addTaskComment(taskId: number | string, content: string) {
+  return postResponse<Comment>(`${BASE}/tasks/${taskId}/comments`, { content })
+}
+
+export function deleteComment(id: number | string) {
+  return deleteResponse<any>(`${BASE}/comments/${id}`)
+}
+
+export function listChecklist(taskId: number | string) {
+  return getResponse<{ items: ChecklistItem[] }>(`${BASE}/tasks/${taskId}/checklist`)
+}
+
+export function createChecklistItem(taskId: number | string, data: Record<string, any>) {
+  return postResponse<ChecklistItem>(`${BASE}/tasks/${taskId}/checklist`, data)
+}
+
+export function updateChecklistItem(id: number | string, data: Record<string, any>) {
+  return putResponse<any>(`${BASE}/checklist/${id}`, data)
+}
+
+export function deleteChecklistItem(id: number | string) {
+  return deleteResponse<any>(`${BASE}/checklist/${id}`)
+}
+
+export function listLabels(projectId: number | string) {
+  return getResponse<{ items: Label[] }>(`${BASE}/projects/${projectId}/labels`)
+}
+
+export function createLabel(projectId: number | string, data: Record<string, any>) {
+  return postResponse<Label>(`${BASE}/projects/${projectId}/labels`, data)
+}
+
+export function deleteLabel(id: number | string) {
+  return deleteResponse<any>(`${BASE}/labels/${id}`)
+}
+
+export function listTaskLabels(taskId: number | string) {
+  return getResponse<{ items: Label[] }>(`${BASE}/tasks/${taskId}/labels`)
+}
+
+export function addTaskLabel(taskId: number | string, labelId: number) {
+  return postResponse<any>(`${BASE}/tasks/${taskId}/labels`, { label_id: labelId })
+}
+
+export function removeTaskLabel(taskId: number | string, labelId: number | string) {
+  return deleteResponse<any>(`${BASE}/tasks/${taskId}/labels/${labelId}`)
+}
+
+export function listTaskAssets(taskId: number | string) {
+  return getResponse<{ items: TaskAsset[] }>(`${BASE}/tasks/${taskId}/assets`)
+}
+
+export function addTaskAsset(taskId: number | string, assetId: number, relationType = 'input') {
+  return postResponse<TaskAsset>(`${BASE}/tasks/${taskId}/assets`, { asset_id: assetId, relation_type: relationType })
+}
+
+export function removeTaskAsset(taskId: number | string, assetId: number | string) {
+  return deleteResponse<any>(`${BASE}/tasks/${taskId}/assets/${assetId}`)
+}
+
+// ---------- V3 报表 ----------
+
+export function getDashboard(projectId: number | string) {
+  return getResponse<ProjectDashboard>(`${BASE}/projects/${projectId}/dashboard`)
+}
+
+export function getBoard(projectId: number | string) {
+  return getResponse<{ columns: BoardColumn[] }>(`${BASE}/projects/${projectId}/board`)
+}
+
+export function getRoadmap(projectId: number | string) {
+  return getResponse<{ items: RoadmapItem[] }>(`${BASE}/projects/${projectId}/roadmap`)
+}
+
+export function getWeeklyReport(projectId: number | string, params?: Record<string, any>) {
+  return getResponse<WeeklyReport>(`${BASE}/projects/${projectId}/report/weekly`, params)
 }

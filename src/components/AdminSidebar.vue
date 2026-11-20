@@ -30,7 +30,7 @@
         </div>
         <div v-show="!collapsed && expandedGroups[group.label]" class="admin-sidebar__group-children">
           <div
-            v-for="child in group.children"
+            v-for="child in visibleChildren(group)"
             :key="child.path"
             class="admin-sidebar__item admin-sidebar__item--child"
             :class="{ 'admin-sidebar__item--active': isActive(child.path) }"
@@ -104,6 +104,8 @@ const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
       { label: '网络工具', path: '/modules/net' },
       { label: '服务导航', path: '/modules/servicenav' },
       { label: '数据库迁移', path: '/modules/migrate' },
+      { label: '主机台账', path: '/ops/hosts', requiresAdmin: true },
+      { label: '系统维护', path: '/ops/maintenance', requiresAdmin: true },
       { label: 'Webhook', path: '/webhook' },
     ],
   },
@@ -134,6 +136,10 @@ const filteredGroups = computed(() =>
 
 function isActive(path: string): boolean {
   return route.path === path
+}
+
+function visibleChildren(group: MenuGroup) {
+  return group.children.filter((c) => !c.requiresAdmin || authStore.isAdmin)
 }
 
 function navigate(item: MenuItem) {

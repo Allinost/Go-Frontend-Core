@@ -259,3 +259,219 @@ export interface ExpandAssetResp {
   skipped: number
   failed: number
 }
+
+// ---------- V3 项目管理 ----------
+
+export interface Milestone {
+  id: number
+  project_id: number
+  version: string
+  name: string
+  goal: string
+  status: string
+  start_date?: string
+  target_date?: string
+  released_at?: string
+  owner: string
+  deleted: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Task {
+  id: number
+  project_id: number
+  milestone_id?: number
+  iteration_id?: number
+  requirement_id?: number
+  parent_id?: number
+  code: string
+  title: string
+  description: string
+  type: string
+  status: string
+  priority: string
+  estimate_hours: number
+  actual_hours: number
+  owner: string
+  start_date?: string
+  due_date?: string
+  started_at?: string
+  done_at?: string
+  order_no: number
+  deleted: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskDependency {
+  id: number
+  task_id: number
+  depends_on_task_id: number
+  dep_type: string
+  lag_days: number
+  created_at: string
+}
+
+export interface TaskLog {
+  id: number
+  task_id: number
+  from_status: string
+  to_status: string
+  hours: number
+  note: string
+  operator: string
+  created_at: string
+}
+
+export interface MilestoneProgress {
+  milestone_id: number
+  total: number
+  todo: number
+  doing: number
+  blocked: number
+  review: number
+  done: number
+  cancelled: number
+  estimate_hours: number
+  actual_hours: number
+  percent: number
+}
+
+export interface Risk {
+  id: number
+  project_id: number
+  milestone_id?: number
+  task_id?: number
+  title: string
+  description: string
+  probability: string
+  impact: string
+  level: string
+  mitigation: string
+  owner: string
+  status: string
+  due_date?: string
+  deleted: boolean
+  created_at: string
+}
+
+export interface Release {
+  id: number
+  project_id: number
+  milestone_id?: number
+  version: string
+  name: string
+  release_type: string
+  status: string
+  released_at?: string
+  change_summary: string
+  rollback_plan: string
+  deployed_by: string
+  deleted: boolean
+  created_at: string
+}
+
+export interface Baseline {
+  id: number
+  project_id: number
+  milestone_id?: number
+  name: string
+  snapshot: any
+  note: string
+  created_by: string
+  created_at: string
+}
+
+export interface Iteration {
+  id: number
+  project_id: number
+  milestone_id?: number
+  name: string
+  goal: string
+  start_date?: string
+  end_date?: string
+  status: string
+  capacity_hours: number
+  deleted: boolean
+  created_at: string
+}
+
+export interface Comment {
+  id: number
+  project_id: number
+  target_type: string
+  target_id: number
+  content: string
+  operator: string
+  created_at: string
+}
+
+export interface ChecklistItem {
+  id: number
+  task_id: number
+  title: string
+  done: boolean
+  order_no: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Label {
+  id: number
+  project_id: number
+  name: string
+  color: string
+  created_at: string
+}
+
+export interface TaskAsset {
+  id: number
+  task_id: number
+  asset_id: number
+  relation_type: string
+  created_at: string
+}
+
+export interface ProjectDashboard {
+  project_id: number
+  milestones: number
+  active_milestones: number
+  tasks: number
+  todo: number
+  doing: number
+  blocked: number
+  review: number
+  done: number
+  cancelled: number
+  estimate_hours: number
+  actual_hours: number
+  risks_open: number
+  risks_critical: number
+  releases: number
+  active_iterations: number
+  percent: number
+}
+
+export interface BoardColumn {
+  status: string
+  tasks: Task[]
+}
+
+export interface RoadmapItem {
+  milestone: Milestone
+  progress: MilestoneProgress
+}
+
+export interface WeeklyReport {
+  project_id: number
+  from: string
+  to: string
+  created_tasks: number
+  done_tasks: number
+  log_hours: number
+  risks_opened: number
+  risks_closed: number
+  releases: number
+  done_tasks_list: Task[]
+}
