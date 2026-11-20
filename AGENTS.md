@@ -57,8 +57,11 @@ src/
 - `developmentManager`（项目开发管理）：`/modules/zzz/developmentmanager`
   - API 封装：`src/api/developmentManager.ts`
   - 类型：`src/types/developmentManager.ts`
-  - 页面：`src/views/modules/zzz/developmentManager/`（项目列表 + 概览/部署/数据字典/需求/生成/资产）
+  - 页面：`src/views/modules/zzz/developmentManager/`（项目列表 + 概览/V3 任务/V3 看板/部署/数据字典/需求/生成/资产）
   - 容器管理（运维管理菜单）：`/modules/zzz/containers`，管理 `container_project` 类型项目并直达部署 Tab
+- **V3 运维**：`/ops/hosts`（主机台账/SSH 连通）与 `/ops/maintenance`（L1/L2 手动维护）
+  - API 封装：`src/api/ops.ts`
+  - 页面：`src/views/admin/ops/`
 
 ## 全局设置
 - 顶部导航「设置」（用户名左侧）：前端 API 地址/站点标题/内网域名/EasyTier 域名/主题；管理员可见「后端设置」（公开地址、Browser 地址、外部工具地址、依赖状态）
