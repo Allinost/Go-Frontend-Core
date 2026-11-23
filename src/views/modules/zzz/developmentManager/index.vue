@@ -32,6 +32,26 @@
         <div class="dm-stat-label">已删除项目</div>
         <div class="dm-stat-value">{{ stats.projects_deleted }}</div>
       </div>
+      <div class="dm-stat-card">
+        <div class="dm-stat-label">任务完成</div>
+        <div class="dm-stat-value">{{ stats.tasks_done }} / {{ stats.tasks_total }}</div>
+      </div>
+      <div class="dm-stat-card">
+        <div class="dm-stat-label">进行中 / 阻塞</div>
+        <div class="dm-stat-value">{{ stats.tasks_doing }} / {{ stats.tasks_blocked }}</div>
+      </div>
+      <div class="dm-stat-card">
+        <div class="dm-stat-label">活跃里程碑</div>
+        <div class="dm-stat-value">{{ stats.milestones_active }}</div>
+      </div>
+      <div class="dm-stat-card">
+        <div class="dm-stat-label">未关闭风险</div>
+        <div class="dm-stat-value">{{ stats.risks_open }}</div>
+      </div>
+      <div class="dm-stat-card">
+        <div class="dm-stat-label">发布 / 已发布</div>
+        <div class="dm-stat-value">{{ stats.releases_total }} / {{ stats.releases_deployed }}</div>
+      </div>
     </div>
 
     <div class="dm-filters">
@@ -183,6 +203,14 @@ const stats = ref<ProjectStats>({
   projects_by_status: {},
   relations_active: 0,
   assets_total: 0,
+  tasks_total: 0,
+  tasks_done: 0,
+  tasks_doing: 0,
+  tasks_blocked: 0,
+  milestones_active: 0,
+  risks_open: 0,
+  releases_total: 0,
+  releases_deployed: 0,
 })
 const projects = ref<Project[]>([])
 const page = ref(1)

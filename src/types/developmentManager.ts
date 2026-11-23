@@ -13,6 +13,14 @@ export interface ProjectStats {
   projects_by_status: Record<string, number>
   relations_active: number
   assets_total: number
+  tasks_total: number
+  tasks_done: number
+  tasks_doing: number
+  tasks_blocked: number
+  milestones_active: number
+  risks_open: number
+  releases_total: number
+  releases_deployed: number
 }
 
 export interface Project {
