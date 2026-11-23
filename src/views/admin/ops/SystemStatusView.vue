@@ -325,4 +325,19 @@ onMounted(loadAll)
     grid-template-columns: 1fr;
   }
 }
+@media (max-width: 700px) {
+  .sys-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sys-card-value {
+    font-size: 16px;
+    white-space: normal;
+    word-break: break-all;
+  }
+}
+@media (max-width: 480px) {
+  .sys-cards {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

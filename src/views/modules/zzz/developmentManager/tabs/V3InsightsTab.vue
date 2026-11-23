@@ -23,10 +23,10 @@
         >
           <div class="v3ins-column-head">
             <span>{{ statusLabel(col.status) }}</span>
-            <NkTag size="sm" type="neutral">{{ col.tasks.length }}</NkTag>
+            <NkTag size="sm" type="neutral">{{ (col.tasks || []).length }}</NkTag>
           </div>
           <div
-            v-for="t in col.tasks"
+            v-for="t in (col.tasks || [])"
             :key="t.id"
             class="v3ins-task"
             :class="{ 'v3ins-task--dragging': draggingTask?.id === t.id }"
