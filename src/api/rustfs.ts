@@ -8,6 +8,18 @@ export interface RustFSFile {
   content_type: string
   last_modified: string
   etag: string
+  staged?: boolean
+}
+
+export interface StorageStatus {
+  s3_backend: string
+  storage_mode: string
+  staged_files: number
+  storage_error?: string
+  database: string
+  file_ref_service: string
+  file_references_table: string
+  scan_targets_table: string
 }
 
 export interface FileListData {
@@ -119,4 +131,16 @@ export function cleanupFiles(paths?: string[]): Promise<ApiResponse<void>> {
 
 export function getBucketStats(): Promise<ApiResponse<BucketStats>> {
   return getResponse('/ops/rustfs/stats')
+}
+
+export function getStorageStatus(): Promise<ApiResponse<StorageStatus>> {
+  return getResponse('/ops/status')
+}
+
+export function listStagedFiles(): Promise<ApiResponse<{ items: RustFSFile[]; total: number }>> {
+  return getResponse('/ops/rustfs/staged')
+}
+
+export function flushStagedFiles(): Promise<ApiResponse<{ flushed: number }>> {
+  return postResponse('/ops/rustfs/flush', {})
 }

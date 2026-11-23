@@ -324,6 +324,76 @@
       </table>
     </div>
 
+    <!-- ===================== Tab 5: Redis 暂存 ===================== -->
+    <div v-show="activeTab === 'staged'" class="storage-mgmt__tab-content">
+      <NkCard>
+        <template #header>
+          <div class="storage-mgmt__browser-header">
+            <div>
+              <span class="storage-mgmt__card-title">Redis 暂存区</span>
+              <span class="storage-mgmt__staged-hint">对象存储故障时上传会暂存在 Redis，恢复后自动提交。</span>
+            </div>
+            <div class="storage-mgmt__browser-actions">
+              <NkButton size="sm" variant="ghost" :loading="loadingStaged" @click="loadStaged">刷新</NkButton>
+              <NkButton size="sm" :loading="flushingStaged" :disabled="!stagedFiles.length" @click="handleFlushStaged">
+                立即提交
+              </NkButton>
+            </div>
+          </div>
+        </template>
+
+        <div v-if="storageStatus" class="storage-mgmt__staged-status">
+          <NkTag size="sm" :type="storageStatus.storage_mode === 'unavailable' ? 'danger' : storageStatus.storage_mode === 's3+redis' ? 'success' : 'warning'">
+            模式：{{ storageStatus.storage_mode }}
+          </NkTag>
+          <NkTag size="sm" :type="storageStatus.s3_backend === '已连接' ? 'success' : 'danger'">
+            S3：{{ storageStatus.s3_backend }}
+          </NkTag>
+          <span>待提交 {{ stagedFiles.length }} 个</span>
+          <span v-if="storageStatus.storage_error" class="storage-mgmt__staged-error">{{ storageStatus.storage_error }}</span>
+        </div>
+
+        <NkLoading v-if="loadingStaged" />
+        <div v-else-if="!stagedFiles.length" class="storage-mgmt__empty">
+          <NkEmpty description="暂无暂存文件" />
+        </div>
+        <table v-else class="storage-mgmt__file-table">
+          <thead>
+            <tr>
+              <th>文件名</th>
+              <th style="width: 110px">大小</th>
+              <th style="width: 120px">类型</th>
+              <th style="width: 170px">暂存时间</th>
+              <th style="width: 120px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="file in stagedFiles" :key="file.path">
+              <td>
+                <div class="storage-mgmt__file-cell">
+                  <NkIcon name="file" size="sm" class="storage-mgmt__file-icon" />
+                  <span :title="file.path">{{ file.path }}</span>
+                </div>
+              </td>
+              <td>{{ formatSize(file.size) }}</td>
+              <td>
+                <NkTag v-if="file.content_type" size="xs" variant="outline">
+                  {{ file.content_type.split('/')[1] || file.content_type }}
+                </NkTag>
+              </td>
+              <td>{{ formatDate(file.last_modified) }}</td>
+              <td>
+                <NkButton size="xs" variant="ghost" @click="downloadStaged(file)">下载</NkButton>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="storage-mgmt__staged-note">
+          暂存对象有 TTL 限制，长时间故障请先恢复对象存储；提交成功后会从 Redis 删除。
+        </div>
+      </NkCard>
+    </div>
+
     <!-- ===================== Dialogs ===================== -->
 
     <!-- Upload Dialog -->
@@ -527,10 +597,11 @@ import {
   listFiles, getFileInfo, getSignedUrl, downloadFile as getDownloadUrl,
   uploadFile, deleteFile, batchDeleteFiles,
   scanFiles, cleanupFiles, getBucketStats,
+  getStorageStatus, listStagedFiles, flushStagedFiles,
 } from '@/api/rustfs'
 import type {
   RustFSFile, FileListData, FileInfoData,
-  SignedUrlData, ScanResult, BucketStats,
+  SignedUrlData, ScanResult, BucketStats, StorageStatus,
 } from '@/api/rustfs'
 import {
   registerReferences, queryReferences, getReferenceStats, syncReferences,
@@ -545,6 +616,7 @@ import { NKMessage } from '@nkui/vue/src/utils/message'
 const activeTab = ref('browser')
 const tabs = [
   { label: '文件浏览器', value: 'browser' },
+  { label: 'Redis 暂存', value: 'staged' },
   { label: '使用扫描', value: 'scan' },
   { label: '文件引用', value: 'references' },
   { label: '扫描目标', value: 'targets' },
@@ -553,6 +625,7 @@ const tabs = [
 function onTabChange(value: string | number) {
   activeTab.value = value as string
   if (activeTab.value === 'browser') loadFiles()
+  if (activeTab.value === 'staged') loadStaged()
   if (activeTab.value === 'scan') handleScan()
   if (activeTab.value === 'targets') loadTargets()
   if (activeTab.value === 'references') {
@@ -753,6 +826,42 @@ function copyToClipboard(text: string) {
 
 // ---- Download ----
 function downloadFileAction(file: RustFSFile) {
+  window.open(getDownloadUrl(file.path), '_blank')
+}
+
+// ---- Redis 暂存区 ----
+const storageStatus = ref<StorageStatus | null>(null)
+const stagedFiles = ref<RustFSFile[]>([])
+const loadingStaged = ref(false)
+const flushingStaged = ref(false)
+
+async function loadStaged() {
+  loadingStaged.value = true
+  try {
+    const [statusRes, listRes] = await Promise.all([getStorageStatus(), listStagedFiles()])
+    storageStatus.value = statusRes.data
+    stagedFiles.value = listRes.data.items || []
+  } catch (err: any) {
+    NKMessage.error(err.message || '加载暂存区失败')
+  } finally {
+    loadingStaged.value = false
+  }
+}
+
+async function handleFlushStaged() {
+  flushingStaged.value = true
+  try {
+    const res = await flushStagedFiles()
+    NKMessage.success(`已提交 ${res.data.flushed} 个暂存文件`)
+    await loadStaged()
+  } catch (err: any) {
+    NKMessage.error(err.message || '提交暂存文件失败')
+  } finally {
+    flushingStaged.value = false
+  }
+}
+
+function downloadStaged(file: RustFSFile) {
   window.open(getDownloadUrl(file.path), '_blank')
 }
 
@@ -1476,6 +1585,37 @@ onMounted(loadFiles)
   &__url-text {
     font-size: $nk-font-size-xs;
     color: $nk-color-neutral-700;
+  }
+
+  &__staged-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $nk-spacing-sm;
+    margin-bottom: $nk-spacing-md;
+    font-size: $nk-font-size-sm;
+  }
+
+  &__staged-error {
+    color: $nk-color-error;
+    font-size: $nk-font-size-xs;
+    word-break: break-all;
+  }
+
+  &__staged-hint {
+    margin-left: $nk-spacing-sm;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+  }
+
+  &__staged-note {
+    margin-top: $nk-spacing-md;
+    font-size: $nk-font-size-xs;
+    color: $nk-color-neutral-400;
+  }
+
+  &__card-title {
+    font-weight: 600;
   }
 }
 </style>
