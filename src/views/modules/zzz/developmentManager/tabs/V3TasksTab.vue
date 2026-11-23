@@ -72,6 +72,8 @@
         <NkSelect v-model="taskForm.priority" :options="priorityOptions" />
         <NkInput v-model.number="taskForm.estimate_hours" type="number" placeholder="预估工时" />
         <NkInput v-model="taskForm.owner" placeholder="负责人" />
+        <NkInput v-model="taskForm.start_date" placeholder="开始日期 YYYY-MM-DD" />
+        <NkInput v-model="taskForm.due_date" placeholder="截止日期 YYYY-MM-DD" />
         <NkButton size="sm" type="primary" :loading="saving" @click="saveTask">保存任务</NkButton>
       </div>
       <NkLoading v-if="tasksLoading" />
@@ -155,6 +157,15 @@
           <NkButton v-if="currentTask.status === 'doing'" size="sm" @click="changeStatus(currentTask, 'review')">提测</NkButton>
           <NkButton v-if="currentTask.status === 'doing' || currentTask.status === 'review'" size="sm" type="primary" @click="changeStatus(currentTask, 'done')">完成</NkButton>
           <NkButton v-if="currentTask.status === 'done'" size="sm" @click="changeStatus(currentTask, 'doing')">重新打开</NkButton>
+        </div>
+
+        <div class="v3pm-section">
+          <div class="v3pm-section-title">计划日期</div>
+          <div class="v3pm-form-row">
+            <NkInput v-model="taskPlan.start_date" placeholder="开始 YYYY-MM-DD" size="sm" style="width: 170px" />
+            <NkInput v-model="taskPlan.due_date" placeholder="截止 YYYY-MM-DD" size="sm" style="width: 170px" />
+            <NkButton size="sm" @click="saveTaskPlan">保存日期</NkButton>
+          </div>
         </div>
 
         <div class="v3pm-section">
@@ -324,6 +335,7 @@ import {
   removeTaskAsset,
   removeTaskLabel,
   updateChecklistItem,
+  updateTask,
 } from '@/api/developmentManager'
 
 const props = defineProps<{ project: Project }>()
@@ -342,11 +354,12 @@ const showTaskForm = ref(false)
 const milestoneForm = reactive({ version: '', name: '', target_date: '' })
 const taskForm = reactive({
   code: '', title: '', milestone_id: '' as number | '', type: 'feature', priority: 'P2',
-  estimate_hours: 0, owner: '',
+  estimate_hours: 0, owner: '', start_date: '', due_date: '',
 })
 
 const drawerVisible = ref(false)
 const currentTask = ref<Task | null>(null)
+const taskPlan = reactive({ start_date: '', due_date: '' })
 const logs = ref<TaskLog[]>([])
 const deps = ref<TaskDependency[]>([])
 const checklist = ref<ChecklistItem[]>([])
@@ -569,6 +582,8 @@ async function saveTask() {
       priority: taskForm.priority,
       estimate_hours: Number(taskForm.estimate_hours) || 0,
       owner: taskForm.owner,
+      start_date: taskForm.start_date || undefined,
+      due_date: taskForm.due_date || undefined,
       status: 'todo',
     })
     NKMessage.success('任务已创建')
@@ -576,6 +591,8 @@ async function saveTask() {
     taskForm.code = ''
     taskForm.title = ''
     taskForm.estimate_hours = 0
+    taskForm.start_date = ''
+    taskForm.due_date = ''
     await load()
   } catch (err: any) {
     NKMessage.error(err.message || '创建任务失败')
@@ -600,8 +617,29 @@ async function changeStatus(task: Task, status: string) {
 
 async function openTask(task: Task) {
   currentTask.value = task
+  taskPlan.start_date = task.start_date ? String(task.start_date).slice(0, 10) : ''
+  taskPlan.due_date = task.due_date ? String(task.due_date).slice(0, 10) : ''
   drawerVisible.value = true
   await loadTaskDetail(task.id)
+}
+
+async function saveTaskPlan() {
+  if (!currentTask.value) return
+  try {
+    await updateTask(currentTask.value.id, {
+      start_date: taskPlan.start_date || '',
+      due_date: taskPlan.due_date || '',
+    })
+    currentTask.value = {
+      ...currentTask.value,
+      start_date: taskPlan.start_date || undefined,
+      due_date: taskPlan.due_date || undefined,
+    }
+    NKMessage.success('计划日期已更新')
+    await load()
+  } catch (err: any) {
+    NKMessage.error(err.message || '更新计划日期失败')
+  }
 }
 
 async function loadTaskDetail(id: number) {
