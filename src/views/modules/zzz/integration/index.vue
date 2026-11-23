@@ -448,7 +448,7 @@ onMounted(() => {
     color: $nk-color-neutral-400;
 
     &--on {
-      color: #52c41a;
+      color: color-mix(in srgb, var(--nk-color-success, #22c55e) 72%, var(--nk-color-neutral-900, #171717));
     }
   }
 

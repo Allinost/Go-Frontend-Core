@@ -1625,8 +1625,9 @@ onMounted(loadFiles)
     margin: $nk-spacing-sm 0;
     padding: $nk-spacing-sm $nk-spacing-md;
     border-radius: $nk-radius-md;
-    background: rgba(250, 173, 20, 0.12);
-    color: #ad6800;
+    background: color-mix(in srgb, var(--nk-color-warning, #f59e0b) 14%, var(--nk-color-neutral-0, #fff));
+    color: color-mix(in srgb, var(--nk-color-warning, #f59e0b) 62%, var(--nk-color-neutral-900, #171717));
+    border: 1px solid color-mix(in srgb, var(--nk-color-warning, #f59e0b) 28%, transparent);
     font-size: $nk-font-size-sm;
   }
 

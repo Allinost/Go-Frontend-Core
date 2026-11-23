@@ -91,12 +91,6 @@ button:focus-visible,
 }
 
 [data-theme='dark'] {
-  .maint-warning,
-  .storage-mgmt__degraded {
-    background: rgba(250, 173, 20, 0.16);
-    color: #fbbf24;
-  }
-
   .dm-error {
     color: #f87171;
   }

@@ -321,6 +321,10 @@
     color: $nk-color-neutral-500;
   }
 
+  &__return-tip--error {
+    color: color-mix(in srgb, var(--nk-color-error, #ef4444) 72%, var(--nk-color-neutral-900, #171717));
+  }
+
   &__order-search-results {
     margin-top: 4px;
     border: 1px solid $nk-color-neutral-200;

@@ -127,14 +127,14 @@
               placeholder="数量"
             />
           </div>
-          <p v-if="orderForm.combo_id && comboGuardMessage" class="goodser__return-tip" style="color: #d4380d">
+          <p v-if="orderForm.combo_id && comboGuardMessage" class="goodser__return-tip goodser__return-tip--error">
             {{ comboGuardMessage }}
           </p>
           <p v-else-if="orderForm.combo_id" class="goodser__return-tip">
             可售 {{ comboAvailability }} 套 · 提交后会按组件明细展开并扣减组件库存。
           </p>
           <div v-if="orderForm.combo_id && comboBundleComponents.length" class="goodser__combo-bundle-configs">
-            <p class="goodser__return-tip" style="color: #d4380d">组合包含捆，请手动选择每套捆的主商品与捆物</p>
+            <p class="goodser__return-tip goodser__return-tip--error">组合包含捆，请手动选择每套捆的主商品与捆物</p>
             <div
               v-for="bc in comboBundleComponents"
               :key="bc.bundle_id"
@@ -233,7 +233,7 @@
                 />
               </div>
             </div>
-            <p v-if="bundlePreviewError" class="goodser__return-tip" style="color: #d4380d">{{ bundlePreviewError }}</p>
+            <p v-if="bundlePreviewError" class="goodser__return-tip goodser__return-tip--error">{{ bundlePreviewError }}</p>
             <p v-else-if="bundlePreview" class="goodser__return-tip">
               单捆 ¥{{ bundlePreview.unit_price }} · 共 {{ bundlePreview.quantity }} 捆 · 总价 ¥{{ bundlePreview.total_price }}
               （主商品 ¥{{ bundlePreview.main_amount }} / 副区 ¥{{ bundlePreview.sub_amount }}）
