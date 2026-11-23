@@ -63,8 +63,8 @@ src/
 - **文件存储**：`/storage`（文件浏览/扫描/引用/扫描目标/Redis 暂存区）
   - API 封装：`src/api/rustfs.ts`
   - Redis 暂存区支持查看积压、下载、手动提交 `/ops/rustfs/flush`
-- **V3 运维**：`/ops/hosts`（主机台账/SSH 连通）与 `/ops/maintenance`（L1/L2 手动维护）
-  - API 封装：`src/api/ops.ts`
+- **V3 运维**：`/ops/hosts`（主机台账/SSH 连通）、`/ops/maintenance`（L1/L2 手动维护）、`/ops/status`（服务/依赖/存储状态）
+  - API 封装：`src/api/ops.ts`、`src/api/health.ts`
   - 页面：`src/views/admin/ops/`
 - **配置中心**：`/settings/config`（管理员，schema 驱动，敏感项掩码 + 变更历史）
   - API 封装：`src/api/settings.ts`
