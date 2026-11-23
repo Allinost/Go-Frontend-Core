@@ -89,3 +89,24 @@ button:focus-visible,
   outline: 2px solid color-mix(in srgb, var(--nk-color-primary-500) 70%, transparent);
   outline-offset: 2px;
 }
+
+[data-theme='dark'] {
+  .maint-warning,
+  .storage-mgmt__degraded {
+    background: rgba(250, 173, 20, 0.16);
+    color: #fbbf24;
+  }
+
+  .dm-error {
+    color: #f87171;
+  }
+
+  .dm-success {
+    color: #4ade80;
+  }
+
+  .soft-warning-bg {
+    background: rgba(250, 173, 20, 0.16);
+    color: #fbbf24;
+  }
+}

@@ -46,6 +46,12 @@
   --nk-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --nk-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --nk-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* 兼容旧组件/页面使用的中性变量 */
+  --nk-border-color: var(--nk-color-neutral-200);
+  --nk-fill-color: var(--nk-color-neutral-100);
+  --nk-bg-color: var(--nk-color-neutral-0);
+  --nk-text-color-secondary: var(--nk-color-neutral-500);
 }
 
 [data-theme='dark'] {
@@ -74,4 +80,9 @@
   --nk-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --nk-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
   --nk-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+  --nk-border-color: var(--nk-color-neutral-200);
+  --nk-fill-color: var(--nk-color-neutral-100);
+  --nk-bg-color: var(--nk-color-neutral-0);
+  --nk-text-color-secondary: var(--nk-color-neutral-500);
 }

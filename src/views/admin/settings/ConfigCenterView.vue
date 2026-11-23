@@ -391,6 +391,7 @@ onMounted(loadAll)
 }
 .cc-nav-item:hover {
   background: var(--nk-fill-color, #f5f6f8);
+  color: var(--nk-color-neutral-900, #171717);
 }
 .cc-nav-item--active {
   background: rgba(22, 119, 255, 0.1);

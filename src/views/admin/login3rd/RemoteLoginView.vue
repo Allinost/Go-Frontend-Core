@@ -437,7 +437,7 @@ onUnmounted(() => {
   }
 
   &__success-box {
-    background: white;
+    background: $nk-color-neutral-0;
     padding: $nk-spacing-xl $nk-spacing-2xl;
     border-radius: $nk-radius-lg;
     font-size: $nk-font-size-xl;
