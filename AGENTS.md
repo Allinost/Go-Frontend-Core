@@ -58,7 +58,11 @@ src/
   - API 封装：`src/api/developmentManager.ts`
   - 类型：`src/types/developmentManager.ts`
   - 页面：`src/views/modules/zzz/developmentManager/`（项目列表 + 概览/V3 任务/V3 看板/V3 风险/V3 发布/V3 迭代/V3 基线/部署/数据字典/需求/生成/资产）
+  - 高级视图：任务甘特、风险矩阵、发布日历、路线图/周报
   - 容器管理（运维管理菜单）：`/modules/zzz/containers`，管理 `container_project` 类型项目并直达部署 Tab
+- **文件存储**：`/storage`（文件浏览/扫描/引用/扫描目标/Redis 暂存区）
+  - API 封装：`src/api/rustfs.ts`
+  - Redis 暂存区支持查看积压、下载、手动提交 `/ops/rustfs/flush`
 - **V3 运维**：`/ops/hosts`（主机台账/SSH 连通）与 `/ops/maintenance`（L1/L2 手动维护）
   - API 封装：`src/api/ops.ts`
   - 页面：`src/views/admin/ops/`
