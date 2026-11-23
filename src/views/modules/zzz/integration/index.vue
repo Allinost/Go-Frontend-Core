@@ -522,9 +522,10 @@ onMounted(() => {
   &__error {
     margin-top: $nk-spacing-sm;
     padding: 6px 8px;
-    border-radius: $nk-radius-sm;
-    background: #fff1f0;
-    color: #cf1322;
+    border-radius: $nk-radius-md;
+    background: color-mix(in srgb, $nk-color-error 10%, $nk-color-neutral-0);
+    color: color-mix(in srgb, $nk-color-error 78%, $nk-color-neutral-900);
+    border: 1px solid color-mix(in srgb, $nk-color-error 24%, transparent);
     font-size: $nk-font-size-xs;
     word-break: break-all;
   }

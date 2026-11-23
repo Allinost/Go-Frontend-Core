@@ -1042,6 +1042,7 @@ onMounted(load)
   border-radius: 4px;
   padding: 0 6px;
   font-size: 11px;
+  font-weight: 600;
   line-height: 20px;
   color: #fff;
   background: #1677ff;
@@ -1050,6 +1051,11 @@ onMounted(load)
   white-space: nowrap;
   text-overflow: ellipsis;
   box-sizing: border-box;
+}
+.v3pm-gantt__bar--done,
+.v3pm-gantt__bar--blocked,
+.v3pm-gantt__bar--todo {
+  color: #14231a;
 }
 .v3pm-gantt__bar--done {
   background: #52c41a;

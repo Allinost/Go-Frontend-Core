@@ -521,7 +521,7 @@ onMounted(load)
   }
   &__resolve {
     border: 1px solid $nk-color-primary-200;
-    background: color-mix(in srgb, $nk-color-primary-500 4%, white);
+    background: color-mix(in srgb, $nk-color-primary-500 4%, $nk-color-neutral-0);
     border-radius: $nk-radius-md;
     padding: $nk-spacing-md;
   }

@@ -393,10 +393,14 @@ onMounted(loadAll)
   background: var(--nk-fill-color, #f5f6f8);
   color: var(--nk-color-neutral-900, #171717);
 }
-.cc-nav-item--active {
-  background: rgba(22, 119, 255, 0.1);
+.cc-nav-item--active,
+.cc-nav-item--active:hover {
+  background: color-mix(in srgb, var(--nk-color-primary-500, #1677ff) 12%, transparent);
   color: var(--nk-color-primary-600, #0958d9);
   font-weight: 600;
+}
+.cc-nav-item--active:hover {
+  background: color-mix(in srgb, var(--nk-color-primary-500, #1677ff) 18%, transparent);
 }
 .cc-panel {
   padding: 16px;

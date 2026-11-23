@@ -81,7 +81,7 @@
 
     <NkDialog v-model:visible="showDeleteDialog" title="确认删除" :width="400">
       <p>确定要删除该投递日志记录吗？</p>
-      <p v-if="deletingLog" style="margin-top:8px;font-size:12px;color:#999">
+      <p v-if="deletingLog" style="margin-top:8px;font-size:12px;color:var(--nk-text-color-secondary)">
         {{ formatTime(deletingLog.created_at) }} - {{ deletingLog.title }}
       </p>
       <template #footer>
