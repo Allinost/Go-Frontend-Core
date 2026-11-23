@@ -4,6 +4,10 @@
       <div class="dm-card__header">
         <span class="dm-card__title">风险（{{ total }}）</span>
         <div class="dm-actions">
+          <div class="risk-view-switch">
+            <NkButton size="sm" :variant="viewMode === 'list' ? 'solid' : 'ghost'" @click="viewMode = 'list'">列表</NkButton>
+            <NkButton size="sm" :variant="viewMode === 'matrix' ? 'solid' : 'ghost'" @click="viewMode = 'matrix'">风险矩阵</NkButton>
+          </div>
           <NkButton size="sm" variant="ghost" :loading="loading" @click="loadRisks">刷新</NkButton>
           <NkButton size="sm" @click="openForm()">新建风险</NkButton>
         </div>
@@ -18,49 +22,80 @@
       </div>
 
       <NkLoading v-if="loading" />
-      <table v-else class="dm-table">
-        <thead>
-          <tr>
-            <th>标题</th>
-            <th>等级</th>
-            <th>概率</th>
-            <th>影响</th>
-            <th>状态</th>
-            <th>负责人</th>
-            <th>截止</th>
-            <th style="width: 210px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in visibleRisks" :key="r.id">
-            <td>
-              <span class="dm-link" @click="openForm(r)">{{ r.title }}</span>
-              <div class="dm-muted">{{ r.description }}</div>
-            </td>
-            <td><NkTag size="sm" :type="levelType(r.level)">{{ levelLabel(r.level) }}</NkTag></td>
-            <td>{{ probabilityLabel(r.probability) }}</td>
-            <td>{{ probabilityLabel(r.impact) }}</td>
-            <td>
-              <NkSelect
-                :model-value="r.status"
-                :options="statusOptions"
-                size="sm"
-                style="width: 110px"
-                @update:model-value="changeStatus(r, $event)"
-              />
-            </td>
-            <td class="dm-muted">{{ r.owner || '-' }}</td>
-            <td class="dm-muted">{{ r.due_date ? formatDate(r.due_date) : '-' }}</td>
-            <td>
-              <NkButton size="sm" variant="ghost" @click="openForm(r)">编辑</NkButton>
-              <NkButton size="sm" variant="ghost" type="danger" @click="remove(r)">删除</NkButton>
-            </td>
-          </tr>
-          <tr v-if="!visibleRisks.length">
-            <td colspan="8" class="dm-table__empty">暂无风险</td>
-          </tr>
-        </tbody>
-      </table>
+      <template v-else>
+        <table v-if="viewMode === 'list'" class="dm-table">
+          <thead>
+            <tr>
+              <th>标题</th>
+              <th>等级</th>
+              <th>概率</th>
+              <th>影响</th>
+              <th>状态</th>
+              <th>负责人</th>
+              <th>截止</th>
+              <th style="width: 210px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in visibleRisks" :key="r.id">
+              <td>
+                <span class="dm-link" @click="openForm(r)">{{ r.title }}</span>
+                <div class="dm-muted">{{ r.description }}</div>
+              </td>
+              <td><NkTag size="sm" :type="levelType(r.level)">{{ levelLabel(r.level) }}</NkTag></td>
+              <td>{{ probabilityLabel(r.probability) }}</td>
+              <td>{{ probabilityLabel(r.impact) }}</td>
+              <td>
+                <NkSelect
+                  :model-value="r.status"
+                  :options="statusOptions"
+                  size="sm"
+                  style="width: 110px"
+                  @update:model-value="changeStatus(r, $event)"
+                />
+              </td>
+              <td class="dm-muted">{{ r.owner || '-' }}</td>
+              <td class="dm-muted">{{ r.due_date ? formatDate(r.due_date) : '-' }}</td>
+              <td>
+                <NkButton size="sm" variant="ghost" @click="openForm(r)">编辑</NkButton>
+                <NkButton size="sm" variant="ghost" type="danger" @click="remove(r)">删除</NkButton>
+              </td>
+            </tr>
+            <tr v-if="!visibleRisks.length">
+              <td colspan="8" class="dm-table__empty">暂无风险</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-else class="risk-matrix">
+          <div class="risk-matrix__corner">概率 \ 影响</div>
+          <div v-for="impact in probabilityOptions" :key="impact.value" class="risk-matrix__axis">
+            {{ impact.label }}影响
+          </div>
+          <template v-for="prob in probabilityOptions" :key="prob.value">
+            <div class="risk-matrix__axis risk-matrix__axis--row">{{ prob.label }}概率</div>
+            <div
+              v-for="impact in probabilityOptions"
+              :key="`${prob.value}-${impact.value}`"
+              class="risk-matrix__cell"
+              :class="`risk-matrix__cell--${cellLevel(prob.value, impact.value)}`"
+            >
+              <div
+                v-for="r in risksAt(prob.value, impact.value)"
+                :key="r.id"
+                class="risk-matrix__chip"
+                :class="`risk-matrix__chip--${r.level}`"
+                :title="r.title"
+                @click="openForm(r)"
+              >
+                <span class="risk-matrix__chip-title">{{ r.title }}</span>
+                <span class="risk-matrix__chip-meta">{{ levelLabel(r.level) }} · {{ r.owner || '未分配' }}</span>
+              </div>
+              <span v-if="!risksAt(prob.value, impact.value).length" class="risk-matrix__empty">-</span>
+            </div>
+          </template>
+        </div>
+      </template>
       <div class="dm-pagination">
         <NkPagination v-model="page" :total="total" :page-size="pageSize" @change="loadRisks" />
       </div>
@@ -175,6 +210,21 @@ const taskOptions = computed(() =>
 const visibleRisks = computed(() =>
   filters.level ? risks.value.filter((r) => r.level === filters.level) : risks.value,
 )
+
+const viewMode = ref<'list' | 'matrix'>('list')
+
+function risksAt(probability: string, impact: string) {
+  return visibleRisks.value.filter((r) => r.probability === probability && r.impact === impact)
+}
+
+function cellLevel(probability: string, impact: string) {
+  const score: Record<string, number> = { low: 1, medium: 2, high: 3 }
+  const value = (score[probability] || 1) * (score[impact] || 1)
+  if (value >= 9) return 'critical'
+  if (value >= 6) return 'high'
+  if (value >= 3) return 'medium'
+  return 'low'
+}
 
 const formVisible = ref(false)
 const editingId = ref<number | null>(null)
@@ -336,3 +386,96 @@ onMounted(() => {
   loadRisks()
 })
 </script>
+
+<style scoped lang="scss">
+.risk-view-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--nk-border-color, #e5e7eb);
+  border-radius: 6px;
+}
+
+.risk-matrix {
+  display: grid;
+  grid-template-columns: 80px repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 16px;
+}
+.risk-matrix__corner,
+.risk-matrix__axis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--nk-text-color-secondary, #888);
+  background: var(--nk-fill-color, #f7f8fa);
+  border-radius: 6px;
+  padding: 8px;
+}
+.risk-matrix__cell {
+  min-height: 110px;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--nk-border-color, #eee);
+  background: var(--nk-bg-color, #fff);
+}
+.risk-matrix__cell--low {
+  background: rgba(82, 196, 26, 0.05);
+}
+.risk-matrix__cell--medium {
+  background: rgba(250, 173, 20, 0.08);
+}
+.risk-matrix__cell--high {
+  background: rgba(250, 84, 28, 0.08);
+}
+.risk-matrix__cell--critical {
+  background: rgba(245, 34, 45, 0.1);
+}
+.risk-matrix__chip {
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--nk-bg-color, #fff);
+  border-left: 3px solid var(--nk-color-primary-500, #1677ff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  font-size: 12px;
+}
+.risk-matrix__chip--high {
+  border-left-color: #fa541c;
+}
+.risk-matrix__chip--critical {
+  border-left-color: #f5222d;
+}
+.risk-matrix__chip--medium {
+  border-left-color: #faad14;
+}
+.risk-matrix__chip--low {
+  border-left-color: #52c41a;
+}
+.risk-matrix__chip-title {
+  display: block;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.risk-matrix__chip-meta {
+  color: var(--nk-text-color-secondary, #888);
+}
+.risk-matrix__empty {
+  color: var(--nk-text-color-secondary, #bbb);
+  font-size: 12px;
+  text-align: center;
+  margin: auto;
+}
+@media (max-width: 900px) {
+  .risk-matrix {
+    grid-template-columns: 64px repeat(3, minmax(120px, 1fr));
+    overflow-x: auto;
+  }
+}
+</style>
