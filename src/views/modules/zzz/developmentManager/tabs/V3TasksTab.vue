@@ -56,6 +56,8 @@
       <div class="v3pm-card-title">
         <span>任务</span>
         <div class="v3pm-inline">
+          <NkButton size="sm" :variant="taskViewMode === 'list' ? 'solid' : 'ghost'" @click="taskViewMode = 'list'">列表</NkButton>
+          <NkButton size="sm" :variant="taskViewMode === 'gantt' ? 'solid' : 'ghost'" @click="taskViewMode = 'gantt'">甘特</NkButton>
           <NkSelect v-model="filterStatus" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: 130px" @change="loadTasks" />
           <NkSelect v-model="filterMilestone" :options="milestoneOptions" placeholder="里程碑" clearable size="sm" style="width: 150px" @change="loadTasks" />
           <NkButton size="sm" @click="showTaskForm = !showTaskForm">新建任务</NkButton>
@@ -74,6 +76,35 @@
       </div>
       <NkLoading v-if="tasksLoading" />
       <div v-else-if="tasks.length === 0" class="v3pm-muted">暂无任务</div>
+      <div v-else-if="taskViewMode === 'gantt'" class="v3pm-gantt">
+        <div v-if="ganttTasks.length === 0" class="v3pm-muted">暂无带开始/截止日期的任务</div>
+        <template v-else>
+          <div class="v3pm-gantt__head">
+            <span>{{ formatGanttDate(ganttRange.start) }}</span>
+            <span>{{ formatGanttDate(ganttRange.end) }}</span>
+          </div>
+          <div v-for="t in ganttTasks" :key="t.id" class="v3pm-gantt__row">
+            <div class="v3pm-gantt__label" @click="openTask(t)">
+              <span class="v3pm-code">{{ t.code }}</span>
+              <span class="v3pm-gantt__title">{{ t.title }}</span>
+            </div>
+            <div class="v3pm-gantt__track">
+              <div
+                class="v3pm-gantt__bar"
+                :class="`v3pm-gantt__bar--${t.status}`"
+                :style="ganttBarStyle(t)"
+                :title="`${t.title} ${formatGanttDate(t.start_date)} ~ ${formatGanttDate(t.due_date)}`"
+                @click="openTask(t)"
+              >
+                {{ t.owner || t.status }}
+              </div>
+            </div>
+          </div>
+          <div class="v3pm-muted v3pm-gantt__hint">
+            共 {{ ganttTasks.length }} 个有日期任务，另有 {{ tasks.length - ganttTasks.length }} 个未排期。
+          </div>
+        </template>
+      </div>
       <div v-else class="v3pm-table-wrap">
         <table class="v3pm-table">
           <thead>
@@ -340,6 +371,53 @@ const assetRelationOptions = [
 const importVisible = ref(false)
 const importText = ref('')
 const importing = ref(false)
+const taskViewMode = ref<'list' | 'gantt'>('list')
+
+const ganttTasks = computed(() =>
+  tasks.value
+    .filter((t) => t.start_date && t.due_date)
+    .slice()
+    .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date))),
+)
+
+const ganttRange = computed(() => {
+  if (ganttTasks.value.length === 0) {
+    return { start: new Date(), end: new Date() }
+  }
+  const starts = ganttTasks.value.map((t) => parseGanttDate(t.start_date!).getTime())
+  const ends = ganttTasks.value.map((t) => parseGanttDate(t.due_date!).getTime())
+  const day = 86400000
+  return {
+    start: new Date(Math.min(...starts) - day),
+    end: new Date(Math.max(...ends) + day),
+  }
+})
+
+function parseGanttDate(value: string | Date) {
+  if (value instanceof Date) return value
+  const raw = String(value).slice(0, 10)
+  return new Date(`${raw}T00:00:00`)
+}
+
+function formatGanttDate(value?: string | Date) {
+  if (!value) return '-'
+  return parseGanttDate(value).toLocaleDateString()
+}
+
+function ganttBarStyle(task: Task) {
+  const day = 86400000
+  const start = parseGanttDate(task.start_date!).getTime()
+  const end = parseGanttDate(task.due_date!).getTime()
+  const rangeStart = ganttRange.value.start.getTime()
+  const rangeEnd = ganttRange.value.end.getTime()
+  const total = Math.max(day, rangeEnd - rangeStart)
+  const left = ((start - rangeStart) / total) * 100
+  const width = Math.max(2, ((end - start + day) / total) * 100)
+  return {
+    left: `${Math.max(0, Math.min(98, left))}%`,
+    width: `${Math.min(100 - Math.max(0, Math.min(98, left)), width)}%`,
+  }
+}
 
 const statusOptions = [
   { label: 'todo', value: 'todo' },
@@ -880,9 +958,86 @@ onMounted(load)
   text-decoration: line-through;
   color: var(--nk-text-color-secondary, #888);
 }
+.v3pm-gantt {
+  border: 1px solid var(--nk-border-color, #eee);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.v3pm-gantt__head {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--nk-text-color-secondary, #888);
+  background: var(--nk-fill-color, #f7f8fa);
+}
+.v3pm-gantt__row {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  border-top: 1px solid var(--nk-border-color, #f0f0f0);
+}
+.v3pm-gantt__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-right: 1px solid var(--nk-border-color, #f0f0f0);
+  min-width: 0;
+}
+.v3pm-gantt__title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.v3pm-gantt__track {
+  position: relative;
+  min-height: 40px;
+  background-image: linear-gradient(to right, var(--nk-border-color, #f5f5f5) 1px, transparent 1px);
+  background-size: 8.333% 100%;
+}
+.v3pm-gantt__bar {
+  position: absolute;
+  top: 10px;
+  height: 20px;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 20px;
+  color: #fff;
+  background: #1677ff;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+.v3pm-gantt__bar--done {
+  background: #52c41a;
+}
+.v3pm-gantt__bar--doing {
+  background: #1677ff;
+}
+.v3pm-gantt__bar--blocked {
+  background: #faad14;
+}
+.v3pm-gantt__bar--review {
+  background: #722ed1;
+}
+.v3pm-gantt__bar--todo {
+  background: #8c8c8c;
+}
+.v3pm-gantt__hint {
+  padding: 8px 12px;
+  border-top: 1px solid var(--nk-border-color, #f0f0f0);
+}
 @media (max-width: 900px) {
   .v3pm-form-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  .v3pm-gantt__row {
+    grid-template-columns: 160px minmax(0, 1fr);
   }
 }
 </style>
