@@ -6,10 +6,13 @@
     <div class="admin-sidebar__logo">
       <span class="admin-sidebar__logo-text">{{ collapsed ? 'M' : 'Monitor Controller' }}</span>
     </div>
+    <div v-show="!collapsed" class="admin-sidebar__search">
+      <NkInput v-model="searchQuery" size="sm" placeholder="搜索菜单" clearable />
+    </div>
     <nav class="admin-sidebar__nav">
       <div
-        v-for="item in topItems"
-        :key="item.path"
+        v-for="item in store.visibleTopItems"
+        :key="item.id"
         class="admin-sidebar__item"
         :class="{ 'admin-sidebar__item--active': isActive(item.path), 'admin-sidebar__item--collapsed': collapsed }"
         @click="navigate(item)"
@@ -18,20 +21,20 @@
         <span v-show="!collapsed" class="admin-sidebar__item-label">{{ item.label }}</span>
       </div>
 
-      <div v-for="group in filteredGroups" :key="group.label" class="admin-sidebar__group">
+      <div v-for="group in navGroups" :key="group.id" class="admin-sidebar__group">
         <div
           class="admin-sidebar__group-header"
           :class="{ 'admin-sidebar__item--collapsed': collapsed }"
-          @click="toggleGroup(group.label)"
+          @click="toggleGroup(group.id)"
         >
           <NkIcon v-if="group.icon" :name="group.icon" size="sm" />
           <span v-show="!collapsed" class="admin-sidebar__item-label">{{ group.label }}</span>
-          <NkIcon v-show="!collapsed" :name="expandedGroups[group.label] ? 'arrow-up' : 'arrow-down'" size="xs" class="admin-sidebar__group-arrow" />
+          <NkIcon v-show="!collapsed" :name="groupExpanded(group) ? 'arrow-up' : 'arrow-down'" size="xs" class="admin-sidebar__group-arrow" />
         </div>
-        <div v-show="!collapsed && expandedGroups[group.label]" class="admin-sidebar__group-children">
+        <div v-show="!collapsed && groupExpanded(group)" class="admin-sidebar__group-children">
           <div
-            v-for="child in visibleChildren(group)"
-            :key="child.path"
+            v-for="child in group.items"
+            :key="child.id"
             class="admin-sidebar__item admin-sidebar__item--child"
             :class="{ 'admin-sidebar__item--active': isActive(child.path) }"
             @click="navigate(child)"
@@ -42,81 +45,33 @@
       </div>
     </nav>
     <div class="admin-sidebar__footer">
+      <div v-if="authStore.isAdmin" class="admin-sidebar__item" :class="{ 'admin-sidebar__item--collapsed': collapsed }" @click="showEditor = true">
+        <NkIcon name="file" size="sm" />
+        <span v-show="!collapsed" class="admin-sidebar__item-label">编辑导航</span>
+      </div>
       <div class="admin-sidebar__item" :class="{ 'admin-sidebar__item--collapsed': collapsed }" @click="toggle">
         <NkIcon :name="collapsed ? 'arrow-right' : 'arrow-left'" size="sm" />
         <span v-show="!collapsed" class="admin-sidebar__item-label">折叠</span>
       </div>
     </div>
+    <SidebarEditorDialog v-model:visible="showEditor" />
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
-
-interface MenuItem {
-  label: string
-  path: string
-  requiresAdmin?: boolean
-}
-
-interface MenuGroup {
-  label: string
-  icon: string
-  children: MenuItem[]
-}
-
-const topItems: (MenuItem & { icon: string })[] = [
-  { label: '仪表盘', path: '/dashboard', icon: 'home' },
-]
-
-const menuGroups: (MenuGroup & { requiresAdmin?: boolean })[] = [
-  {
-    label: '用户管理',
-    icon: 'user',
-    children: [
-      { label: '用户管理', path: '/users', requiresAdmin: true },
-      { label: '角色权限', path: '/roles', requiresAdmin: true },
-      { label: '第三方登录', path: '/users/login3rd' },
-    ],
-  },
-  {
-    label: '业务模块',
-    icon: 'search',
-    children: [
-      { label: '项目开发管理', path: '/modules/zzz/developmentmanager' },
-      { label: '投资分析', path: '/modules/zzz/ia' },
-      { label: 'Goodser', path: '/modules/zzz/goodser' },
-      { label: '集成管理', path: '/modules/zzz/integration' },
-      { label: 'ShopChecker', path: '/modules/zzz/shopchecker/products' },
-    ],
-  },
-  {
-    label: '运维管理',
-    icon: 'file',
-    children: [
-      { label: '容器管理', path: '/modules/zzz/containers' },
-      { label: '加密工具', path: '/modules/crypto' },
-      { label: '任务调度', path: '/modules/schedule' },
-      { label: '文件存储', path: '/storage' },
-      { label: '网络工具', path: '/modules/net' },
-      { label: '服务导航', path: '/modules/servicenav' },
-      { label: '数据库迁移', path: '/modules/migrate' },
-      { label: '主机台账', path: '/ops/hosts', requiresAdmin: true },
-      { label: '系统维护', path: '/ops/maintenance', requiresAdmin: true },
-      { label: '系统状态', path: '/ops/status', requiresAdmin: true },
-      { label: '配置中心', path: '/settings/config', requiresAdmin: true },
-      { label: 'Webhook', path: '/webhook' },
-    ],
-  },
-]
+import { useSidebarStore } from '@/stores/sidebar'
+import SidebarEditorDialog from './SidebarEditorDialog.vue'
+import type { SidebarGroupConfig, SidebarItemConfig } from '@/types/sidebar'
 
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const store = useSidebarStore()
 
 const props = defineProps<{
   mobileOpen?: boolean
@@ -126,25 +81,37 @@ const emit = defineEmits<{
   (e: 'navigate'): void
 }>()
 
+const searchQuery = ref('')
+const showEditor = ref(false)
+
 const collapsed = computed(() => appStore.sidebarCollapsed && !props.mobileOpen)
 
-const filteredGroups = computed(() =>
-  menuGroups.filter((g) => {
-    if (g.requiresAdmin && !authStore.isAdmin) return false
-    if (g.children.every((c) => c.requiresAdmin && !authStore.isAdmin)) return false
-    return true
-  }),
-)
+const navGroups = computed<SidebarGroupConfig[]>(() => {
+  const groups = [store.favoriteGroup, ...store.visibleGroups].filter(
+    (group): group is SidebarGroupConfig => !!group,
+  )
+  const keyword = searchQuery.value.trim().toLowerCase()
+  if (!keyword) return groups
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) =>
+          item.label.toLowerCase().includes(keyword) ||
+          item.path.toLowerCase().includes(keyword),
+      ),
+    }))
+    .filter(
+      (group) =>
+        group.label.toLowerCase().includes(keyword) || group.items.length > 0,
+    )
+})
 
 function isActive(path: string): boolean {
   return route.path === path
 }
 
-function visibleChildren(group: MenuGroup) {
-  return group.children.filter((c) => !c.requiresAdmin || authStore.isAdmin)
-}
-
-function navigate(item: MenuItem) {
+function navigate(item: SidebarItemConfig) {
   router.push(item.path)
   emit('navigate')
 }
@@ -153,16 +120,14 @@ function toggle() {
   appStore.toggleSidebar()
 }
 
-const expandedGroups = reactive<Record<string, boolean>>(
-  Object.fromEntries(menuGroups.map((g) => [g.label, true])),
-)
-
-function toggleGroup(label: string) {
-  expandedGroups[label] = !expandedGroups[label]
+function toggleGroup(groupId: string) {
+  if (searchQuery.value.trim()) return
+  store.toggleGroup(groupId)
 }
 
-function isGroupActive(group: MenuGroup): boolean {
-  return group.children.some((c) => isActive(c.path))
+function groupExpanded(group: SidebarGroupConfig) {
+  if (searchQuery.value.trim()) return true
+  return store.isExpanded(group.id)
 }
 </script>
 
@@ -195,6 +160,10 @@ function isGroupActive(group: MenuGroup): boolean {
     font-size: $nk-font-size-lg;
     color: $nk-color-primary-600;
     white-space: nowrap;
+  }
+
+  &__search {
+    padding: $nk-spacing-sm $nk-spacing-sm 0;
   }
 
   &__nav {
