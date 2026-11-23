@@ -36,6 +36,18 @@
   gap: $nk-spacing-md;
 }
 
+.dm-stats--loading .dm-stat-value {
+  color: transparent;
+  background: $nk-color-neutral-100;
+  border-radius: $nk-radius-sm;
+  animation: dm-stat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dm-stat-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
 .dm-stat-card {
   background: $nk-color-neutral-0;
   border: 1px solid $nk-color-neutral-200;

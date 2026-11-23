@@ -28,6 +28,8 @@ export interface FileListData {
   offset: number
   limit: number
   total: number
+  degraded?: boolean
+  message?: string
 }
 
 export interface FileInfoData {

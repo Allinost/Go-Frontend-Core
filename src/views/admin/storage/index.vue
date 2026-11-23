@@ -34,6 +34,7 @@
               >{{ part }}</span>
             </span>
           </div>
+          <div v-if="fileNotice" class="storage-mgmt__degraded">{{ fileNotice }}</div>
         </template>
 
         <NkLoading v-if="loadingFiles" />
@@ -640,6 +641,7 @@ const currentPrefix = ref('')
 const dirList = ref<string[]>([])
 const fileList = ref<RustFSFile[]>([])
 const loadingFiles = ref(false)
+const fileNotice = ref('')
 const totalFiles = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(50)
@@ -673,7 +675,12 @@ async function loadFiles() {
     dirList.value = res.data.dirs || []
     fileList.value = res.data.files || []
     totalFiles.value = res.data.total
+    fileNotice.value = res.data.degraded ? (res.data.message || '对象存储不可用，文件功能已降级') : ''
   } catch (err: any) {
+    dirList.value = []
+    fileList.value = []
+    totalFiles.value = 0
+    fileNotice.value = err.message || '加载文件列表失败'
     NKMessage.error(err.message || '加载文件列表失败')
   } finally {
     loadingFiles.value = false
@@ -1612,6 +1619,15 @@ onMounted(loadFiles)
     margin-top: $nk-spacing-md;
     font-size: $nk-font-size-xs;
     color: $nk-color-neutral-400;
+  }
+
+  &__degraded {
+    margin: $nk-spacing-sm 0;
+    padding: $nk-spacing-sm $nk-spacing-md;
+    border-radius: $nk-radius-md;
+    background: rgba(250, 173, 20, 0.12);
+    color: #ad6800;
+    font-size: $nk-font-size-sm;
   }
 
   &__card-title {

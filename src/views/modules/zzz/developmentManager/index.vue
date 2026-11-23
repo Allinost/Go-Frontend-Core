@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <div class="dm-stats">
+    <div class="dm-stats" :class="{ 'dm-stats--loading': statsLoading }">
       <div class="dm-stat-card">
         <div class="dm-stat-label">项目总数</div>
         <div class="dm-stat-value">{{ stats.projects_total }}</div>
@@ -196,6 +196,7 @@ import type { Project, ProjectStats } from '@/types/developmentManager'
 const router = useRouter()
 
 const loading = ref(false)
+const statsLoading = ref(true)
 const stats = ref<ProjectStats>({
   projects_total: 0,
   projects_deleted: 0,
@@ -242,11 +243,14 @@ function typeLabel(type: string): string {
 }
 
 async function loadStats() {
+  statsLoading.value = true
   try {
     const res = await getStats()
     stats.value = res.data
   } catch (err: any) {
     NKMessage.error(err.message || '加载统计失败')
+  } finally {
+    statsLoading.value = false
   }
 }
 
