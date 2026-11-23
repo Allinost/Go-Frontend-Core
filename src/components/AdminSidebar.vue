@@ -133,25 +133,26 @@ function groupExpanded(group: SidebarGroupConfig) {
 
 <style lang="scss" scoped>
 .admin-sidebar {
-  width: 220px;
+  width: 224px;
   min-height: 100vh;
-  background: $nk-color-neutral-0;
-  border-right: 1px solid $nk-color-neutral-200;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, $nk-color-neutral-0 92%, $nk-color-primary-50), $nk-color-neutral-0 42%);
+  border-right: 1px solid color-mix(in srgb, $nk-color-neutral-300 50%, transparent);
   display: flex;
   flex-direction: column;
   transition: width $nk-duration-normal;
   overflow: hidden;
 
   &--collapsed {
-    width: 56px;
+    width: 58px;
   }
 
   &__logo {
-    height: 56px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid $nk-color-neutral-200;
+    border-bottom: 1px solid color-mix(in srgb, $nk-color-neutral-300 45%, transparent);
     flex-shrink: 0;
   }
 
@@ -160,10 +161,11 @@ function groupExpanded(group: SidebarGroupConfig) {
     font-size: $nk-font-size-lg;
     color: $nk-color-primary-600;
     white-space: nowrap;
+    letter-spacing: -0.02em;
   }
 
   &__search {
-    padding: $nk-spacing-sm $nk-spacing-sm 0;
+    padding: $nk-spacing-md $nk-spacing-sm 0;
   }
 
   &__nav {
@@ -173,31 +175,45 @@ function groupExpanded(group: SidebarGroupConfig) {
   }
 
   &__footer {
-    border-top: 1px solid $nk-color-neutral-200;
+    border-top: 1px solid color-mix(in srgb, $nk-color-neutral-300 45%, transparent);
     padding: $nk-spacing-sm;
+    background: color-mix(in srgb, $nk-color-neutral-0 65%, transparent);
   }
 
   &__item {
     display: flex;
     align-items: center;
     gap: $nk-spacing-sm;
-    padding: $nk-spacing-sm $nk-spacing-md;
+    padding: 9px $nk-spacing-md;
     border-radius: $nk-radius-md;
     cursor: pointer;
     color: $nk-color-neutral-600;
-    transition: all $nk-duration-fast;
+    transition: background $nk-duration-fast, color $nk-duration-fast, transform $nk-duration-fast;
     white-space: nowrap;
     margin-bottom: 2px;
+    position: relative;
 
     &:hover {
-      background: $nk-color-neutral-100;
+      background: color-mix(in srgb, $nk-color-neutral-100 80%, transparent);
       color: $nk-color-neutral-900;
+      transform: translateX(1px);
     }
 
     &--active {
-      background: $nk-color-primary-50;
-      color: $nk-color-primary-600;
+      background: linear-gradient(90deg, color-mix(in srgb, $nk-color-primary-500 14%, transparent), color-mix(in srgb, $nk-color-primary-500 6%, transparent));
+      color: $nk-color-primary-700;
       font-weight: $nk-font-weight-medium;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 8px;
+        bottom: 8px;
+        width: 3px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, $nk-color-primary-500, $nk-color-accent);
+      }
     }
 
     &--collapsed {
@@ -213,24 +229,27 @@ function groupExpanded(group: SidebarGroupConfig) {
 
   &__item-label {
     font-size: $nk-font-size-base;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__group {
-    margin-top: $nk-spacing-xs;
+    margin-top: 4px;
 
     &-header {
       display: flex;
       align-items: center;
       gap: $nk-spacing-sm;
-      padding: $nk-spacing-sm $nk-spacing-md;
+      padding: 9px $nk-spacing-md;
       border-radius: $nk-radius-md;
       cursor: pointer;
       color: $nk-color-neutral-600;
-      transition: all $nk-duration-fast;
+      transition: background $nk-duration-fast, color $nk-duration-fast;
       margin-bottom: 2px;
+      font-weight: $nk-font-weight-medium;
 
       &:hover {
-        background: $nk-color-neutral-100;
+        background: color-mix(in srgb, $nk-color-neutral-100 80%, transparent);
         color: $nk-color-neutral-900;
       }
     }
@@ -238,6 +257,7 @@ function groupExpanded(group: SidebarGroupConfig) {
     &-arrow {
       margin-left: auto;
       transition: transform $nk-duration-fast;
+      opacity: 0.7;
     }
 
     &-children {

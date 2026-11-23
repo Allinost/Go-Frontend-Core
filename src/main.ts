@@ -8,6 +8,7 @@ import { getSiteTitle } from './utils/appSettings'
 import './styles/_theme.css'
 import './styles/global.scss'
 import './styles/development-manager.scss'
+import './styles/polish.scss'
 
 const app = createApp(App)
 

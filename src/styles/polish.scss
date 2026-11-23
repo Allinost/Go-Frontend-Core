@@ -1,0 +1,91 @@
+// V3 全局视觉打磨：滚动条、背景、选中态、表格与浮层细节。
+
+:root {
+  --v3-scrollbar-size: 10px;
+  --v3-scrollbar-thumb: color-mix(in srgb, var(--nk-color-neutral-400) 55%, transparent);
+  --v3-scrollbar-thumb-hover: color-mix(in srgb, var(--nk-color-neutral-500) 75%, transparent);
+  --v3-scrollbar-track: transparent;
+  --v3-surface-glass: color-mix(in srgb, var(--nk-color-neutral-0) 82%, transparent);
+  --v3-surface-elevated: color-mix(in srgb, var(--nk-color-neutral-0) 96%, var(--nk-color-primary-50) 4%);
+  --v3-border-soft: color-mix(in srgb, var(--nk-color-neutral-300) 55%, transparent);
+}
+
+[data-theme='dark'] {
+  --v3-scrollbar-thumb: color-mix(in srgb, var(--nk-color-neutral-500) 65%, transparent);
+  --v3-scrollbar-thumb-hover: color-mix(in srgb, var(--nk-color-neutral-400) 80%, transparent);
+  --v3-surface-glass: color-mix(in srgb, var(--nk-color-neutral-0) 78%, transparent);
+  --v3-surface-elevated: color-mix(in srgb, var(--nk-color-neutral-0) 94%, var(--nk-color-primary-100) 6%);
+  --v3-border-soft: color-mix(in srgb, var(--nk-color-neutral-300) 60%, transparent);
+}
+
+html {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 12% -8%, color-mix(in srgb, var(--nk-color-primary-100) 60%, transparent), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, color-mix(in srgb, var(--nk-color-accent) 8%, transparent), transparent 55%),
+    var(--nk-color-neutral-50);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--nk-color-primary-500) 26%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--v3-scrollbar-thumb) var(--v3-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--v3-scrollbar-size);
+  height: var(--v3-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--v3-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--v3-scrollbar-thumb);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  min-height: 40px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--v3-scrollbar-thumb-hover);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+textarea,
+.nk-textarea__inner,
+.nk-dialog__body,
+.nk-drawer__body,
+.nk-select__dropdown {
+  scrollbar-width: thin;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nk-color-primary-500) 70%, transparent);
+  outline-offset: 2px;
+}

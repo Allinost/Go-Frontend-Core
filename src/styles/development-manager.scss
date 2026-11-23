@@ -3,82 +3,120 @@
 .dm-page {
   display: flex;
   flex-direction: column;
-  gap: $nk-spacing-lg;
+  gap: 18px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .dm-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: $nk-spacing-md;
+  padding: 4px 2px 2px;
 }
 
 .dm-title {
-  font-size: $nk-font-size-xl;
-  font-weight: $nk-font-weight-semibold;
+  font-size: 24px;
+  font-weight: 700;
   color: $nk-color-neutral-900;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .dm-subtitle {
   font-size: $nk-font-size-sm;
   color: $nk-color-neutral-500;
+  margin-top: 4px;
 }
 
 .dm-actions {
   display: flex;
   align-items: center;
   gap: $nk-spacing-sm;
+  flex-wrap: wrap;
 }
 
 .dm-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: $nk-spacing-md;
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+  gap: 12px;
 }
 
 .dm-stats--loading .dm-stat-value {
   color: transparent;
-  background: $nk-color-neutral-100;
+  background: linear-gradient(90deg, $nk-color-neutral-100, $nk-color-neutral-200, $nk-color-neutral-100);
+  background-size: 200% 100%;
   border-radius: $nk-radius-sm;
   animation: dm-stat-pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes dm-stat-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.9; }
+  0% { background-position: 200% 0; opacity: 0.6; }
+  100% { background-position: -200% 0; opacity: 0.95; }
 }
 
 .dm-stat-card {
-  background: $nk-color-neutral-0;
-  border: 1px solid $nk-color-neutral-200;
-  border-radius: $nk-radius-md;
-  padding: $nk-spacing-md;
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, $nk-color-primary-50 45%, $nk-color-neutral-0), $nk-color-neutral-0 58%);
+  border: 1px solid color-mix(in srgb, $nk-color-neutral-300 50%, transparent);
+  border-radius: 14px;
+  padding: 14px 16px;
+  overflow: hidden;
+  transition: transform $nk-duration-fast, box-shadow $nk-duration-fast, border-color $nk-duration-fast;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, $nk-color-primary-500, $nk-color-accent);
+    opacity: 0.55;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 30px color-mix(in srgb, #0f172a 8%, transparent);
+    border-color: color-mix(in srgb, $nk-color-primary-500 24%, transparent);
+  }
 }
 
 .dm-stat-label {
-  font-size: $nk-font-size-sm;
+  font-size: 12px;
   color: $nk-color-neutral-500;
-  margin-bottom: $nk-spacing-xs;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
 }
 
 .dm-stat-value {
-  font-size: $nk-font-size-xl;
-  font-weight: $nk-font-weight-semibold;
-  color: $nk-color-primary-600;
+  font-size: 22px;
+  font-weight: 700;
+  color: $nk-color-neutral-900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .dm-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: $nk-spacing-sm;
+  gap: 10px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, $nk-color-neutral-0 72%, transparent);
+  border: 1px solid color-mix(in srgb, $nk-color-neutral-300 42%, transparent);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
 }
 
 .dm-card {
-  background: $nk-color-neutral-0;
-  border: 1px solid $nk-color-neutral-200;
-  border-radius: $nk-radius-md;
-  padding: $nk-spacing-md;
+  background: color-mix(in srgb, $nk-color-neutral-0 92%, transparent);
+  border: 1px solid color-mix(in srgb, $nk-color-neutral-300 48%, transparent);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 28px color-mix(in srgb, #0f172a 5%, transparent);
 }
 
 .dm-card__header {
@@ -86,37 +124,52 @@
   align-items: center;
   justify-content: space-between;
   gap: $nk-spacing-sm;
-  margin-bottom: $nk-spacing-md;
+  margin-bottom: 14px;
 }
 
 .dm-card__title {
-  font-size: $nk-font-size-base;
-  font-weight: $nk-font-weight-semibold;
+  font-size: 15px;
+  font-weight: 650;
   color: $nk-color-neutral-900;
+  letter-spacing: -0.01em;
 }
 
 .dm-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: $nk-font-size-sm;
 
   th,
   td {
-    padding: $nk-spacing-sm $nk-spacing-md;
-    border-bottom: 1px solid $nk-color-neutral-200;
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in srgb, $nk-color-neutral-300 35%, transparent);
     text-align: left;
     vertical-align: top;
   }
 
   th {
-    background: $nk-color-neutral-50;
+    background: color-mix(in srgb, $nk-color-neutral-100 65%, transparent);
     color: $nk-color-neutral-600;
-    font-weight: $nk-font-weight-medium;
+    font-weight: 600;
     white-space: nowrap;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
-  tr:hover td {
-    background: $nk-color-neutral-50;
+  tbody tr {
+    transition: background $nk-duration-fast;
+  }
+
+  tbody tr:hover td {
+    background: color-mix(in srgb, $nk-color-primary-50 45%, transparent);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
   }
 }
 
@@ -140,13 +193,13 @@
 .dm-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $nk-spacing-md;
+  gap: 14px;
 }
 
 .dm-form-item {
   display: flex;
   flex-direction: column;
-  gap: $nk-spacing-xs;
+  gap: 6px;
 }
 
 .dm-form-item--full {
@@ -154,7 +207,8 @@
 }
 
 .dm-form-label {
-  font-size: $nk-font-size-sm;
+  font-size: 12px;
+  font-weight: 500;
   color: $nk-color-neutral-600;
 }
 
@@ -210,22 +264,25 @@
 
 .dm-code {
   font-family: $nk-font-family-mono;
-  font-size: $nk-font-size-xs;
-  background: $nk-color-neutral-100;
-  padding: 2px 6px;
-  border-radius: $nk-radius-sm;
+  font-size: 11px;
+  background: color-mix(in srgb, $nk-color-neutral-100 80%, transparent);
+  color: $nk-color-neutral-600;
+  padding: 2px 7px;
+  border-radius: 6px;
   word-break: break-all;
+  border: 1px solid color-mix(in srgb, $nk-color-neutral-300 35%, transparent);
 }
 
 .dm-pre {
   white-space: pre-wrap;
   word-break: break-word;
   font-family: $nk-font-family-mono;
-  font-size: $nk-font-size-xs;
-  background: $nk-color-neutral-50;
-  border: 1px solid $nk-color-neutral-200;
-  border-radius: $nk-radius-md;
-  padding: $nk-spacing-md;
+  font-size: 12px;
+  line-height: 1.55;
+  background: color-mix(in srgb, $nk-color-neutral-50 80%, transparent);
+  border: 1px solid color-mix(in srgb, $nk-color-neutral-300 45%, transparent);
+  border-radius: $nk-radius-lg;
+  padding: 14px;
   max-height: 360px;
   overflow: auto;
 }
@@ -240,10 +297,14 @@
 .dm-link {
   color: $nk-color-primary-600;
   cursor: pointer;
+  font-weight: 500;
+  transition: color $nk-duration-fast;
 }
 
 .dm-link:hover {
+  color: $nk-color-primary-700;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .dm-error {

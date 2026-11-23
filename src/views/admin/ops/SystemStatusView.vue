@@ -235,7 +235,15 @@ onMounted(loadAll)
   gap: 10px;
 }
 .sys-card {
-  padding: 12px;
+  padding: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--nk-color-primary-50, #eff6ff) 45%, var(--nk-color-neutral-0, #fff)), var(--nk-color-neutral-0, #fff) 60%);
+  border: 1px solid color-mix(in srgb, var(--nk-color-neutral-300, #d4d4d4) 50%, transparent);
+  border-radius: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sys-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px color-mix(in srgb, #0f172a 8%, transparent);
 }
 .sys-card-label {
   font-size: 12px;

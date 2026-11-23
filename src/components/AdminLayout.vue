@@ -5,7 +5,11 @@
     <div class="admin-layout__main" :class="{ 'admin-layout__main--expanded': collapsed }">
       <AdminHeader @toggle-sidebar="mobileOpen = !mobileOpen" />
       <main class="admin-layout__content">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <Transition name="page-fade" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
       </main>
     </div>
   </div>
@@ -50,12 +54,31 @@ watch(
   &__content {
     flex: 1;
     overflow-y: auto;
-    padding: $nk-spacing-xl;
-    background: $nk-color-neutral-50;
+    padding: 26px 30px;
+    background:
+      radial-gradient(900px 420px at 8% -10%, color-mix(in srgb, $nk-color-primary-100 55%, transparent), transparent 60%),
+      radial-gradient(760px 380px at 100% 0%, color-mix(in srgb, $nk-color-accent 7%, transparent), transparent 55%),
+      $nk-color-neutral-50;
+    scroll-behavior: smooth;
   }
 
   &__backdrop {
     display: none;
+  }
+
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+
+  .page-fade-enter-from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  .page-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 
   @media (max-width: 768px) {
