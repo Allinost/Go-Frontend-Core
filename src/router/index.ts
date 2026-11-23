@@ -145,6 +145,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '主机台账', requiresAdmin: true },
       },
       {
+        path: 'ops/status',
+        name: 'SystemStatus',
+        component: () => import('@/views/admin/ops/SystemStatusView.vue'),
+        meta: { title: '系统状态', requiresAdmin: true },
+      },
+      {
         path: 'settings/config',
         name: 'ConfigCenter',
         component: () => import('@/views/admin/settings/ConfigCenterView.vue'),
