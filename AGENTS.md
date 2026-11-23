@@ -73,6 +73,8 @@ src/
 ## 全局设置
 - 顶部导航「设置」（用户名左侧）：前端 API 地址/站点标题/内网域名/EasyTier 域名/主题；管理员可见「后端设置」（公开地址、Browser 地址、外部工具地址、依赖状态）
 - 实现：`src/components/SettingsDialog.vue`、`src/api/settings.ts`、`src/utils/appSettings.ts`
+- 侧边导航编辑（管理员）：分组/菜单显示隐藏、默认展开、排序、跨分组移动、权限、搜索、常用功能；配置存 localStorage `go_admin_sidebar_config_v1`
+  - 实现：`src/components/AdminSidebar.vue`、`src/components/SidebarEditorDialog.vue`、`src/stores/sidebar.ts`
 - 前端默认值来自构建时 `.env`，真实域名/地址不写进代码：
   - `VITE_API_BASE_URL`、`VITE_APP_TITLE`
   - `VITE_INTRANET_HOST`、`VITE_EASYTIER_HOST`
