@@ -12,12 +12,28 @@
       <div class="v3ins-title">看板</div>
       <NkLoading v-if="loading" />
       <div v-else class="v3ins-board">
-        <div v-for="col in board" :key="col.status" class="v3ins-column">
+        <div
+          v-for="col in board"
+          :key="col.status"
+          class="v3ins-column"
+          :class="{ 'v3ins-column--over': dragOverStatus === col.status }"
+          @dragover.prevent="dragOverStatus = col.status"
+          @dragleave="onDragLeave(col.status)"
+          @drop.prevent="dropTask(col.status)"
+        >
           <div class="v3ins-column-head">
             <span>{{ statusLabel(col.status) }}</span>
             <NkTag size="sm" type="neutral">{{ col.tasks.length }}</NkTag>
           </div>
-          <div v-for="t in col.tasks" :key="t.id" class="v3ins-task">
+          <div
+            v-for="t in col.tasks"
+            :key="t.id"
+            class="v3ins-task"
+            :class="{ 'v3ins-task--dragging': draggingTask?.id === t.id }"
+            draggable="true"
+            @dragstart="onDragStart(t)"
+            @dragend="onDragEnd"
+          >
             <div class="v3ins-task-code">{{ t.code }}</div>
             <div class="v3ins-task-title">{{ t.title }}</div>
             <div class="v3ins-task-meta">{{ t.priority }} · {{ t.owner || '未分配' }}</div>
@@ -59,8 +75,8 @@
 import { onMounted, ref } from 'vue'
 import { NKMessage } from '@nkui/vue/src/utils/message'
 import type { Project } from '@/types/developmentManager'
-import type { BoardColumn, ProjectDashboard, RoadmapItem, WeeklyReport } from '@/types/developmentManager'
-import { getBoard, getDashboard, getRoadmap, getWeeklyReport } from '@/api/developmentManager'
+import type { BoardColumn, ProjectDashboard, RoadmapItem, WeeklyReport, Task } from '@/types/developmentManager'
+import { changeTaskStatus, getBoard, getDashboard, getRoadmap, getWeeklyReport } from '@/api/developmentManager'
 
 const props = defineProps<{ project: Project }>()
 const loading = ref(false)
@@ -68,12 +84,43 @@ const dashboard = ref<ProjectDashboard | null>(null)
 const board = ref<BoardColumn[]>([])
 const roadmap = ref<RoadmapItem[]>([])
 const weekly = ref<WeeklyReport | null>(null)
+const draggingTask = ref<Task | null>(null)
+const dragOverStatus = ref('')
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     todo: '待办', doing: '进行中', blocked: '阻塞', review: '评审', done: '完成', cancelled: '取消',
   }
   return labels[status] || status
+}
+
+function onDragStart(task: Task) {
+  draggingTask.value = task
+}
+
+function onDragEnd() {
+  draggingTask.value = null
+  dragOverStatus.value = ''
+}
+
+function onDragLeave(status: string) {
+  if (dragOverStatus.value === status) {
+    dragOverStatus.value = ''
+  }
+}
+
+async function dropTask(status: string) {
+  const task = draggingTask.value
+  dragOverStatus.value = ''
+  draggingTask.value = null
+  if (!task || task.status === status) return
+  try {
+    await changeTaskStatus(task.id, { status })
+    NKMessage.success(`${task.code} → ${statusLabel(status)}`)
+    await load()
+  } catch (err: any) {
+    NKMessage.error(err.message || '更新任务状态失败')
+  }
 }
 
 async function load() {
@@ -141,6 +188,11 @@ onMounted(load)
   padding: 8px;
   min-height: 140px;
 }
+.v3ins-column--over {
+  outline: 2px dashed var(--nk-color-primary-500, #1677ff);
+  outline-offset: -2px;
+  background: rgba(22, 119, 255, 0.06);
+}
 .v3ins-column-head {
   display: flex;
   justify-content: space-between;
@@ -155,6 +207,10 @@ onMounted(load)
   border-radius: 6px;
   padding: 8px;
   margin-bottom: 6px;
+  cursor: grab;
+}
+.v3ins-task--dragging {
+  opacity: 0.45;
 }
 .v3ins-task-code {
   font-size: 11px;
