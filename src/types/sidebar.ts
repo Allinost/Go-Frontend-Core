@@ -16,6 +16,8 @@ export interface SidebarGroupConfig {
   visible: boolean
   defaultExpanded: boolean
   items: SidebarItemConfig[]
+  /** 系统保留层级：不可删除，名称固定 */
+  system?: boolean
 }
 
 export interface SidebarFavoriteGroupConfig {

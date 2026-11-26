@@ -9,12 +9,23 @@ import type {
 } from '@/types/sidebar'
 
 const STORAGE_KEY = 'go_admin_sidebar_config_v1'
+const CONFIG_VERSION = 2
+export const OTHER_GROUP_ID = 'other'
+
+function item(
+  id: string,
+  label: string,
+  path: string,
+  permission: SidebarPermission = 'all',
+): SidebarItemConfig {
+  return { id, label, path, visible: true, permission }
+}
 
 function defaultConfig(): SidebarConfig {
   return {
-    version: 1,
+    version: CONFIG_VERSION,
     topItems: [
-      { id: '/dashboard', label: '仪表盘', path: '/dashboard', icon: 'home', visible: true, permission: 'all' },
+      item('/dashboard', '仪表盘', '/dashboard'),
     ],
     groups: [
       {
@@ -23,51 +34,93 @@ function defaultConfig(): SidebarConfig {
         icon: 'user',
         visible: true,
         defaultExpanded: true,
+        system: true,
         items: [
-          { id: '/users', label: '用户管理', path: '/users', visible: true, permission: 'admin' },
-          { id: '/roles', label: '角色权限', path: '/roles', visible: true, permission: 'admin' },
-          { id: '/users/login3rd', label: '第三方登录', path: '/users/login3rd', visible: true, permission: 'all' },
+          item('/users', '用户管理', '/users', 'admin'),
+          item('/roles', '角色权限', '/roles', 'admin'),
+          item('/users/login3rd', '第三方登录', '/users/login3rd'),
         ],
       },
       {
         id: 'business',
         label: '业务模块',
-        icon: 'search',
+        icon: 'layers',
         visible: true,
         defaultExpanded: true,
+        system: true,
         items: [
-          { id: '/modules/zzz/developmentmanager', label: '项目开发管理', path: '/modules/zzz/developmentmanager', visible: true, permission: 'all' },
-          { id: '/modules/zzz/ia', label: '投资分析', path: '/modules/zzz/ia', visible: true, permission: 'all' },
-          { id: '/modules/zzz/goodser', label: 'Goodser', path: '/modules/zzz/goodser', visible: true, permission: 'all' },
-          { id: '/modules/zzz/integration', label: '集成管理', path: '/modules/zzz/integration', visible: true, permission: 'all' },
-          { id: '/modules/zzz/shopchecker/products', label: 'ShopChecker', path: '/modules/zzz/shopchecker/products', visible: true, permission: 'all' },
+          item('/modules/zzz/developmentmanager', '项目开发管理', '/modules/zzz/developmentmanager'),
+          item('/modules/zzz/ia', '投资分析', '/modules/zzz/ia'),
+          item('/modules/zzz/goodser', 'Goodser', '/modules/zzz/goodser'),
+          item('/modules/zzz/integration', '集成管理', '/modules/zzz/integration'),
+          item('/modules/zzz/shopchecker/products', 'ShopChecker', '/modules/zzz/shopchecker/products'),
         ],
       },
       {
-        id: 'ops',
-        label: '运维管理',
-        icon: 'file',
+        id: 'hardware',
+        label: '硬件运维',
+        icon: 'server',
         visible: true,
         defaultExpanded: true,
+        system: true,
         items: [
-          { id: '/modules/zzz/containers', label: '容器管理', path: '/modules/zzz/containers', visible: true, permission: 'all' },
-          { id: '/modules/crypto', label: '加密工具', path: '/modules/crypto', visible: true, permission: 'all' },
-          { id: '/modules/schedule', label: '任务调度', path: '/modules/schedule', visible: true, permission: 'all' },
-          { id: '/storage', label: '文件存储', path: '/storage', visible: true, permission: 'all' },
-          { id: '/modules/net', label: '网络工具', path: '/modules/net', visible: true, permission: 'all' },
-          { id: '/modules/servicenav', label: '服务导航', path: '/modules/servicenav', visible: true, permission: 'all' },
-          { id: '/modules/migrate', label: '数据库迁移', path: '/modules/migrate', visible: true, permission: 'all' },
-          { id: '/ops/hosts', label: '主机台账', path: '/ops/hosts', visible: true, permission: 'admin' },
-          { id: '/ops/maintenance', label: '系统维护', path: '/ops/maintenance', visible: true, permission: 'admin' },
-          { id: '/ops/status', label: '系统状态', path: '/ops/status', visible: true, permission: 'admin' },
-          { id: '/settings/config', label: '配置中心', path: '/settings/config', visible: true, permission: 'admin' },
-          { id: '/webhook', label: 'Webhook', path: '/webhook', visible: true, permission: 'all' },
+          item('/modules/zzz/containers', '容器管理', '/modules/zzz/containers'),
+          item('/ops/hosts', '主机台账', '/ops/hosts', 'admin'),
+          item('/ops/maintenance', '系统维护', '/ops/maintenance', 'admin'),
+          item('/ops/status', '系统状态', '/ops/status', 'admin'),
         ],
+      },
+      {
+        id: 'software',
+        label: '软件运维',
+        icon: 'code',
+        visible: true,
+        defaultExpanded: true,
+        system: true,
+        items: [
+          item('/modules/schedule', '任务调度', '/modules/schedule'),
+          item('/webhook', 'Webhook', '/webhook'),
+          item('/modules/servicenav', '服务导航', '/modules/servicenav'),
+        ],
+      },
+      {
+        id: 'data',
+        label: '数据运维',
+        icon: 'database',
+        visible: true,
+        defaultExpanded: true,
+        system: true,
+        items: [
+          item('/storage', '文件存储', '/storage'),
+          item('/modules/migrate', '数据库迁移', '/modules/migrate'),
+          item('/settings/config', '配置中心', '/settings/config', 'admin'),
+        ],
+      },
+      {
+        id: 'tools',
+        label: '工具组件',
+        icon: 'tools',
+        visible: true,
+        defaultExpanded: true,
+        system: true,
+        items: [
+          item('/modules/crypto', '加密工具', '/modules/crypto'),
+          item('/modules/net', '网络工具', '/modules/net'),
+        ],
+      },
+      {
+        id: OTHER_GROUP_ID,
+        label: '其他',
+        icon: 'grid',
+        visible: true,
+        defaultExpanded: true,
+        system: true,
+        items: [],
       },
     ],
     favoriteGroup: {
       label: '常用功能',
-      icon: 'file',
+      icon: 'star',
       visible: true,
       defaultExpanded: true,
     },
@@ -84,15 +137,79 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
+function migrateConfig(raw: any): SidebarConfig {
+  const next = defaultConfig()
+  if (!raw || !Array.isArray(raw.groups)) return next
+
+  // v1 -> v2：保留菜单项可见性/权限，未知功能统一放入「其他」
+  const oldItems: SidebarItemConfig[] = []
+  for (const top of raw.topItems || []) oldItems.push(top)
+  for (const group of raw.groups || []) {
+    for (const entry of group.items || []) oldItems.push(entry)
+  }
+
+  const byPath = new Map<string, SidebarItemConfig>()
+  for (const group of next.groups) {
+    for (const entry of group.items) byPath.set(entry.path, entry)
+  }
+
+  const other = next.groups.find((group) => group.id === OTHER_GROUP_ID)!
+  for (const old of oldItems) {
+    if (!old || !old.path) continue
+    const target = byPath.get(old.path)
+    if (target) {
+      target.visible = old.visible !== false
+      if (old.permission) target.permission = old.permission
+      if (old.label) target.label = old.label
+      continue
+    }
+    if (other.items.some((entry) => entry.path === old.path)) continue
+    other.items.push({
+      id: old.id || old.path,
+      label: old.label || old.path,
+      path: old.path,
+      icon: old.icon,
+      visible: old.visible !== false,
+      permission: (old.permission as SidebarPermission) || 'all',
+    })
+  }
+
+  if (Array.isArray(raw.favorites)) {
+    const valid = new Set<string>()
+    for (const group of next.groups) {
+      for (const entry of group.items) valid.add(entry.path)
+    }
+    next.favorites = raw.favorites.filter((path: string) => valid.has(path))
+  }
+  if (raw.favoriteGroup) {
+    next.favoriteGroup = {
+      ...next.favoriteGroup,
+      ...raw.favoriteGroup,
+      label: raw.favoriteGroup.label || next.favoriteGroup.label,
+      icon: raw.favoriteGroup.icon || next.favoriteGroup.icon,
+    }
+  }
+  return next
+}
+
 function loadConfig(): SidebarConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultConfig()
-    const parsed = JSON.parse(raw) as SidebarConfig
-    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.groups)) {
-      return defaultConfig()
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return defaultConfig()
+    if (parsed.version === CONFIG_VERSION && Array.isArray(parsed.groups)) {
+      const config = parsed as SidebarConfig
+      // 确保系统层级始终存在
+      const base = defaultConfig()
+      for (const systemGroup of base.groups) {
+        if (!config.groups.some((group) => group.id === systemGroup.id)) {
+          config.groups.push(systemGroup)
+        }
+      }
+      return config
     }
-    return parsed
+    return migrateConfig(parsed)
   } catch {
     return defaultConfig()
   }
@@ -133,15 +250,15 @@ export const useSidebarStore = defineStore('sidebar', () => {
 
   const allItems = computed<Record<string, SidebarItemConfig>>(() => {
     const map: Record<string, SidebarItemConfig> = {}
-    for (const item of config.value.topItems) map[item.id] = item
+    for (const entry of config.value.topItems) map[entry.id] = entry
     for (const group of config.value.groups) {
-      for (const item of group.items) map[item.id] = item
+      for (const entry of group.items) map[entry.id] = entry
     }
     return map
   })
 
   const visibleTopItems = computed(() =>
-    config.value.topItems.filter((item) => item.visible && canAccess(item.permission)),
+    config.value.topItems.filter((entry) => entry.visible && canAccess(entry.permission)),
   )
 
   const visibleGroups = computed(() =>
@@ -149,7 +266,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
       .filter((group) => group.visible)
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => item.visible && canAccess(item.permission)),
+        items: group.items.filter((entry) => entry.visible && canAccess(entry.permission)),
       }))
       .filter((group) => group.items.length > 0),
   )
@@ -158,8 +275,8 @@ export const useSidebarStore = defineStore('sidebar', () => {
     if (!config.value.favoriteGroup.visible) return null
     const items = config.value.favorites
       .map((id) => allItems.value[id])
-      .filter((item): item is SidebarItemConfig => !!item)
-      .filter((item) => item.visible && canAccess(item.permission))
+      .filter((entry): entry is SidebarItemConfig => !!entry)
+      .filter((entry) => entry.visible && canAccess(entry.permission))
     if (items.length === 0) return null
     return {
       id: 'favorites',
@@ -168,6 +285,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
       visible: true,
       defaultExpanded: config.value.favoriteGroup.defaultExpanded,
       items,
+      system: true,
     } as SidebarGroupConfig
   })
 
@@ -193,7 +311,12 @@ export const useSidebarStore = defineStore('sidebar', () => {
 
   function renameGroup(groupId: string, label: string) {
     const group = config.value.groups.find((g) => g.id === groupId)
-    if (group) group.label = label
+    if (group && !group.system) group.label = label
+  }
+
+  function setGroupIcon(groupId: string, icon: string) {
+    const group = config.value.groups.find((g) => g.id === groupId)
+    if (group) group.icon = icon
   }
 
   function setFavoriteDefaultExpanded(value: boolean) {
@@ -211,13 +334,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
   }
 
   function toggleItemVisible(groupId: string, itemId: string) {
-    const item = findItem(groupId, itemId)
-    if (item) item.visible = !item.visible
+    const entry = findItem(groupId, itemId)
+    if (entry) entry.visible = !entry.visible
   }
 
   function setItemPermission(groupId: string, itemId: string, permission: SidebarPermission) {
-    const item = findItem(groupId, itemId)
-    if (item) item.permission = permission
+    const entry = findItem(groupId, itemId)
+    if (entry) entry.permission = permission
   }
 
   function moveGroup(groupId: string, delta: number) {
@@ -232,11 +355,11 @@ export const useSidebarStore = defineStore('sidebar', () => {
   function moveItem(groupId: string, itemId: string, delta: number) {
     const group = config.value.groups.find((g) => g.id === groupId)
     if (!group) return
-    const index = group.items.findIndex((i) => i.id === itemId)
+    const index = group.items.findIndex((entry) => entry.id === itemId)
     const next = index + delta
     if (index < 0 || next < 0 || next >= group.items.length) return
-    const [item] = group.items.splice(index, 1)
-    group.items.splice(next, 0, item)
+    const [entry] = group.items.splice(index, 1)
+    group.items.splice(next, 0, entry)
   }
 
   function moveItemToGroup(itemId: string, fromGroupId: string, toGroupId: string) {
@@ -244,10 +367,58 @@ export const useSidebarStore = defineStore('sidebar', () => {
     const from = config.value.groups.find((g) => g.id === fromGroupId)
     const to = config.value.groups.find((g) => g.id === toGroupId)
     if (!from || !to) return
-    const index = from.items.findIndex((i) => i.id === itemId)
+    const index = from.items.findIndex((entry) => entry.id === itemId)
     if (index < 0) return
-    const [item] = from.items.splice(index, 1)
-    to.items.push(item)
+    const [entry] = from.items.splice(index, 1)
+    to.items.push(entry)
+  }
+
+  function addGroup(label = '新层级', icon = 'grid'): string {
+    const id = `custom-${Date.now()}`
+    const group: SidebarGroupConfig = {
+      id,
+      label: label.trim() || '新层级',
+      icon: icon || 'grid',
+      visible: true,
+      defaultExpanded: true,
+      system: false,
+      items: [],
+    }
+    const otherIndex = config.value.groups.findIndex((g) => g.id === OTHER_GROUP_ID)
+    if (otherIndex >= 0) config.value.groups.splice(otherIndex, 0, group)
+    else config.value.groups.push(group)
+    expanded[id] = true
+    return id
+  }
+
+  function deleteGroup(groupId: string): boolean {
+    if (groupId === OTHER_GROUP_ID) return false
+    const index = config.value.groups.findIndex((g) => g.id === groupId)
+    if (index < 0) return false
+    const group = config.value.groups[index]
+    if (group.system) return false
+
+    const other = config.value.groups.find((g) => g.id === OTHER_GROUP_ID)
+    if (other) {
+      for (const entry of group.items) {
+        if (!other.items.some((existing) => existing.path === entry.path)) {
+          other.items.push(entry)
+        }
+      }
+      other.visible = true
+      other.defaultExpanded = true
+      expanded[OTHER_GROUP_ID] = true
+    }
+    config.value.groups.splice(index, 1)
+    delete expanded[groupId]
+    if (config.value.favorites.length) {
+      const valid = new Set<string>()
+      for (const g of config.value.groups) {
+        for (const entry of g.items) valid.add(entry.id)
+      }
+      config.value.favorites = config.value.favorites.filter((id) => valid.has(id))
+    }
+    return true
   }
 
   function toggleFavorite(itemId: string) {
@@ -263,7 +434,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
 
   function findItem(groupId: string, itemId: string) {
     const group = config.value.groups.find((g) => g.id === groupId)
-    return group?.items.find((i) => i.id === itemId)
+    return group?.items.find((entry) => entry.id === itemId)
   }
 
   function reset() {
@@ -286,6 +457,9 @@ export const useSidebarStore = defineStore('sidebar', () => {
     setGroupDefaultExpanded,
     setFavoriteDefaultExpanded,
     renameGroup,
+    setGroupIcon,
+    addGroup,
+    deleteGroup,
     toggleGroupVisible,
     toggleFavoriteVisible,
     toggleItemVisible,
