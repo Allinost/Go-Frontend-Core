@@ -811,3 +811,79 @@ export interface BundlePreviewResp {
   items: OrderItem[]
   snapshot: BundleOrderSnapshot
 }
+
+// ---- 平铺图导出 ----
+export type ExportItemType = 'product' | 'bundle' | 'combo'
+export type ExportBackground = 'black' | 'white' | 'transparent'
+export type ExportTextColor = 'auto' | 'dark' | 'light'
+export type ExportFormat = 'png' | 'jpeg'
+export type ExportPriceDisplay = 'unit' | 'total' | 'both'
+export type ExportJobStatus = 'pending' | 'processing' | 'succeeded' | 'failed'
+
+export interface ExportBundleSelection {
+  main_product_id?: string
+  main_quantity?: number
+  sub_items?: Array<{ product_id: string; quantity: number }>
+}
+
+export interface ExportItemReq {
+  type: ExportItemType
+  id: string
+  quantity: number
+  bundle_selection?: ExportBundleSelection
+}
+
+export interface ExportRequest {
+  items: ExportItemReq[]
+  columns?: number
+  width?: number
+  background?: ExportBackground
+  text_color?: ExportTextColor
+  format?: ExportFormat
+  show_name?: boolean
+  show_price?: boolean
+  show_quantity?: boolean
+  price_display?: ExportPriceDisplay
+  title?: string
+}
+
+export interface ExportComponent {
+  name: string
+  quantity: number
+  amount: number
+}
+
+export interface ExportLine {
+  type: ExportItemType
+  id: string
+  name: string
+  quantity: number
+  unit_price: number
+  amount: number
+  price_mode: string
+  image_url?: string
+  components?: ExportComponent[]
+}
+
+export interface ExportPreview {
+  lines: ExportLine[]
+  total_amount: number
+  total_quantity: number
+  columns: number
+  width: number
+  background: ExportBackground
+  format: ExportFormat
+}
+
+export interface ExportJob {
+  id: string
+  inventory_id: string
+  status: ExportJobStatus
+  request: ExportRequest
+  result_url?: string
+  error?: string
+  created_by?: number
+  created_at: string
+  finished_at?: string
+  expires_at?: string
+}

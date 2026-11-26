@@ -51,6 +51,7 @@
       </div>
       <span v-if="selectedProductIds.length" class="goodser__count">已选 {{ selectedProductIds.length }} 件</span>
       <div v-if="selectedProductIds.length" class="goodser__batch-actions">
+        <NkButton size="xs" @click="openExportDialog">生成平铺图</NkButton>
         <NkButton size="xs" variant="ghost" @click="clearProductSelection">取消选择</NkButton>
         <NkButton size="xs" variant="ghost" type="danger" @click="showBatchDeleteDialog = true">批量删除</NkButton>
       </div>
@@ -410,12 +411,18 @@
       :loading="saving"
       @confirm="handleDeleteProductFromDetail"
     />
+
+    <ExportDialog
+      v-model="showExportDialog"
+      :inventory-id="props.inventoryId"
+      :initial-products="exportProducts"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   createProduct,
   deleteProduct,
@@ -427,6 +434,7 @@ import {
 import type { Dictionary, GoodserTag, Inventory, Product, StatusCode } from '@/types/goodser'
 import { formatDate } from '../utils'
 import ConfirmDialog from './ConfirmDialog.vue'
+import ExportDialog from './ExportDialog.vue'
 
 const props = defineProps<{
   inventoryId: string
@@ -468,6 +476,8 @@ const batchDeleting = ref(false)
 const editingProduct = ref<Product | null>(null)
 const detailProduct = ref<Product | null>(null)
 const selectedProductIds = ref<string[]>([])
+const showExportDialog = ref(false)
+const exportProducts = ref<Product[]>([])
 const productForm = ref({
   name: '',
   main_zone: '',
@@ -696,6 +706,11 @@ function toggleSelectAllProducts(checked: boolean) {
 
 function clearProductSelection() {
   selectedProductIds.value = []
+}
+
+function openExportDialog() {
+  exportProducts.value = products.value.filter((p) => selectedProductIds.value.includes(p._id))
+  showExportDialog.value = true
 }
 
 async function handleBatchDeleteProducts() {

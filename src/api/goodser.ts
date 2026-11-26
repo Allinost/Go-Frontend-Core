@@ -16,6 +16,7 @@ import type {
   Bundle, CreateBundleReq, UpdateBundleReq, BundleMainProduct, BundleSubProduct,
   BundlePreviewReq, BundlePreviewResp, StatsOverview,
   BundlePool, CreateBundlePoolReq, UpdateBundlePoolReq,
+  ExportRequest, ExportPreview, ExportJob,
 } from '@/types/goodser'
 
 // Inventories
@@ -316,4 +317,25 @@ export function uploadProductImage(file: File): Promise<ApiResponse<{ url: strin
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     .then((res) => res.data)
+}
+
+// ---- 平铺图导出 ----
+export function previewExport(inventoryId: string, data: ExportRequest) {
+  return postResponse<ExportPreview>(`zzz-goodser/inventories/${inventoryId}/exports/preview`, data)
+}
+
+export function createExport(inventoryId: string, data: ExportRequest) {
+  return postResponse<ExportJob>(`zzz-goodser/inventories/${inventoryId}/exports`, data)
+}
+
+export function loadExports(inventoryId: string, limit = 20) {
+  return getResponse<ExportJob[]>(`zzz-goodser/inventories/${inventoryId}/exports`, { limit })
+}
+
+export function getExport(id: string) {
+  return getResponse<ExportJob>(`zzz-goodser/exports/${id}`)
+}
+
+export function deleteExport(id: string) {
+  return deleteResponse<any>(`zzz-goodser/exports/${id}`)
 }
