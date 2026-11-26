@@ -19,20 +19,38 @@
 
       <div class="sn-editor__section">
         <div class="sn-editor__section-title">顶部项 / 仪表盘</div>
-        <div v-for="entry in store.config.topItems" :key="entry.id" class="sn-editor__row">
-          <div class="sn-editor__name">
-            <strong>{{ entry.label }}</strong>
-            <span>{{ entry.path }}</span>
+        <template v-for="entry in store.config.topItems" :key="entry.id">
+          <div class="sn-editor__row">
+            <button type="button" class="sn-icon-btn" title="选择图标" @click="togglePicker('top:' + entry.id)">
+              <NkIcon :name="entry.icon || 'home'" size="sm" />
+            </button>
+            <div class="sn-editor__name">
+              <strong>{{ entry.label }}</strong>
+              <span>{{ entry.path }}</span>
+            </div>
+            <NkSwitch :model-value="entry.visible" size="sm" @update:model-value="entry.visible = $event" />
+            <NkSelect
+              :model-value="entry.permission"
+              :options="permissionOptions"
+              size="sm"
+              style="width: 130px"
+              @update:model-value="entry.permission = $event"
+            />
           </div>
-          <NkSwitch :model-value="entry.visible" size="sm" @update:model-value="entry.visible = $event" />
-          <NkSelect
-            :model-value="entry.permission"
-            :options="permissionOptions"
-            size="sm"
-            style="width: 130px"
-            @update:model-value="entry.permission = $event"
-          />
-        </div>
+          <div v-if="iconPickerFor === 'top:' + entry.id" class="sn-icon-grid">
+            <button
+              v-for="icon in sidebarIcons"
+              :key="icon.name"
+              type="button"
+              class="sn-icon-option"
+              :class="{ active: entry.icon === icon.name }"
+              :title="icon.label"
+              @click="chooseTopIcon(entry.id, icon.name)"
+            >
+              <NkIcon :name="icon.name" size="sm" />
+            </button>
+          </div>
+        </template>
       </div>
 
       <div class="sn-editor__section">
@@ -218,6 +236,12 @@ function togglePicker(id: string) {
 
 function chooseFavoriteIcon(icon: string) {
   store.config.favoriteGroup.icon = icon
+  iconPickerFor.value = ''
+}
+
+function chooseTopIcon(itemId: string, icon: string) {
+  const entry = store.config.topItems.find((item) => item.id === itemId)
+  if (entry) entry.icon = icon
   iconPickerFor.value = ''
 }
 
