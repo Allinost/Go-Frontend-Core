@@ -9,6 +9,7 @@ import type {
 } from '@/types/sidebar'
 
 const STORAGE_KEY = 'go_admin_sidebar_config_v1'
+const DEFAULT_KEY = 'go_admin_sidebar_default_v1'
 const CONFIG_VERSION = 2
 export const OTHER_GROUP_ID = 'other'
 
@@ -215,9 +216,24 @@ function loadConfig(): SidebarConfig {
   }
 }
 
+function loadSavedDefault(): SidebarConfig | null {
+  try {
+    const raw = localStorage.getItem(DEFAULT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || parsed.version !== CONFIG_VERSION || !Array.isArray(parsed.groups)) {
+      return null
+    }
+    return parsed as SidebarConfig
+  } catch {
+    return null
+  }
+}
+
 export const useSidebarStore = defineStore('sidebar', () => {
   const auth = useAuthStore()
   const config = ref<SidebarConfig>(loadConfig())
+  const savedDefault = ref<SidebarConfig | null>(loadSavedDefault())
   const expanded = reactive<Record<string, boolean>>({})
 
   function syncExpanded() {
@@ -438,14 +454,39 @@ export const useSidebarStore = defineStore('sidebar', () => {
   }
 
   function reset() {
-    config.value = defaultConfig()
+    config.value = loadDefaultConfig()
     for (const key of Object.keys(expanded)) delete expanded[key]
     syncExpanded()
+  }
+
+  function replaceConfig(next: SidebarConfig) {
+    config.value = clone(next)
+    for (const key of Object.keys(expanded)) {
+      if (key === 'favorites') continue
+      if (!config.value.groups.some((group) => group.id === key)) delete expanded[key]
+    }
+    syncExpanded()
+  }
+
+  function saveConfigAsDefault(next: SidebarConfig) {
+    const copy = clone(next)
+    savedDefault.value = copy
+    try {
+      localStorage.setItem(DEFAULT_KEY, JSON.stringify(copy))
+    } catch {
+      // localStorage 不可用时仅保留内存默认
+    }
+    replaceConfig(copy)
+  }
+
+  function loadDefaultConfig(): SidebarConfig {
+    return clone(savedDefault.value ?? defaultConfig())
   }
 
   return {
     config,
     expanded,
+    savedDefault,
     visibleTopItems,
     visibleGroups,
     favoriteGroup,
@@ -470,5 +511,8 @@ export const useSidebarStore = defineStore('sidebar', () => {
     toggleFavorite,
     isFavorite,
     reset,
+    replaceConfig,
+    saveConfigAsDefault,
+    loadDefaultConfig,
   }
 })

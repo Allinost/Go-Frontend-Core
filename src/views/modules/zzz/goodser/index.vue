@@ -27,6 +27,12 @@
         @changed="fetchDictionaries"
       />
 
+      <!-- ==================== 谷子图鉴 Tab ==================== -->
+      <CatalogsTab
+        v-if="activeTab === 'catalogs'"
+        :inventory-id="currentInventoryId"
+      />
+
       <!-- ==================== 组合包 Tab ==================== -->
       <CombosTab
         v-if="activeTab === 'combos'"
@@ -116,6 +122,7 @@ import type {
 import ReturnsTab from './components/ReturnsTab.vue'
 import StatsTab from './components/StatsTab.vue'
 import SeriesTab from './components/SeriesTab.vue'
+import CatalogsTab from './components/CatalogsTab.vue'
 import CombosTab from './components/CombosTab.vue'
 import BundlesTab from './components/BundlesTab.vue'
 import LogsTab from './components/LogsTab.vue'
@@ -129,6 +136,7 @@ const activeTab = ref('products')
 const tabs = [
   { label: '商品列表', value: 'products' },
   { label: '系列视图', value: 'series' },
+  { label: '谷子图鉴', value: 'catalogs' },
   { label: '组合包', value: 'combos' },
   { label: '捆', value: 'bundles' },
   { label: '统计', value: 'stats' },

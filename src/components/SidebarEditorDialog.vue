@@ -3,23 +3,30 @@
     :visible="visible"
     title="编辑导航"
     :width="980"
-    @update:visible="emit('update:visible', $event)"
+    confirm-text="保存"
+    cancel-text="取消"
+    @confirm="save"
+    @cancel="cancel"
+    @update:visible="onVisibleChange"
   >
     <div class="sn-editor">
       <div class="sn-editor__toolbar">
-        <NkInput v-model="query" placeholder="搜索菜单名称或路径" size="sm" clearable style="width: 260px" />
+        <NkInput v-model="query" placeholder="搜索菜单名称或路径" size="sm" clearable style="width: 240px" />
         <NkButton size="sm" variant="ghost" @click="addGroup">新增层级</NkButton>
-        <NkButton size="sm" variant="ghost" @click="reset">恢复默认</NkButton>
-        <NkButton size="sm" type="primary" @click="close">完成</NkButton>
+        <NkButton size="sm" variant="ghost" @click="expandAll">展开全部</NkButton>
+        <NkButton size="sm" variant="ghost" @click="collapseAll">折叠全部</NkButton>
+        <NkButton size="sm" variant="ghost" @click="resetToDefault">恢复默认</NkButton>
+        <NkButton size="sm" variant="ghost" @click="saveAsDefault">保存为默认</NkButton>
       </div>
       <div class="sn-editor__hint">
-        修改自动保存到当前浏览器。系统层级（用户管理、业务模块、硬件运维、软件运维、数据运维、工具组件、其他）不可删除；
-        删除自定义层级时，其下功能会自动移动到「其他」。层级图标可点击左侧图标更换。
+        编辑中的修改只在点击「保存」后生效，点击「取消」会丢弃本次修改。
+        系统层级不可删除；删除自定义层级时，其下功能会自动移动到「其他」。
+        「保存为默认」会把当前编辑结果保存，并作为以后「恢复默认」的基线。
       </div>
 
       <div class="sn-editor__section">
         <div class="sn-editor__section-title">顶部项 / 仪表盘</div>
-        <template v-for="entry in store.config.topItems" :key="entry.id">
+        <template v-for="entry in draft.topItems" :key="entry.id">
           <div class="sn-editor__row">
             <button type="button" class="sn-icon-btn" title="选择图标" @click="togglePicker('top:' + entry.id)">
               <NkIcon :name="entry.icon || 'home'" size="sm" />
@@ -57,16 +64,20 @@
         <div class="sn-editor__section-title">常用功能层级</div>
         <div class="sn-editor__row sn-editor__row--settings">
           <button type="button" class="sn-icon-btn" title="选择图标" @click="togglePicker('favorites')">
-            <NkIcon :name="store.config.favoriteGroup.icon" size="sm" />
+            <NkIcon :name="draft.favoriteGroup.icon" size="sm" />
           </button>
-          <NkInput v-model="store.config.favoriteGroup.label" size="sm" style="width: 180px" />
+          <NkInput v-model="draft.favoriteGroup.label" size="sm" style="width: 180px" />
           <span class="sn-editor__inline">显示</span>
-          <NkSwitch :model-value="store.config.favoriteGroup.visible" size="sm" @update:model-value="store.toggleFavoriteVisible()" />
+          <NkSwitch
+            :model-value="draft.favoriteGroup.visible"
+            size="sm"
+            @update:model-value="draft.favoriteGroup.visible = $event"
+          />
           <span class="sn-editor__inline">默认展开</span>
           <NkSwitch
-            :model-value="store.config.favoriteGroup.defaultExpanded"
+            :model-value="draft.favoriteGroup.defaultExpanded"
             size="sm"
-            @update:model-value="store.setFavoriteDefaultExpanded($event)"
+            @update:model-value="draft.favoriteGroup.defaultExpanded = $event"
           />
         </div>
         <div v-if="iconPickerFor === 'favorites'" class="sn-icon-grid">
@@ -75,7 +86,7 @@
             :key="icon.name"
             type="button"
             class="sn-icon-option"
-            :class="{ active: store.config.favoriteGroup.icon === icon.name }"
+            :class="{ active: draft.favoriteGroup.icon === icon.name }"
             :title="icon.label"
             @click="chooseFavoriteIcon(icon.name)"
           >
@@ -84,7 +95,7 @@
         </div>
         <div v-if="favoriteItems.length === 0" class="sn-editor__empty">尚未绑定常用功能，请在下方菜单项点击“设为常用”。</div>
         <div v-else class="sn-editor__chips">
-          <NkTag v-for="entry in favoriteItems" :key="entry.id" size="sm" type="primary" closable @close="store.toggleFavorite(entry.id)">
+          <NkTag v-for="entry in favoriteItems" :key="entry.id" size="sm" type="primary" closable @close="toggleFavorite(entry.id)">
             {{ entry.label }}
           </NkTag>
         </div>
@@ -98,23 +109,23 @@
           <NkInput
             :model-value="group.label"
             size="sm"
-            style="width: 160px"
+            style="width: 150px"
             :disabled="group.system"
-            @update:model-value="store.renameGroup(group.id, $event)"
+            @update:model-value="renameGroup(group.id, $event)"
           />
           <NkTag v-if="group.system" size="sm" type="neutral">系统</NkTag>
           <NkTag v-else size="sm" type="info">自定义</NkTag>
           <span class="sn-editor__inline">显示</span>
-          <NkSwitch :model-value="group.visible" size="sm" @update:model-value="store.toggleGroupVisible(group.id)" />
+          <NkSwitch :model-value="group.visible" size="sm" @update:model-value="toggleGroupVisible(group.id)" />
           <span class="sn-editor__inline">默认展开</span>
           <NkSwitch
             :model-value="group.defaultExpanded"
             size="sm"
-            @update:model-value="store.setGroupDefaultExpanded(group.id, $event)"
+            @update:model-value="setGroupDefaultExpanded(group.id, $event)"
           />
           <div class="sn-editor__move">
-            <NkButton size="xs" variant="ghost" :disabled="groupIndex === 0" @click="store.moveGroup(group.id, -1)">上移</NkButton>
-            <NkButton size="xs" variant="ghost" :disabled="groupIndex === displayGroups.length - 1" @click="store.moveGroup(group.id, 1)">下移</NkButton>
+            <NkButton size="xs" variant="ghost" :disabled="groupIndex === 0" @click="moveGroup(group.id, -1)">上移</NkButton>
+            <NkButton size="xs" variant="ghost" :disabled="groupIndex === displayGroups.length - 1" @click="moveGroup(group.id, 1)">下移</NkButton>
           </div>
           <NkButton
             v-if="!group.system"
@@ -123,56 +134,70 @@
             type="danger"
             @click="removeGroup(group.id, group.label)"
           >删除</NkButton>
-        </div>
-
-        <div v-if="iconPickerFor === group.id" class="sn-icon-grid">
-          <button
-            v-for="icon in sidebarIcons"
-            :key="icon.name"
-            type="button"
-            class="sn-icon-option"
-            :class="{ active: group.icon === icon.name }"
-            :title="icon.label"
-            @click="chooseGroupIcon(group.id, icon.name)"
+          <NkButton
+            size="xs"
+            variant="ghost"
+            class="sn-editor__collapse"
+            :aria-expanded="isGroupOpen(group.id)"
+            @click="toggleGroupOpen(group.id)"
           >
-            <NkIcon :name="icon.name" size="sm" />
-          </button>
-        </div>
-
-        <div v-if="group.id === 'other'" class="sn-editor__other-hint">
-          「其他」是系统保留的兜底层级，删除自定义层级时其功能会自动归入这里。
-        </div>
-
-        <div v-if="group.items.length === 0" class="sn-editor__empty">{{ group.id === 'other' ? '暂无迁移功能' : '该分组暂无匹配项' }}</div>
-        <div v-for="(entry, itemIndex) in group.items" :key="group.id + ':' + entry.id" class="sn-editor__row sn-editor__row--item">
-          <span class="sn-editor__item-dot" />
-          <div class="sn-editor__name">
-            <strong>{{ entry.label }}</strong>
-            <span>{{ entry.path }}</span>
-          </div>
-          <NkSwitch :model-value="entry.visible" size="sm" @update:model-value="store.toggleItemVisible(group.id, entry.id)" />
-          <NkSelect
-            :model-value="entry.permission"
-            :options="permissionOptions"
-            size="sm"
-            style="width: 130px"
-            @update:model-value="store.setItemPermission(group.id, entry.id, $event)"
-          />
-          <NkSelect
-            :model-value="group.id"
-            :options="groupOptions(group.id)"
-            placeholder="移动到分组"
-            size="sm"
-            style="width: 130px"
-            @update:model-value="store.moveItemToGroup(entry.id, group.id, $event)"
-          />
-          <div class="sn-editor__move">
-            <NkButton size="xs" variant="ghost" :disabled="itemIndex === 0" @click="store.moveItem(group.id, entry.id, -1)">上移</NkButton>
-            <NkButton size="xs" variant="ghost" :disabled="itemIndex === group.items.length - 1" @click="store.moveItem(group.id, entry.id, 1)">下移</NkButton>
-          </div>
-          <NkButton size="xs" variant="ghost" @click="store.toggleFavorite(entry.id)">
-            {{ store.isFavorite(entry.id) ? '取消常用' : '设为常用' }}
+            <NkIcon name="arrow-down" size="xs" :class="{ 'is-open': isGroupOpen(group.id) }" />
+            <span>{{ group.items.length }}</span>
           </NkButton>
+        </div>
+
+        <div v-show="isGroupOpen(group.id)" class="sn-editor__group-body">
+          <div v-if="iconPickerFor === group.id" class="sn-icon-grid">
+            <button
+              v-for="icon in sidebarIcons"
+              :key="icon.name"
+              type="button"
+              class="sn-icon-option"
+              :class="{ active: group.icon === icon.name }"
+              :title="icon.label"
+              @click="chooseGroupIcon(group.id, icon.name)"
+            >
+              <NkIcon :name="icon.name" size="sm" />
+            </button>
+          </div>
+
+          <div v-if="group.id === 'other'" class="sn-editor__other-hint">
+            「其他」是系统保留的兜底层级，删除自定义层级时其功能会自动归入这里。
+          </div>
+
+          <div v-if="group.items.length === 0" class="sn-editor__empty">
+            {{ group.id === 'other' ? '暂无迁移功能' : '该分组暂无匹配项' }}
+          </div>
+          <div v-for="(entry, itemIndex) in group.items" :key="group.id + ':' + entry.id" class="sn-editor__row sn-editor__row--item">
+            <span class="sn-editor__item-dot" />
+            <div class="sn-editor__name">
+              <strong>{{ entry.label }}</strong>
+              <span>{{ entry.path }}</span>
+            </div>
+            <NkSwitch :model-value="entry.visible" size="sm" @update:model-value="toggleItemVisible(group.id, entry.id)" />
+            <NkSelect
+              :model-value="entry.permission"
+              :options="permissionOptions"
+              size="sm"
+              style="width: 130px"
+              @update:model-value="setItemPermission(group.id, entry.id, $event)"
+            />
+            <NkSelect
+              :model-value="group.id"
+              :options="groupOptions(group.id)"
+              placeholder="移动到分组"
+              size="sm"
+              style="width: 130px"
+              @update:model-value="moveItemToGroup(entry.id, group.id, $event)"
+            />
+            <div class="sn-editor__move">
+              <NkButton size="xs" variant="ghost" :disabled="itemIndex === 0" @click="moveItem(group.id, entry.id, -1)">上移</NkButton>
+              <NkButton size="xs" variant="ghost" :disabled="itemIndex === group.items.length - 1" @click="moveItem(group.id, entry.id, 1)">下移</NkButton>
+            </div>
+            <NkButton size="xs" variant="ghost" @click="toggleFavorite(entry.id)">
+              {{ isFavorite(entry.id) ? '取消常用' : '设为常用' }}
+            </NkButton>
+          </div>
         </div>
       </div>
     </div>
@@ -180,10 +205,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useSidebarStore } from '@/stores/sidebar'
+import { computed, reactive, ref, watch } from 'vue'
+import { useSidebarStore, OTHER_GROUP_ID } from '@/stores/sidebar'
 import { SIDEBAR_ICONS } from '@/utils/sidebarIcons'
-import type { SidebarItemConfig } from '@/types/sidebar'
+import type {
+  SidebarConfig,
+  SidebarItemConfig,
+  SidebarPermission,
+} from '@/types/sidebar'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
@@ -192,6 +221,8 @@ const store = useSidebarStore()
 const query = ref('')
 const sidebarIcons = SIDEBAR_ICONS
 const iconPickerFor = ref('')
+const draft = ref<SidebarConfig>(clone(store.config))
+const openGroups = reactive<Record<string, boolean>>({})
 
 const permissionOptions = [
   { label: '所有用户', value: 'all' },
@@ -199,9 +230,30 @@ const permissionOptions = [
   { label: '仅管理员', value: 'admin' },
 ]
 
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function resetTransient() {
+  query.value = ''
+  iconPickerFor.value = ''
+  for (const key of Object.keys(openGroups)) delete openGroups[key]
+}
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) {
+      draft.value = clone(store.config)
+      resetTransient()
+    }
+  },
+  { immediate: true },
+)
+
 const displayGroups = computed(() => {
   const keyword = query.value.trim().toLowerCase()
-  return store.config.groups
+  return draft.value.groups
     .map((group) => ({
       ...group,
       items: keyword
@@ -218,14 +270,40 @@ const displayGroups = computed(() => {
     })
 })
 
+const allItems = computed<Record<string, SidebarItemConfig>>(() => {
+  const map: Record<string, SidebarItemConfig> = {}
+  for (const entry of draft.value.topItems) map[entry.id] = entry
+  for (const group of draft.value.groups) {
+    for (const entry of group.items) map[entry.id] = entry
+  }
+  return map
+})
+
 const favoriteItems = computed(() =>
-  store.config.favorites
-    .map((id) => store.allItems[id])
+  draft.value.favorites
+    .map((id) => allItems.value[id])
     .filter((entry): entry is SidebarItemConfig => !!entry),
 )
 
+function isGroupOpen(groupId: string): boolean {
+  if (query.value.trim()) return true
+  return !!openGroups[groupId]
+}
+
+function toggleGroupOpen(groupId: string) {
+  openGroups[groupId] = !isGroupOpen(groupId)
+}
+
+function expandAll() {
+  for (const group of displayGroups.value) openGroups[group.id] = true
+}
+
+function collapseAll() {
+  for (const key of Object.keys(openGroups)) delete openGroups[key]
+}
+
 function groupOptions(currentId: string) {
-  return store.config.groups
+  return draft.value.groups
     .filter((group) => group.id !== currentId)
     .map((group) => ({ label: group.label, value: group.id }))
 }
@@ -235,41 +313,152 @@ function togglePicker(id: string) {
 }
 
 function chooseFavoriteIcon(icon: string) {
-  store.config.favoriteGroup.icon = icon
+  draft.value.favoriteGroup.icon = icon
   iconPickerFor.value = ''
 }
 
 function chooseTopIcon(itemId: string, icon: string) {
-  const entry = store.config.topItems.find((item) => item.id === itemId)
+  const entry = draft.value.topItems.find((item) => item.id === itemId)
   if (entry) entry.icon = icon
   iconPickerFor.value = ''
 }
 
 function chooseGroupIcon(groupId: string, icon: string) {
-  store.setGroupIcon(groupId, icon)
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (group) group.icon = icon
   iconPickerFor.value = ''
 }
 
+function renameGroup(groupId: string, label: string) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (group && !group.system) group.label = label
+}
+
+function toggleGroupVisible(groupId: string) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (group) group.visible = !group.visible
+}
+
+function setGroupDefaultExpanded(groupId: string, value: boolean) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (group) group.defaultExpanded = value
+}
+
+function moveGroup(groupId: string, delta: number) {
+  const groups = draft.value.groups
+  const index = groups.findIndex((group) => group.id === groupId)
+  const next = index + delta
+  if (index < 0 || next < 0 || next >= groups.length) return
+  const [group] = groups.splice(index, 1)
+  groups.splice(next, 0, group)
+}
+
 function addGroup() {
-  store.addGroup('新层级', 'grid')
+  const id = `custom-${Date.now()}`
+  const group = {
+    id,
+    label: '新层级',
+    icon: 'grid',
+    visible: true,
+    defaultExpanded: true,
+    system: false,
+    items: [],
+  }
+  const otherIndex = draft.value.groups.findIndex((item) => item.id === OTHER_GROUP_ID)
+  if (otherIndex >= 0) draft.value.groups.splice(otherIndex, 0, group)
+  else draft.value.groups.push(group)
+  openGroups[id] = true
   iconPickerFor.value = ''
 }
 
 function removeGroup(groupId: string, label: string) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (!group || group.system || groupId === OTHER_GROUP_ID) return
   if (!window.confirm(`删除层级「${label}」？其下功能会移动到「其他」。`)) return
-  store.deleteGroup(groupId)
+  const other = draft.value.groups.find((item) => item.id === OTHER_GROUP_ID)
+  if (other) {
+    for (const entry of group.items) {
+      if (!other.items.some((existing) => existing.path === entry.path)) {
+        other.items.push(entry)
+      }
+    }
+    other.visible = true
+    other.defaultExpanded = true
+  }
+  draft.value.groups = draft.value.groups.filter((item) => item.id !== groupId)
+  delete openGroups[groupId]
   if (iconPickerFor.value === groupId) iconPickerFor.value = ''
 }
 
-function reset() {
-  if (window.confirm('恢复默认导航配置？当前自定义会被覆盖。')) {
-    store.reset()
-    iconPickerFor.value = ''
-  }
+function toggleItemVisible(groupId: string, itemId: string) {
+  const entry = findItem(groupId, itemId)
+  if (entry) entry.visible = !entry.visible
 }
 
-function close() {
+function setItemPermission(groupId: string, itemId: string, permission: SidebarPermission) {
+  const entry = findItem(groupId, itemId)
+  if (entry) entry.permission = permission
+}
+
+function moveItem(groupId: string, itemId: string, delta: number) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  if (!group) return
+  const index = group.items.findIndex((entry) => entry.id === itemId)
+  const next = index + delta
+  if (index < 0 || next < 0 || next >= group.items.length) return
+  const [entry] = group.items.splice(index, 1)
+  group.items.splice(next, 0, entry)
+}
+
+function moveItemToGroup(itemId: string, fromGroupId: string, toGroupId: string) {
+  if (!toGroupId || fromGroupId === toGroupId) return
+  const from = draft.value.groups.find((group) => group.id === fromGroupId)
+  const to = draft.value.groups.find((group) => group.id === toGroupId)
+  if (!from || !to) return
+  const index = from.items.findIndex((entry) => entry.id === itemId)
+  if (index < 0) return
+  const [entry] = from.items.splice(index, 1)
+  to.items.push(entry)
+}
+
+function findItem(groupId: string, itemId: string) {
+  const group = draft.value.groups.find((item) => item.id === groupId)
+  return group?.items.find((entry) => entry.id === itemId)
+}
+
+function toggleFavorite(itemId: string) {
+  const list = draft.value.favorites
+  const index = list.indexOf(itemId)
+  if (index >= 0) list.splice(index, 1)
+  else list.push(itemId)
+}
+
+function isFavorite(itemId: string) {
+  return draft.value.favorites.includes(itemId)
+}
+
+function resetToDefault() {
+  if (!window.confirm('恢复默认导航配置？当前编辑中的修改会被默认配置替换，仍需点击「保存」才会生效。')) return
+  draft.value = store.loadDefaultConfig()
+  resetTransient()
+}
+
+function save() {
+  store.replaceConfig(draft.value)
   emit('update:visible', false)
+}
+
+function saveAsDefault() {
+  store.saveConfigAsDefault(draft.value)
+  emit('update:visible', false)
+}
+
+function cancel() {
+  emit('update:visible', false)
+}
+
+function onVisibleChange(value: boolean) {
+  if (!value) emit('update:visible', false)
 }
 </script>
 
@@ -283,10 +472,8 @@ function close() {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 8px;
-}
-.sn-editor__toolbar .nk-btn:last-child {
-  margin-left: auto;
 }
 .sn-editor__hint {
   margin-bottom: 12px;
@@ -317,6 +504,21 @@ function close() {
   padding: 8px 10px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--nk-fill-color, #f5f5f5) 45%, transparent);
+}
+.sn-editor__group-body {
+  padding-left: 2px;
+}
+.sn-editor__collapse {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sn-editor__collapse .nk-icon {
+  transition: transform 0.18s ease;
+}
+.sn-editor__collapse .nk-icon.is-open {
+  transform: rotate(180deg);
 }
 .sn-editor__row {
   display: flex;
