@@ -325,7 +325,10 @@ export function previewExport(inventoryId: string, data: ExportRequest) {
 }
 
 export function createExport(inventoryId: string, data: ExportRequest) {
-  return postResponse<ExportJob>(`zzz-goodser/inventories/${inventoryId}/exports`, data)
+  // 同步导出需要下载并渲染多张图片，放宽单次请求超时。
+  return request
+    .post<ApiResponse<ExportJob>>(`zzz-goodser/inventories/${inventoryId}/exports`, data, { timeout: 180000 })
+    .then((res) => res.data)
 }
 
 export function loadExports(inventoryId: string, limit = 20) {
