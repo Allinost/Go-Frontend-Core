@@ -63,7 +63,7 @@
 import { ref, onMounted } from 'vue'
 import { getDashboard } from '@/api/shopchecker'
 import type { DashboardResp } from '@/types/shopchecker'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const data = ref<DashboardResp | null>(null)

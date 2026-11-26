@@ -114,7 +114,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listDcaPlans, createDcaPlan, updateDcaPlan, deleteDcaPlan } from '@/api/ia'
 import type { DcaPlan, CreateDcaPlanReq, UpdateDcaPlanReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import AssetSearch from '../common/AssetSearch.vue'
 

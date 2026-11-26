@@ -73,7 +73,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listAlerts, createAlert, updateAlert, deleteAlert } from '@/api/ia'
 import type { PriceAlert, CreateAlertReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import AssetSearch from '../common/AssetSearch.vue'
 

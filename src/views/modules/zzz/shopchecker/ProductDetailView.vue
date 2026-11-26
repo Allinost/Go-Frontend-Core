@@ -152,7 +152,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProduct, manualCheck, listPriceRecords, listNotificationLogs } from '@/api/shopchecker'
 import type { Product, PriceRecord, NotificationLog } from '@/types/shopchecker'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const route = useRoute()
 const productId = computed(() => route.params.id as string)

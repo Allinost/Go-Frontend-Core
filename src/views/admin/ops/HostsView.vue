@@ -122,8 +122,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   createHost,
   deleteHost,
@@ -284,7 +285,7 @@ async function save() {
 }
 
 async function remove(host: Host) {
-  if (!window.confirm(`确认删除主机 ${host.name}？`)) return
+  if (!(await confirmDialog(`确认删除主机 ${host.name}？`))) return
   try {
     await deleteHost(host.id)
     NKMessage.success('已删除')

@@ -96,8 +96,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { Iteration, Milestone, Project, Task } from '@/types/developmentManager'
 import {
   createIteration,
@@ -265,7 +266,7 @@ async function changeStatus(iteration: Iteration, status: string) {
 }
 
 async function remove(iteration: Iteration) {
-  if (!window.confirm(`确认删除迭代「${iteration.name}」？`)) return
+  if (!(await confirmDialog(`确认删除迭代「${iteration.name}」？`))) return
   try {
     await deleteIteration(iteration.id)
     NKMessage.success('已删除')

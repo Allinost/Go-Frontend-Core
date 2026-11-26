@@ -218,7 +218,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { listAssets, createAsset, updateAsset, deleteAsset, resolveAsset } from '@/api/ia'
 import type { Asset, CreateAssetReq, UpdateAssetReq, AssetResolveResp } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const saving = ref(false)

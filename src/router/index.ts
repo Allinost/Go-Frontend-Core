@@ -198,6 +198,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/webhook/ConfigEditView.vue'),
         meta: { title: '编辑 Webhook 配置' },
       },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('@/views/NotFoundView.vue'),
+        meta: { title: '页面不存在' },
+      },
       ],
   },
 ]

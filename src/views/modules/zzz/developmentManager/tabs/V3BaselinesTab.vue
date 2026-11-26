@@ -74,8 +74,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { Baseline, Milestone, Project } from '@/types/developmentManager'
 import {
   createBaseline,
@@ -168,7 +169,7 @@ async function openSnapshot(baseline: Baseline) {
 }
 
 async function remove(baseline: Baseline) {
-  if (!window.confirm(`确认删除基线「${baseline.name}」？`)) return
+  if (!(await confirmDialog(`确认删除基线「${baseline.name}」？`))) return
   try {
     await deleteBaseline(baseline.id)
     NKMessage.success('已删除')

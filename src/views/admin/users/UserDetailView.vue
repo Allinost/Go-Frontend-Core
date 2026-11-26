@@ -85,7 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getUser, updateUser } from '@/api/auth'
 import { assignRole } from '@/api/role'
 import { useAuthStore } from '@/stores/auth'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { UserInfo } from '@/types/api'
 
 const route = useRoute()

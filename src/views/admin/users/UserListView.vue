@@ -3,67 +3,34 @@
     <div class="user-list__header">
       <h2 class="user-list__title">用户管理</h2>
       <div class="user-list__actions">
-        <NkInput v-model="search" placeholder="搜索用户名/昵称" size="sm" style="width: 240px" />
-        <NkButton size="sm" @click="loadUsers">搜索</NkButton>
+        <NkInput v-model="search" placeholder="搜索用户名/昵称" size="sm" style="width: 240px" @keyup.enter="handleSearch" />
+        <NkButton size="sm" @click="handleSearch">搜索</NkButton>
       </div>
     </div>
 
-    <div class="user-list__table-card">
-      <table class="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>用户名</th>
-            <th>昵称</th>
-            <th>邮箱</th>
-            <th>状态</th>
-            <th>角色</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in users" :key="user.id">
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.nickname || '-' }}</td>
-            <td>{{ user.email || '-' }}</td>
-            <td>
-              <NkTag
-                v-if="user.status"
-                :type="user.status === 'active' ? 'success' : user.status === 'inactive' ? 'warning' : 'danger'"
-                size="sm"
-              >
-                {{ statusLabel(user.status) }}
-              </NkTag>
-              <span v-else class="user-table__no-status">-</span>
-            </td>
-            <td>
-              <NkTag v-for="role in user.roles" :key="role" size="sm" type="info" style="margin-right: 4px">
-                {{ role }}
-              </NkTag>
-              <span v-if="!user.roles?.length" class="user-table__no-role">-</span>
-            </td>
-            <td>{{ formatDate(user.created_at) }}</td>
-            <td>
-              <NkButton size="sm" variant="ghost" @click="editUser(user.id)">编辑</NkButton>
-              <NkButton size="sm" variant="ghost" type="danger" @click="confirmDelete(user)">删除</NkButton>
-            </td>
-          </tr>
-          <tr v-if="!users.length && !loading">
-            <td colspan="8" class="user-table__empty">
-              <NkEmpty description="暂无用户数据" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <NkTable :columns="columns" :data="users" :loading="loading" empty-text="暂无用户数据">
+      <template #cell-status="{ value }">
+        <NkTag v-if="value" size="sm" :type="statusType(value)">{{ statusLabel(value) }}</NkTag>
+        <span v-else class="user-list__muted">-</span>
+      </template>
+      <template #cell-roles="{ row }">
+        <NkTag v-for="role in row.roles || []" :key="role" size="sm" type="info" style="margin-right: 4px">
+          {{ role }}
+        </NkTag>
+        <span v-if="!row.roles?.length" class="user-list__muted">-</span>
+      </template>
+      <template #cell-actions="{ row }">
+        <NkButton size="sm" variant="ghost" @click="editUser(row.id)">编辑</NkButton>
+        <NkButton size="sm" variant="ghost" type="danger" @click="confirmDelete(row)">删除</NkButton>
+      </template>
+    </NkTable>
 
     <div class="user-list__pagination">
       <NkPagination
         v-model="currentPage"
         :total="total"
         :page-size="pageSize"
+        @change="loadUsers"
       />
     </div>
 
@@ -82,9 +49,20 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listUsers, deleteUser } from '@/api/auth'
 import type { UserInfo } from '@/types/api'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage, type NkTableColumn } from '@nkui/vue'
 
 const router = useRouter()
+
+const columns: NkTableColumn[] = [
+  { key: 'id', title: 'ID', width: 70, sortable: true },
+  { key: 'username', title: '用户名', sortable: true },
+  { key: 'nickname', title: '昵称' },
+  { key: 'email', title: '邮箱' },
+  { key: 'status', title: '状态', width: 100 },
+  { key: 'roles', title: '角色' },
+  { key: 'created_at', title: '创建时间', width: 120, formatter: (row) => formatDate(row.created_at) },
+  { key: 'actions', title: '操作', width: 160 },
+]
 
 const users = ref<UserInfo[]>([])
 const loading = ref(false)
@@ -114,6 +92,11 @@ async function loadUsers() {
   }
 }
 
+function handleSearch() {
+  currentPage.value = 1
+  loadUsers()
+}
+
 function editUser(id: number) {
   router.push(`/users/${id}`)
 }
@@ -136,6 +119,12 @@ async function handleDelete() {
   } finally {
     deleting.value = false
   }
+}
+
+function statusType(status: string): 'success' | 'warning' | 'danger' {
+  if (status === 'active') return 'success'
+  if (status === 'inactive') return 'warning'
+  return 'danger'
 }
 
 function statusLabel(status: string): string {
@@ -177,53 +166,14 @@ onMounted(loadUsers)
     align-items: center;
   }
 
-  &__table-card {
-    overflow: hidden;
+  &__muted {
+    color: $nk-color-neutral-400;
   }
 
   &__pagination {
     display: flex;
     justify-content: flex-end;
     margin-top: $nk-spacing-lg;
-  }
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: $nk-font-size-sm;
-
-  th, td {
-    text-align: left;
-    padding: $nk-spacing-sm $nk-spacing-md;
-    border-bottom: 1px solid $nk-color-neutral-200;
-  }
-
-  th {
-    font-weight: $nk-font-weight-medium;
-    color: $nk-color-neutral-500;
-    background: $nk-color-neutral-50;
-    font-size: $nk-font-size-xs;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  td {
-    color: $nk-color-neutral-700;
-  }
-
-  tbody tr:hover {
-    background: $nk-color-neutral-50;
-  }
-
-  &__empty {
-    text-align: center;
-    padding: $nk-spacing-3xl;
-  }
-
-  &__no-role,
-  &__no-status {
-    color: $nk-color-neutral-400;
   }
 }
 </style>

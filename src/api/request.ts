@@ -24,16 +24,25 @@ request.interceptors.request.use(
 )
 
 let isRefreshing = false
-let refreshSubscribers: ((token: string) => void)[] = []
+
+interface RefreshSubscriber {
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
+}
+let refreshSubscribers: RefreshSubscriber[] = []
 
 function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token))
+  refreshSubscribers.forEach((s) => s.resolve(token))
   refreshSubscribers = []
 }
 
-function addRefreshSubscriber(cb: (token: string) => void) {
-  refreshSubscribers.push(cb)
+function onRefreshFailed(err: unknown) {
+  refreshSubscribers.forEach((s) => s.reject(err))
+  refreshSubscribers = []
 }
+
+// 登录/注册/刷新本身返回 401 时不走刷新与整页跳转，由调用方展示服务端错误文案
+const AUTH_PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/refresh']
 
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
@@ -45,12 +54,17 @@ request.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const url: string = originalRequest?.url ?? ''
+    const isAuthPath = AUTH_PUBLIC_PATHS.some((p) => url.endsWith(p))
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthPath) {
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          addRefreshSubscriber((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            resolve(request(originalRequest))
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push({
+            resolve: (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              resolve(request(originalRequest))
+            },
+            reject,
           })
         })
       }
@@ -71,7 +85,8 @@ request.interceptors.response.use(
         onRefreshed(data.access_token)
         originalRequest.headers.Authorization = `Bearer ${data.access_token}`
         return request(originalRequest)
-      } catch {
+      } catch (refreshErr) {
+        onRefreshFailed(refreshErr)
         clearAuth()
         window.location.href = '/login'
         return Promise.reject(error)

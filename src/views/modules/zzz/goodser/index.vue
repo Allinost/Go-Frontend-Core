@@ -108,7 +108,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   loadInventories,
   loadTags,

@@ -119,8 +119,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { onMounted, reactive, ref, watch } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   addCatalogImage,
   createCatalog,
@@ -277,7 +278,7 @@ async function editItem(item: CatalogItem) {
 }
 
 async function removeItem(item: CatalogItem) {
-  if (!window.confirm('删除这个柄图？')) return
+  if (!(await confirmDialog('删除这个柄图？'))) return
   try {
     await deleteCatalogItem(item._id)
     if (detail.value) await loadDetail(detail.value._id)

@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { createInventory, deleteInventory, updateInventory } from '@/api/goodser'
 import type { Inventory } from '@/types/goodser'
 import { formatDate } from '../utils'

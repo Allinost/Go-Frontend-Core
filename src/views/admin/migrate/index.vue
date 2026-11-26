@@ -241,7 +241,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   getTables,
   downloadDump,

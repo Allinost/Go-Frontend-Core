@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { Project } from '@/types/developmentManager'
 import type { BoardColumn, ProjectDashboard, RoadmapItem, WeeklyReport, Task } from '@/types/developmentManager'
 import { changeTaskStatus, getBoard, getDashboard, getRoadmap, getWeeklyReport } from '@/api/developmentManager'

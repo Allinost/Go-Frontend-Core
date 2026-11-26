@@ -118,7 +118,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listConfigs, deleteConfig, updateConfigStatus, testSendConfig, sendWebhook } from '@/api/webhook'
 import type { WebhookConfig } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const items = ref<WebhookConfig[]>([])

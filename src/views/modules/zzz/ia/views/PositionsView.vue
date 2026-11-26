@@ -89,7 +89,7 @@
 import { ref, onMounted } from 'vue'
 import { listPositions, setPositionTarget, updatePositionValuation } from '@/api/ia'
 import type { Position } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import PnLBadge from '../common/PnLBadge.vue'
 

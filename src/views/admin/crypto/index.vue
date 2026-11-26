@@ -163,7 +163,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   encrypt as apiEncrypt,
   decrypt as apiDecrypt,

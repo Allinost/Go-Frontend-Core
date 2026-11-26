@@ -91,7 +91,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listFees, createFee, deleteFee } from '@/api/ia'
 import type { FeeRecord, CreateFeeReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import AssetSearch from '../common/AssetSearch.vue'
 import PnLBadge from '../common/PnLBadge.vue'

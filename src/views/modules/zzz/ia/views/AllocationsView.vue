@@ -116,7 +116,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listAllocations, createAllocation, updateAllocation, deleteAllocation, getAllocationReview } from '@/api/ia'
 import type { AllocationItem, CreateAllocationReq, UpdateAllocationReq, AllocationReviewResp } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import PnLBadge from '../common/PnLBadge.vue'
 

@@ -90,7 +90,7 @@ import type {
   RemoteLoginResp,
 } from '@/types/login3rd'
 import { listPlatforms } from '@/api/login3rd'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const route = useRoute()
 const router = useRouter()

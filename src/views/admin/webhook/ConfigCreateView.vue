@@ -98,7 +98,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { createConfig } from '@/api/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const router = useRouter()
 

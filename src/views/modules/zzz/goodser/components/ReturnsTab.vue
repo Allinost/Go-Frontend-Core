@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { cancelReturn, confirmReturn, loadReturns } from '@/api/goodser'
 import type { ReturnOrder } from '@/types/goodser'
 import {

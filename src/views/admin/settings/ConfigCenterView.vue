@@ -4,6 +4,9 @@
       <div>
         <h2 class="cc-title">配置中心</h2>
         <div class="cc-muted">启动基线来自 env / config.yaml，数据库值优先；敏感项加密存储，接口只返回掩码。</div>
+        <div class="cc-muted">
+          标记说明：<b>热更新</b> 保存后立即生效；<b>需重启</b> 启动时生效，保存后需重启服务；<b>未接入</b> 功能尚未开发，保存后暂不生效（配置保留，不影响已有数据）。
+        </div>
       </div>
       <div class="cc-actions">
         <NkButton size="sm" variant="ghost" :loading="loading" @click="loadAll">刷新</NkButton>
@@ -14,6 +17,9 @@
 
     <NkLoading v-if="loading" />
     <template v-else>
+      <div v-if="degraded" class="cc-banner">
+        配置中心处于降级模式（{{ degraded }}），当前无法保存变更。请检查 PostgreSQL 与 system_config 迁移后重启服务。
+      </div>
       <div v-if="dirtyKeys.length" class="cc-banner">
         待保存 {{ dirtyKeys.length }} 项：{{ dirtyKeys.join('、') }}
       </div>
@@ -47,7 +53,9 @@
                   {{ spec.key }}
                   <NkTag v-if="spec.sensitive" size="sm" type="danger">敏感</NkTag>
                   <NkTag v-if="spec.env_locked" size="sm" type="neutral">env 锁定</NkTag>
-                  <NkTag v-if="!spec.reloadable" size="sm" type="warning">需重启</NkTag>
+                  <NkTag v-if="spec.unused" size="sm" type="neutral">未接入</NkTag>
+                  <NkTag v-else-if="!spec.reloadable" size="sm" type="warning">需重启</NkTag>
+                  <NkTag v-else size="sm" type="success">热更新</NkTag>
                   <NkTag v-if="isDirty(spec.key)" size="sm" type="primary">已修改</NkTag>
                 </div>
                 <div class="cc-field-desc">{{ spec.description || spec.module }}</div>
@@ -141,8 +149,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import {
   getConfigHistory,
   getConfigSchema,
@@ -163,6 +172,7 @@ const draft = reactive<Record<string, any>>({})
 const note = ref('')
 const activeGroup = ref('all')
 const history = ref<ConfigHistoryEntry[]>([])
+const degraded = ref('')
 
 const groupLabels: Record<string, string> = {
   server: '服务',
@@ -250,6 +260,7 @@ async function loadAll() {
     const [schema, current] = await Promise.all([getConfigSchema(), getConfigValues()])
     specs.value = schema.data.specs || []
     loaded.value = current.data.values || {}
+    degraded.value = current.data.degraded || ''
     for (const spec of specs.value) {
       if (spec.sensitive) {
         draft[spec.key] = ''
@@ -286,6 +297,10 @@ async function save() {
     else if (spec.type === 'bool') patch[spec.key] = Boolean(draft[spec.key])
     else patch[spec.key] = draft[spec.key]
   }
+  if (degraded.value) {
+    NKMessage.error('配置中心处于降级模式，无法保存')
+    return
+  }
   if (Object.keys(patch).length === 0) {
     NKMessage.info('没有需要保存的变更')
     return
@@ -307,7 +322,7 @@ async function resetOne(spec: ConfigSpec) {
     NKMessage.warning('该项由环境变量锁定，无法在此重置')
     return
   }
-  if (!window.confirm(`确认将 ${spec.key} 重置为默认值？`)) return
+  if (!(await confirmDialog(`确认将 ${spec.key} 重置为默认值？`))) return
   try {
     await resetConfigValues([spec.key], `重置 ${spec.key}`)
     NKMessage.success('已重置')
@@ -318,7 +333,7 @@ async function resetOne(spec: ConfigSpec) {
 }
 
 async function resetAll() {
-  if (!window.confirm('确认将所有配置重置为默认值？')) return
+  if (!(await confirmDialog('确认将所有配置重置为默认值？'))) return
   resetting.value = true
   try {
     await resetConfigValues([], '全部重置')

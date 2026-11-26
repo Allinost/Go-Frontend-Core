@@ -238,7 +238,7 @@ import type {
 } from '@/types/login3rd'
 import type { WebhookConfig } from '@/types/webhook'
 import { listConfigs as listWebhooks } from '@/api/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const router = useRouter()
 const activeTab = ref('accounts')

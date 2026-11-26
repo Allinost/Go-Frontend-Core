@@ -82,7 +82,7 @@
 import { ref, onMounted } from 'vue'
 import { getStats } from '@/api/webhook'
 import type { StatsResp } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const stats = ref<StatsResp | null>(null)

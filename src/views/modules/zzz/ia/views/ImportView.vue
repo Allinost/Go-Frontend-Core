@@ -59,7 +59,7 @@
 import { ref } from 'vue'
 import { importTransactions } from '@/api/ia'
 import type { ImportResult } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 
 const accountId = ref('')

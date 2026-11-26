@@ -93,7 +93,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listAccounts, createAccount, updateAccount, deleteAccount } from '@/api/ia'
 import type { Account, CreateAccountReq, UpdateAccountReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const saving = ref(false)

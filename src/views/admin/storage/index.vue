@@ -612,7 +612,7 @@ import {
   listScanTargets, createScanTarget, updateScanTarget, deleteScanTarget,
 } from '@/api/scanTargets'
 import type { ScanTarget, ScanTargetListData } from '@/api/scanTargets'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const activeTab = ref('browser')
 const tabs = [

@@ -211,7 +211,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { listUsers } from '@/api/auth'
 import { listRoles, createRole, updateRole, deleteRole, getRolePermissions, listPermissions, createPermission, updatePermission, deletePermission, assignRole } from '@/api/role'
 import type { UserInfo, RoleModel, Permission } from '@/types/api'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const activeTab = ref('roles')
 const tabs = [

@@ -57,13 +57,14 @@
             <label class="settings-label">公开访问地址（回调/远程登录）</label>
             <NkInput v-model="backendForm.public_base_url" placeholder="https://api.example.com:29090" />
             <div class="settings-hint">真实地址默认来自后端 `.env` 的 `APP_SERVER_PUBLIC_BASE_URL`。</div>
+            <div class="settings-hint">唯一来源为配置中心 server.public_base_url：保存后即时生效，与配置中心页面共用同一个值。</div>
           </div>
           <div class="settings-row">
-            <label class="settings-label">前端默认标题</label>
+            <label class="settings-label">前端默认标题（尚未接入，仅保存）</label>
             <NkInput v-model="backendForm.frontend_title" />
           </div>
           <div class="settings-row">
-            <label class="settings-label">前端默认 API 地址</label>
+            <label class="settings-label">前端默认 API 地址（尚未接入，仅保存）</label>
             <NkInput v-model="backendForm.frontend_api_base_url" placeholder="/api/v1" />
           </div>
           <div class="settings-row">
@@ -71,15 +72,15 @@
             <NkInput v-model="backendForm.browser_url" placeholder="ws://browser:3000" />
           </div>
           <div class="settings-row">
-            <label class="settings-label">N8n 地址</label>
+            <label class="settings-label">N8n 地址（尚未接入，仅保存）</label>
             <NkInput v-model="backendForm.n8n_url" placeholder="http://n8n:5678" />
           </div>
           <div class="settings-row">
-            <label class="settings-label">OpenClaw 地址</label>
+            <label class="settings-label">OpenClaw 地址（尚未接入，仅保存）</label>
             <NkInput v-model="backendForm.openclaw_url" placeholder="http://openclaw:18789" />
           </div>
           <div class="settings-row">
-            <label class="settings-label">LangBot 地址</label>
+            <label class="settings-label">LangBot 地址（尚未接入，仅保存）</label>
             <NkInput v-model="backendForm.langbot_url" placeholder="http://langbot:5300" />
           </div>
         </div>
@@ -105,7 +106,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import type { ThemeMode } from '@/stores/app'

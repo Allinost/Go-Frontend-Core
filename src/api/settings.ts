@@ -55,12 +55,14 @@ export interface ConfigSpec {
   sensitive: boolean
   reloadable: boolean
   env_locked: boolean
+  unused?: boolean
   group: string
   description: string
 }
 
 export interface ConfigValuesResp {
   values: Record<string, any>
+  degraded?: string
 }
 
 export interface ConfigHistoryEntry {

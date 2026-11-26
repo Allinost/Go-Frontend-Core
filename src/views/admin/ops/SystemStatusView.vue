@@ -115,7 +115,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { getHealth, getModules, getSystemInfo, type HealthResp, type ModuleInfo, type SystemInfo } from '@/api/health'
 import {
   flushStagedFiles,

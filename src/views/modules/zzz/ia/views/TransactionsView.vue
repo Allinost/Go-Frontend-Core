@@ -123,7 +123,7 @@
 import { ref, onMounted } from 'vue'
 import { listTransactions, createTransaction, confirmTransaction, deleteTransaction, listAccounts } from '@/api/ia'
 import type { Transaction } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import AssetSearch from '../common/AssetSearch.vue'
 import PnLBadge from '../common/PnLBadge.vue'

@@ -66,7 +66,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { getProject } from '@/api/developmentManager'
 import type { Project } from '@/types/developmentManager'
 import OverviewTab from './tabs/OverviewTab.vue'

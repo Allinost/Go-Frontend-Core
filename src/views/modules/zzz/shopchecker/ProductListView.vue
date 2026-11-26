@@ -80,7 +80,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listProducts, deleteProduct } from '@/api/shopchecker'
 import type { Product } from '@/types/shopchecker'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const items = ref<Product[]>([])

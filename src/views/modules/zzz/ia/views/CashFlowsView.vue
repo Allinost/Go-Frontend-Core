@@ -87,7 +87,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listCashFlows, createCashFlow, deleteCashFlow } from '@/api/ia'
 import type { CashFlow, CreateCashFlowReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import AccountSelector from '../common/AccountSelector.vue'
 import PnLBadge from '../common/PnLBadge.vue'
 

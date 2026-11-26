@@ -104,7 +104,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { listDeliveryLogs, deleteDeliveryLog, batchDeleteDeliveryLogs } from '@/api/webhook'
 import type { WebhookDeliveryLog } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const items = ref<WebhookDeliveryLog[]>([])

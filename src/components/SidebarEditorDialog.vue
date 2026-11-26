@@ -205,6 +205,7 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, reactive, ref, watch } from 'vue'
 import { useSidebarStore, OTHER_GROUP_ID } from '@/stores/sidebar'
 import { SIDEBAR_ICONS } from '@/utils/sidebarIcons'
@@ -371,10 +372,10 @@ function addGroup() {
   iconPickerFor.value = ''
 }
 
-function removeGroup(groupId: string, label: string) {
+async function removeGroup(groupId: string, label: string) {
   const group = draft.value.groups.find((item) => item.id === groupId)
   if (!group || group.system || groupId === OTHER_GROUP_ID) return
-  if (!window.confirm(`删除层级「${label}」？其下功能会移动到「其他」。`)) return
+  if (!(await confirmDialog(`删除层级「${label}」？其下功能会移动到「其他」。`))) return
   const other = draft.value.groups.find((item) => item.id === OTHER_GROUP_ID)
   if (other) {
     for (const entry of group.items) {
@@ -437,8 +438,8 @@ function isFavorite(itemId: string) {
   return draft.value.favorites.includes(itemId)
 }
 
-function resetToDefault() {
-  if (!window.confirm('恢复默认导航配置？当前编辑中的修改会被默认配置替换，仍需点击「保存」才会生效。')) return
+async function resetToDefault() {
+  if (!(await confirmDialog('恢复默认导航配置？当前编辑中的修改会被默认配置替换，仍需点击「保存」才会生效。'))) return
   draft.value = store.loadDefaultConfig()
   resetTransient()
 }

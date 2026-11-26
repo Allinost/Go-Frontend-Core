@@ -72,7 +72,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listFxRates, upsertFxRate, runRefreshFx } from '@/api/ia'
 import type { FxRate, UpsertFxRateReq } from '@/types/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loading = ref(false)
 const saving = ref(false)

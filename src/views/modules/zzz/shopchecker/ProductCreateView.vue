@@ -69,7 +69,7 @@ import { useRouter } from 'vue-router'
 import { createProduct } from '@/api/shopchecker'
 import { listConfigs } from '@/api/webhook'
 import type { WebhookConfig } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const router = useRouter()
 

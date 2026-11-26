@@ -147,8 +147,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { Milestone, Project, Release } from '@/types/developmentManager'
 import {
   createRelease,
@@ -376,7 +377,7 @@ async function changeStatus(release: Release, status: string) {
 }
 
 async function remove(release: Release) {
-  if (!window.confirm(`确认删除发布 ${release.version}？`)) return
+  if (!(await confirmDialog(`确认删除发布 ${release.version}？`))) return
   try {
     await deleteRelease(release.id)
     NKMessage.success('已删除')

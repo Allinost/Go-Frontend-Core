@@ -74,11 +74,11 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { listServices } from '@/api/servicenav'
 import type { ServiceItem } from '@/api/servicenav'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import { getIntranetHost, getEasytierHost } from '@/utils/appSettings'
 
 const authStore = useAuthStore()
-const loading = ref(false)
+const loading = ref(true)
 const services = ref<ServiceItem[]>([])
 
 async function fetchServices() {

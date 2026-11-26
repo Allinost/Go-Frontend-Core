@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { runAccrue, runCheckAlerts, runCheckRisk, runMaturityCheck, runRefreshFx, runSnapshot, refreshQuotes } from '@/api/ia'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const loadingKey = ref('')
 const results = reactive<Record<string, any>>({})

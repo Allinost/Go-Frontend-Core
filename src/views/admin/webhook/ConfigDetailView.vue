@@ -132,7 +132,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getConfig, testSendConfig, sendWebhook } from '@/api/webhook'
 import type { WebhookConfig } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 
 const route = useRoute()
 const configId = computed(() => route.params.id as string)

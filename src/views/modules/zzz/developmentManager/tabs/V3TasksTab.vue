@@ -289,8 +289,9 @@
 </template>
 
 <script setup lang="ts">
+import { confirmDialog } from '@/utils/confirm'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { NKMessage } from '@nkui/vue/src/utils/message'
+import { NKMessage } from '@nkui/vue'
 import type { Project } from '@/types/developmentManager'
 import type {
   Milestone,
@@ -762,7 +763,7 @@ async function createProjectLabel() {
 }
 
 async function deleteProjectLabel(label: Label) {
-  if (!window.confirm(`确认删除标签「${label.name}」？`)) return
+  if (!(await confirmDialog(`确认删除标签「${label.name}」？`))) return
   try {
     await deleteLabel(label.id)
     projectLabels.value = projectLabels.value.filter((l) => l.id !== label.id)
