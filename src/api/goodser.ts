@@ -16,7 +16,7 @@ import type {
   Bundle, CreateBundleReq, UpdateBundleReq, BundleMainProduct, BundleSubProduct,
   BundlePreviewReq, BundlePreviewResp, StatsOverview,
   BundlePool, CreateBundlePoolReq, UpdateBundlePoolReq,
-  ExportRequest, ExportPreview, ExportJob,
+  ExportRequest, ExportPreview, ExportJob, ExportTemplate, ExportTemplateReq,
 } from '@/types/goodser'
 
 // Inventories
@@ -338,4 +338,24 @@ export function getExport(id: string) {
 
 export function deleteExport(id: string) {
   return deleteResponse<any>(`zzz-goodser/exports/${id}`)
+}
+
+// ---- 导出模板 ----
+export function loadExportTemplates(inventoryId?: string) {
+  return getResponse<ExportTemplate[]>(
+    'zzz-goodser/export-templates',
+    inventoryId ? { inventory_id: inventoryId } : undefined,
+  )
+}
+
+export function createExportTemplate(data: ExportTemplateReq) {
+  return postResponse<ExportTemplate>('zzz-goodser/export-templates', data)
+}
+
+export function updateExportTemplate(id: string, data: ExportTemplateReq) {
+  return putResponse<ExportTemplate>(`zzz-goodser/export-templates/${id}`, data)
+}
+
+export function deleteExportTemplate(id: string) {
+  return deleteResponse<any>(`zzz-goodser/export-templates/${id}`)
 }

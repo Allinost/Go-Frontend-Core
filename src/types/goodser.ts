@@ -887,3 +887,20 @@ export interface ExportJob {
   finished_at?: string
   expires_at?: string
 }
+
+export interface ExportTemplate {
+  id: string
+  inventory_id?: string | null
+  name: string
+  config: Partial<ExportRequest>
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ExportTemplateReq {
+  inventory_id?: string
+  name: string
+  config: Partial<ExportRequest>
+  is_default?: boolean
+}

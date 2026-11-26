@@ -74,6 +74,19 @@
         <div class="goodser-export__title">样式</div>
 
         <div class="goodser-export__field">
+          <span class="goodser-export__label">模板</span>
+          <div class="goodser-export__template-row">
+            <NkSelect v-model="templateId" :options="templateOptions" placeholder="选择模板" size="sm" style="flex: 1" />
+            <NkButton size="sm" variant="ghost" :disabled="!templateId" @click="applyTemplate">应用</NkButton>
+          </div>
+          <div class="goodser-export__template-row">
+            <NkInput v-model="templateName" size="sm" placeholder="模板名称" style="flex: 1" />
+            <NkButton size="sm" variant="ghost" :loading="savingTemplate" @click="saveTemplate">保存</NkButton>
+            <NkButton v-if="templateId" size="sm" variant="ghost" type="danger" @click="removeTemplate">删除</NkButton>
+          </div>
+        </div>
+
+        <div class="goodser-export__field">
           <span class="goodser-export__label">背景</span>
           <div class="goodser-export__chips">
             <button
@@ -227,13 +240,17 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { NKMessage } from '@nkui/vue'
 import {
   createExport,
+  createExportTemplate,
   deleteExport,
+  deleteExportTemplate,
   getExport,
   loadBundles,
   loadCombos,
   loadExports,
+  loadExportTemplates,
   previewExport,
   queryProducts,
+  updateExportTemplate,
 } from '@/api/goodser'
 import type {
   Bundle,
@@ -244,6 +261,8 @@ import type {
   ExportPreview,
   ExportPriceDisplay,
   ExportRequest,
+  ExportTemplate,
+  ExportTemplateReq,
   ExportTextColor,
   Product,
 } from '@/types/goodser'
@@ -284,6 +303,10 @@ const previewError = ref('')
 const generating = ref(false)
 const lastJob = ref<ExportJob | null>(null)
 const history = ref<ExportJob[]>([])
+const templates = ref<ExportTemplate[]>([])
+const templateId = ref('')
+const templateName = ref('')
+const savingTemplate = ref(false)
 
 const options = ref({
   columns: 4,
@@ -345,6 +368,28 @@ const requestPayload = computed<ExportRequest>(() => ({
   title: options.value.title.trim() || undefined,
 }))
 
+const templateOptions = computed(() =>
+  templates.value.map((tpl) => ({
+    label: tpl.is_default ? `${tpl.name}（默认）` : tpl.name,
+    value: tpl.id,
+  })),
+)
+
+const templateConfig = computed<Partial<ExportRequest>>(() => {
+  const payload = requestPayload.value
+  return {
+    columns: payload.columns,
+    background: payload.background,
+    text_color: payload.text_color,
+    format: payload.format,
+    show_name: payload.show_name,
+    show_price: payload.show_price,
+    show_quantity: payload.show_quantity,
+    price_display: payload.price_display,
+    title: payload.title,
+  }
+})
+
 let previewTimer: ReturnType<typeof setTimeout> | null = null
 
 function schedulePreview() {
@@ -369,6 +414,10 @@ watch(
   },
 )
 
+watch(templateId, (id) => {
+  if (id) applyTemplate()
+})
+
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
 })
@@ -378,10 +427,12 @@ async function onOpen() {
   lastJob.value = null
   preview.value = null
   previewError.value = ''
+  templateId.value = ''
+  templateName.value = ''
   for (const product of props.initialProducts || []) {
     pushProduct(product)
   }
-  await Promise.all([loadPickers(), loadHistory()])
+  await Promise.all([loadPickers(), loadHistory(), loadTemplates()])
   await runPreview()
 }
 
@@ -484,6 +535,78 @@ async function loadPickers() {
   } catch {
     combos.value = []
     bundles.value = []
+  }
+}
+
+async function loadTemplates() {
+  if (!props.inventoryId) return
+  try {
+    const res = await loadExportTemplates(props.inventoryId)
+    templates.value = res.data || []
+  } catch {
+    templates.value = []
+  }
+}
+
+function applyTemplate() {
+  const tpl = templates.value.find((item) => item.id === templateId.value)
+  if (!tpl) return
+  const cfg = tpl.config || {}
+  options.value = {
+    ...options.value,
+    columns: cfg.columns ?? options.value.columns,
+    background: cfg.background ?? options.value.background,
+    textColor: cfg.text_color ?? options.value.textColor,
+    format: cfg.format ?? options.value.format,
+    showName: cfg.show_name ?? options.value.showName,
+    showPrice: cfg.show_price ?? options.value.showPrice,
+    showQuantity: cfg.show_quantity ?? options.value.showQuantity,
+    priceDisplay: cfg.price_display ?? options.value.priceDisplay,
+    title: cfg.title ?? options.value.title,
+  }
+  templateName.value = tpl.name
+  schedulePreview()
+}
+
+async function saveTemplate() {
+  const name = templateName.value.trim()
+  if (!name) {
+    NKMessage.warning('请输入模板名称')
+    return
+  }
+  savingTemplate.value = true
+  try {
+    const payload: ExportTemplateReq = {
+      inventory_id: props.inventoryId,
+      name,
+      config: templateConfig.value,
+      is_default: false,
+    }
+    if (templateId.value) {
+      await updateExportTemplate(templateId.value, payload)
+    } else {
+      const res = await createExportTemplate(payload)
+      templateId.value = res.data?.id || ''
+    }
+    NKMessage.success('模板已保存')
+    await loadTemplates()
+  } catch (err: any) {
+    NKMessage.error(err.message || '保存模板失败')
+  } finally {
+    savingTemplate.value = false
+  }
+}
+
+async function removeTemplate() {
+  if (!templateId.value) return
+  try {
+    await deleteExportTemplate(templateId.value)
+    templateId.value = ''
+    templateName.value = ''
+    NKMessage.success('模板已删除')
+    await loadTemplates()
+  } catch (err: any) {
+    NKMessage.error(err.message || '删除模板失败')
   }
 }
 
@@ -708,6 +831,12 @@ function statusTagType(status: ExportJob['status']): 'success' | 'danger' | 'inf
 
   &__search,
   &__add-row {
+    display: flex;
+    align-items: center;
+    gap: $nk-spacing-sm;
+  }
+
+  &__template-row {
     display: flex;
     align-items: center;
     gap: $nk-spacing-sm;
