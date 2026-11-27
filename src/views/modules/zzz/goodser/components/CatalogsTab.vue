@@ -19,7 +19,7 @@
         size="sm"
         placeholder="搜索标题或备注"
         clearable
-        style="width: 260px"
+        style="width: min(260px, 100%)"
         @keyup.enter="load"
       />
       <NkButton size="sm" variant="outline" @click="load">搜索</NkButton>

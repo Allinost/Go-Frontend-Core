@@ -6,9 +6,9 @@
 
     <div class="wh-logs__toolbar">
       <div class="wh-logs__filters">
-        <NkInput v-model="filters.webhook_id" placeholder="Webhook ID" size="sm" style="width: 180px" />
-        <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: 140px" />
-        <NkInput v-model="filters.source" placeholder="来源" size="sm" style="width: 160px" />
+        <NkInput v-model="filters.webhook_id" placeholder="Webhook ID" size="sm" style="width: min(180px, 100%)" />
+        <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: min(140px, 100%)" />
+        <NkInput v-model="filters.source" placeholder="来源" size="sm" style="width: min(160px, 100%)" />
         <NkButton size="sm" @click="loadLogs">搜索</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
       </div>

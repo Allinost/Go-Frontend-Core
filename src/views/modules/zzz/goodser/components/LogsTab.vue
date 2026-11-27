@@ -88,7 +88,7 @@
             <span class="goodser__inbound-search-stock">库存: {{ r.quantity }}</span>
           </div>
           <div class="goodser__inbound-search-action">
-            <NkInput v-model="r._importQty" type="number" size="xs" style="width: 70px" placeholder="数量" />
+            <NkInput v-model="r._importQty" type="number" size="xs" style="width: min(70px, 100%)" placeholder="数量" />
             <NkButton size="xs" @click="addToInboundImport(r)">添加</NkButton>
           </div>
         </div>

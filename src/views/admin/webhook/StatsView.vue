@@ -123,6 +123,7 @@ onMounted(loadStats)
   &__cards {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
+  @include respond-to(sm) { grid-template-columns: repeat(2, 1fr); }
     gap: $nk-spacing-lg;
     margin-bottom: $nk-spacing-xl;
   }
@@ -146,6 +147,7 @@ onMounted(loadStats)
   &__charts {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  @include respond-to(sm) { grid-template-columns: 1fr; }
     gap: $nk-spacing-lg;
   }
   &__chart-card {

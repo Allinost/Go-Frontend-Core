@@ -26,21 +26,21 @@
           clearable
           filterable
           size="sm"
-          style="width: 160px"
+          style="width: min(160px, 100%)"
           @change="onSearch"
         />
         <NkSelect
           v-model="sortBy"
           :options="sortByOptions"
           size="sm"
-          style="width: 130px"
+          style="width: min(130px, 100%)"
           @change="onSearch"
         />
         <NkSelect
           v-model="sortOrder"
           :options="sortOrderOptions"
           size="sm"
-          style="width: 110px"
+          style="width: min(110px, 100%)"
           @change="onSearch"
         />
         <div class="servicenav__toolbar-spacer" />

@@ -62,8 +62,8 @@
       <!-- 事件 -->
       <div v-if="activeTab === 'events'" class="integration__tab">
         <div class="integration__toolbar">
-          <NkSelect v-model="eventStatus" :options="statusOptions" size="sm" style="width: 130px" @change="fetchEvents" />
-          <NkSelect v-model="eventTopic" :options="topicOptions" size="sm" style="width: 220px" @change="fetchEvents" />
+          <NkSelect v-model="eventStatus" :options="statusOptions" size="sm" style="width: min(130px, 100%)" @change="fetchEvents" />
+          <NkSelect v-model="eventTopic" :options="topicOptions" size="sm" style="width: min(220px, 100%)" @change="fetchEvents" />
           <NkButton size="sm" variant="ghost" :loading="loadingEvents" @click="fetchEvents">刷新</NkButton>
           <NkButton v-if="hasEventFilter" size="sm" variant="ghost" @click="resetEventFilter">清空筛选</NkButton>
           <span class="integration__count">共 {{ events.length }} 条</span>

@@ -12,7 +12,7 @@
         v-model="permSearch"
         placeholder="搜索权限..."
         size="sm"
-        style="width: 200px"
+        style="width: min(200px, 100%)"
       />
     </div>
 
@@ -81,7 +81,7 @@
 
       <div v-if="activeTab === 'users'" class="role-manage__users">
         <div class="role-manage__users-header">
-          <NkInput v-model="search" placeholder="搜索用户名/昵称" size="sm" style="width: 240px" />
+          <NkInput v-model="search" placeholder="搜索用户名/昵称" size="sm" style="width: min(240px, 100%)" />
           <NkButton size="sm" @click="loadUsers">搜索</NkButton>
         </div>
 

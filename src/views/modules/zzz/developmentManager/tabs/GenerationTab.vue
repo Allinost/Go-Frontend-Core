@@ -17,7 +17,7 @@
           filterable
           clearable
           size="sm"
-          style="width: 360px"
+          style="width: min(360px, 100%)"
           @change="loadGenerations"
         />
         <span class="dm-muted">方案/代码/文档；模板为主线，AI 不可用时自动降级。</span>

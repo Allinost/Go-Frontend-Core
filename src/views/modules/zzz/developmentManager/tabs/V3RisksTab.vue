@@ -14,9 +14,9 @@
       </div>
 
       <div class="dm-filters" style="margin-bottom: 12px">
-        <NkSelect v-model="filters.status" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: 130px" />
-        <NkSelect v-model="filters.level" :options="levelOptions" placeholder="等级" clearable size="sm" style="width: 120px" />
-        <NkInput v-model="filters.keyword" placeholder="标题 / 描述 / 负责人" size="sm" style="width: 220px" @keyup.enter="search" />
+        <NkSelect v-model="filters.status" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: min(130px, 100%)" />
+        <NkSelect v-model="filters.level" :options="levelOptions" placeholder="等级" clearable size="sm" style="width: min(120px, 100%)" />
+        <NkInput v-model="filters.keyword" placeholder="标题 / 描述 / 负责人" size="sm" style="width: min(220px, 100%)" @keyup.enter="search" />
         <NkButton size="sm" @click="search">搜索</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
       </div>
@@ -50,7 +50,7 @@
                   :model-value="r.status"
                   :options="statusOptions"
                   size="sm"
-                  style="width: 110px"
+                  style="width: min(110px, 100%)"
                   @update:model-value="changeStatus(r, $event)"
                 />
               </td>

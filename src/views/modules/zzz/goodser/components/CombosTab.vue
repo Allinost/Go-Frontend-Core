@@ -12,7 +12,7 @@
         v-if="inventories.length"
         :model-value="inventoryId"
         :options="inventoryOptions"
-        style="width: 200px"
+        style="width: min(200px, 100%)"
         size="sm"
         @update:model-value="emit('update:inventoryId', $event)"
       />
@@ -84,7 +84,7 @@
         </div>
         <div class="goodser__form-field">
           <label class="goodser__form-label">组件类型</label>
-          <NkSelect v-model="comboItemType" :options="comboItemTypeOptions" style="width: 200px" />
+          <NkSelect v-model="comboItemType" :options="comboItemTypeOptions" style="width: min(200px, 100%)" />
         </div>
         <div v-if="comboItemType === 'product'" class="goodser__form-field">
           <label class="goodser__form-label">组件商品（搜索添加）</label>
@@ -118,7 +118,7 @@
                 {{ item.item_type === 'bundle' ? item.bundle_name : item.product_name }}
                 <template v-if="item.item_type === 'product'"> ({{ item.product_code }})</template>
               </span>
-              <NkInput v-model="item.quantity" type="number" size="xs" style="width: 80px" placeholder="数量" />
+              <NkInput v-model="item.quantity" type="number" size="xs" style="width: min(80px, 100%)" placeholder="数量" />
               <NkButton size="xs" variant="ghost" type="danger" @click="comboFormItems.splice(idx, 1)">×</NkButton>
             </div>
           </div>

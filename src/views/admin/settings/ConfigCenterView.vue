@@ -80,7 +80,7 @@
                 :options="enumOptions(spec)"
                 :disabled="spec.env_locked"
                 size="sm"
-                style="width: 240px"
+                style="width: min(240px, 100%)"
                 @update:model-value="setValue(spec.key, $event)"
               />
               <NkInput
@@ -91,7 +91,7 @@
                 :max="spec.max"
                 :disabled="spec.env_locked"
                 size="sm"
-                style="width: 200px"
+                style="width: min(200px, 100%)"
                 @update:model-value="setValue(spec.key, $event)"
               />
               <NkInput
@@ -115,7 +115,7 @@
           </div>
 
           <div class="cc-save-row">
-            <NkInput v-model="note" size="sm" placeholder="变更说明（可选）" style="width: 320px" />
+            <NkInput v-model="note" size="sm" placeholder="变更说明（可选）" style="width: min(320px, 100%)" />
             <NkButton size="sm" type="primary" :loading="saving" :disabled="dirtyKeys.length === 0" @click="save">
               保存变更
             </NkButton>

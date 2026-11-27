@@ -12,7 +12,7 @@
         v-if="inventories.length"
         :model-value="inventoryId"
         :options="inventoryOptions"
-        style="width: 200px"
+        style="width: min(200px, 100%)"
         size="sm"
         @update:model-value="emit('update:inventoryId', $event)"
       />

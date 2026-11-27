@@ -5,7 +5,7 @@
       <NkButton type="primary" @click="openCreate">新建账户</NkButton>
     </div>
     <div class="ia-accounts__filters">
-      <NkInput v-model="filters.keyword" placeholder="名称/券商" size="sm" style="width: 200px" clearable @keyup.enter="load" />
+      <NkInput v-model="filters.keyword" placeholder="名称/券商" size="sm" style="width: min(200px, 100%)" clearable @keyup.enter="load" />
       <NkSelect v-model="filters.type" :options="typeOptions" size="sm" clearable placeholder="账户类型" @change="load" />
       <NkSelect v-model="filters.status" :options="statusOptions" size="sm" clearable placeholder="状态" @change="load" />
       <NkButton size="sm" @click="load">搜索</NkButton>

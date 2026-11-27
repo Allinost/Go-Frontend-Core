@@ -15,7 +15,7 @@
         v-if="inventories.length"
         :model-value="inventoryId"
         :options="inventoryOptions"
-        style="width: 200px"
+        style="width: min(200px, 100%)"
         size="sm"
         @update:model-value="emit('update:inventoryId', $event)"
       />
@@ -220,7 +220,7 @@
                 v-model="item.default_quantity"
                 type="number"
                 size="xs"
-                style="width: 90px"
+                style="width: min(90px, 100%)"
                 placeholder="单捆数量"
               />
               <NkButton size="xs" variant="ghost" type="danger" @click="bundleFormSubProducts.splice(idx, 1)">×</NkButton>
@@ -318,7 +318,7 @@
           <div v-if="poolFormItems.length" class="goodser__order-items">
             <div v-for="(item, idx) in poolFormItems" :key="item.product_id" class="goodser__order-item">
               <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
-              <NkInput v-model="item.default_quantity" type="number" size="xs" style="width: 90px" placeholder="默认数量" />
+              <NkInput v-model="item.default_quantity" type="number" size="xs" style="width: min(90px, 100%)" placeholder="默认数量" />
               <NkButton size="xs" variant="ghost" type="danger" @click="poolFormItems.splice(idx, 1)">×</NkButton>
             </div>
           </div>

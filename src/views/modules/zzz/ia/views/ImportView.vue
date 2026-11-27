@@ -158,6 +158,7 @@ async function handleImport() {
   &__result-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+  @include respond-to(sm) { grid-template-columns: repeat(2, 1fr); }
     gap: $nk-spacing-md;
     margin-bottom: $nk-spacing-md;
   }

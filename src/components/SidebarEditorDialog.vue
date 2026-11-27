@@ -11,7 +11,7 @@
   >
     <div class="sn-editor">
       <div class="sn-editor__toolbar">
-        <NkInput v-model="query" placeholder="搜索菜单名称或路径" size="sm" clearable style="width: 240px" />
+        <NkInput v-model="query" placeholder="搜索菜单名称或路径" size="sm" clearable style="width: min(240px, 100%)" />
         <NkButton size="sm" variant="ghost" @click="addGroup">新增层级</NkButton>
         <NkButton size="sm" variant="ghost" @click="expandAll">展开全部</NkButton>
         <NkButton size="sm" variant="ghost" @click="collapseAll">折叠全部</NkButton>
@@ -40,7 +40,7 @@
               :model-value="entry.permission"
               :options="permissionOptions"
               size="sm"
-              style="width: 130px"
+              style="width: min(130px, 100%)"
               @update:model-value="entry.permission = $event"
             />
           </div>
@@ -66,7 +66,7 @@
           <button type="button" class="sn-icon-btn" title="选择图标" @click="togglePicker('favorites')">
             <NkIcon :name="draft.favoriteGroup.icon" size="sm" />
           </button>
-          <NkInput v-model="draft.favoriteGroup.label" size="sm" style="width: 180px" />
+          <NkInput v-model="draft.favoriteGroup.label" size="sm" style="width: min(180px, 100%)" />
           <span class="sn-editor__inline">显示</span>
           <NkSwitch
             :model-value="draft.favoriteGroup.visible"
@@ -109,7 +109,7 @@
           <NkInput
             :model-value="group.label"
             size="sm"
-            style="width: 150px"
+            style="width: min(150px, 100%)"
             :disabled="group.system"
             @update:model-value="renameGroup(group.id, $event)"
           />
@@ -179,7 +179,7 @@
               :model-value="entry.permission"
               :options="permissionOptions"
               size="sm"
-              style="width: 130px"
+              style="width: min(130px, 100%)"
               @update:model-value="setItemPermission(group.id, entry.id, $event)"
             />
             <NkSelect
@@ -187,7 +187,7 @@
               :options="groupOptions(group.id)"
               placeholder="移动到分组"
               size="sm"
-              style="width: 130px"
+              style="width: min(130px, 100%)"
               @update:model-value="moveItemToGroup(entry.id, group.id, $event)"
             />
             <div class="sn-editor__move">

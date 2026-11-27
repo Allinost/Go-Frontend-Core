@@ -5,7 +5,7 @@
         v-if="inventories.length"
         :model-value="inventoryId"
         :options="inventoryOptions"
-        style="width: 200px"
+        style="width: min(200px, 100%)"
         size="sm"
         @update:model-value="onInventoryChange"
       />
@@ -95,7 +95,7 @@
           v-model="jumpPage"
           type="number"
           size="xs"
-          style="width: 60px"
+          style="width: min(60px, 100%)"
           :min="1"
           :max="productTotalPages"
           @keyup.enter="handleJumpPage"

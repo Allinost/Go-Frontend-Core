@@ -63,7 +63,7 @@
         :model-value="ordersPageSize"
         :options="pageSizeOptions"
         size="sm"
-        style="width: 110px"
+        style="width: min(110px, 100%)"
         @update:model-value="onPageSizeChange"
       />
       <div class="goodser__page-jump">
@@ -71,7 +71,7 @@
           v-model="jumpPage"
           type="number"
           size="xs"
-          style="width: 60px"
+          style="width: min(60px, 100%)"
           :min="1"
           :max="ordersTotalPages"
           @keyup.enter="handleJumpPage"
@@ -123,7 +123,7 @@
               v-model="orderForm.combo_quantity"
               type="number"
               size="sm"
-              style="width: 90px"
+              style="width: min(90px, 100%)"
               placeholder="数量"
             />
           </div>
@@ -171,7 +171,7 @@
                     v-model="comboSelection(bc.bundle_id || '').sub_quantities[s.product_id]"
                     type="number"
                     size="xs"
-                    style="width: 70px"
+                    style="width: min(70px, 100%)"
                   />
                 </div>
               </div>
@@ -228,7 +228,7 @@
                   v-model="bundleOrder.sub_quantities[s.product_id]"
                   type="number"
                   size="xs"
-                  style="width: 80px"
+                  style="width: min(80px, 100%)"
                   @change="refreshBundleOrderPreview"
                 />
               </div>
@@ -260,7 +260,7 @@
           <div v-if="orderFormItems.length" class="goodser__order-items">
             <div v-for="(item, idx) in orderFormItems" :key="idx" class="goodser__order-item">
               <span class="goodser__order-item-name">{{ item.product_name }} ({{ item.product_code }})</span>
-              <NkInput v-model="item.quantity" type="number" size="xs" style="width: 80px" placeholder="数量" />
+              <NkInput v-model="item.quantity" type="number" size="xs" style="width: min(80px, 100%)" placeholder="数量" />
               <NkButton size="xs" variant="ghost" type="danger" @click="orderFormItems.splice(idx, 1)">×</NkButton>
             </div>
           </div>
@@ -380,7 +380,7 @@
               v-model="item.quantity"
               type="number"
               size="xs"
-              style="width: 70px"
+              style="width: min(70px, 100%)"
               :disabled="!item.selected || item.maxQuantity <= 0"
             />
             <NkCheckbox

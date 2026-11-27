@@ -8,8 +8,8 @@
       </div>
     </div>
     <div class="ia-fx__filters">
-      <NkInput v-model="filters.base_ccy" placeholder="基准币种 CNY" size="sm" style="width: 160px" clearable @keyup.enter="load" />
-      <NkInput v-model="filters.quote_ccy" placeholder="报价币种 USD" size="sm" style="width: 160px" clearable @keyup.enter="load" />
+      <NkInput v-model="filters.base_ccy" placeholder="基准币种 CNY" size="sm" style="width: min(160px, 100%)" clearable @keyup.enter="load" />
+      <NkInput v-model="filters.quote_ccy" placeholder="报价币种 USD" size="sm" style="width: min(160px, 100%)" clearable @keyup.enter="load" />
       <NkButton size="sm" @click="load">搜索</NkButton>
     </div>
     <NkLoading v-if="loading" />

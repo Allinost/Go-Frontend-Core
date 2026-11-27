@@ -7,10 +7,10 @@
       </div>
 
       <div class="dm-filters" style="margin-bottom: 12px">
-        <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: 130px" />
-        <NkSelect v-model="filters.type" placeholder="类型" :options="typeOptions" clearable size="sm" style="width: 120px" />
-        <NkSelect v-model="filters.priority" placeholder="优先级" :options="priorityOptions" clearable size="sm" style="width: 110px" />
-        <NkInput v-model="filters.keyword" placeholder="编号 / 标题 / 正文" size="sm" style="width: 220px" @keyup.enter="search" />
+        <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: min(130px, 100%)" />
+        <NkSelect v-model="filters.type" placeholder="类型" :options="typeOptions" clearable size="sm" style="width: min(120px, 100%)" />
+        <NkSelect v-model="filters.priority" placeholder="优先级" :options="priorityOptions" clearable size="sm" style="width: min(110px, 100%)" />
+        <NkInput v-model="filters.keyword" placeholder="编号 / 标题 / 正文" size="sm" style="width: min(220px, 100%)" @keyup.enter="search" />
         <NkButton size="sm" @click="search">搜索</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
       </div>

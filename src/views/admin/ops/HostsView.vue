@@ -14,8 +14,8 @@
     <NkCard class="host-card">
       <div class="host-toolbar">
         <NkInput v-model="filters.keyword" placeholder="搜索名称/地址/备注" clearable size="sm" @clear="load" />
-        <NkSelect v-model="filters.role" :options="roleOptions" placeholder="角色" clearable size="sm" style="width: 140px" @change="load" />
-        <NkSelect v-model="filters.environment" :options="envOptions" placeholder="环境" clearable size="sm" style="width: 130px" @change="load" />
+        <NkSelect v-model="filters.role" :options="roleOptions" placeholder="角色" clearable size="sm" style="width: min(140px, 100%)" @change="load" />
+        <NkSelect v-model="filters.environment" :options="envOptions" placeholder="环境" clearable size="sm" style="width: min(130px, 100%)" @change="load" />
         <NkButton size="sm" @click="load">搜索</NkButton>
       </div>
 

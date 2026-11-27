@@ -7,14 +7,14 @@
           v-model="returnQuery"
           placeholder="搜索单号/商品/备注..."
           size="sm"
-          style="width: 220px"
+          style="width: min(220px, 100%)"
           clearable
         />
         <NkSelect
           v-model="returnStatusFilter"
           :options="returnStatusOptions"
           size="sm"
-          style="width: 140px"
+          style="width: min(140px, 100%)"
         />
         <NkButton size="sm" variant="ghost" @click="fetchReturns">刷新</NkButton>
       </div>

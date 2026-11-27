@@ -8,67 +8,53 @@
     </div>
 
     <div class="webhook-configs__filters">
-      <NkSelect v-model="filters.type" placeholder="类型" :options="typeOptions" clearable size="sm" style="width: 140px" />
-      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: 140px" />
-      <NkInput v-model="filters.source" placeholder="来源" size="sm" style="width: 160px" />
-      <NkInput v-model="filters.keyword" placeholder="名称/URL" size="sm" style="width: 200px" />
+      <NkSelect v-model="filters.type" placeholder="类型" :options="typeOptions" clearable size="sm" style="width: min(140px, 100%)" />
+      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: min(140px, 100%)" />
+      <NkInput v-model="filters.source" placeholder="来源" size="sm" style="width: min(160px, 100%)" />
+      <NkInput v-model="filters.keyword" placeholder="名称/URL" size="sm" style="width: min(200px, 100%)" />
       <NkButton size="sm" @click="loadConfigs">搜索</NkButton>
       <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
     </div>
 
     <div class="webhook-configs__table-card">
-      <NkLoading v-if="loading" />
-      <table v-else class="wh-table">
-        <thead>
-          <tr>
-            <th>名称</th>
-            <th>类型</th>
-            <th>URL</th>
-            <th>状态</th>
-            <th>来源</th>
-            <th>标签</th>
-            <th>发送/失败</th>
-            <th>最后发送</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items" :key="item._id">
-            <td>
-              <router-link :to="`/webhook/${item._id}`" class="wh-table__link">{{ item.name }}</router-link>
-            </td>
-            <td><NkTag size="sm">{{ typeLabel(item.type) }}</NkTag></td>
-            <td class="wh-table__url" :title="item.url">{{ item.url }}</td>
-            <td>
-              <NkTag
-                size="sm"
-                :type="statusTagType(item.status)"
-                style="cursor:pointer"
-                @click="toggleStatus(item)"
-              >
-                {{ statusLabel(item.status) }}
-              </NkTag>
-            </td>
-            <td>{{ item.source }}</td>
-            <td>
-              <NkTag v-for="tag in item.tags" :key="tag" size="sm" variant="outline" style="margin-right: 2px">{{ tag }}</NkTag>
-              <span v-if="!item.tags?.length">-</span>
-            </td>
-            <td>{{ item.total_sent }}/{{ item.total_failed }}</td>
-            <td>{{ formatTime(item.last_sent_at) }}</td>
-            <td>
-              <NkButton size="sm" variant="ghost" @click="$router.push(`/webhook/${item._id}`)">详情</NkButton>
-              <NkButton size="sm" variant="ghost" @click="$router.push(`/webhook/${item._id}/edit`)">编辑</NkButton>
-              <NkButton size="sm" variant="ghost" :loading="sendingId === item._id" @click="handleQuickSend(item)">发送</NkButton>
-              <NkButton size="sm" variant="ghost" @click="openCustomSend(item)">自定义发送</NkButton>
-              <NkButton size="sm" variant="ghost" type="danger" @click="confirmDelete(item)">删除</NkButton>
-            </td>
-          </tr>
-          <tr v-if="!items.length && !loading">
-            <td colspan="9" class="wh-table__empty"><NkEmpty description="暂无配置" /></td>
-          </tr>
-        </tbody>
-      </table>
+      <NkTable
+        :columns="columns"
+        :data="items"
+        :loading="loading"
+        row-key="_id"
+        empty-text="暂无配置"
+      >
+        <template #cell-name="{ row }">
+          <router-link :to="`/webhook/${row._id}`" class="wh-table__link">{{ row.name }}</router-link>
+        </template>
+        <template #cell-type="{ row }">
+          <NkTag size="sm">{{ typeLabel(row.type) }}</NkTag>
+        </template>
+        <template #cell-url="{ row }">
+          <span class="wh-table__url" :title="row.url">{{ row.url }}</span>
+        </template>
+        <template #cell-status="{ row }">
+          <NkTag
+            size="sm"
+            :type="statusTagType(row.status)"
+            style="cursor: pointer"
+            @click="toggleStatus(row)"
+          >
+            {{ statusLabel(row.status) }}
+          </NkTag>
+        </template>
+        <template #cell-tags="{ row }">
+          <NkTag v-for="tag in row.tags || []" :key="tag" size="sm" variant="outline" style="margin-right: 2px">{{ tag }}</NkTag>
+          <span v-if="!row.tags?.length">-</span>
+        </template>
+        <template #cell-actions="{ row }">
+          <NkButton size="sm" variant="ghost" @click="$router.push(`/webhook/${row._id}`)">详情</NkButton>
+          <NkButton size="sm" variant="ghost" @click="$router.push(`/webhook/${row._id}/edit`)">编辑</NkButton>
+          <NkButton size="sm" variant="ghost" :loading="sendingId === row._id" @click="handleQuickSend(row)">发送</NkButton>
+          <NkButton size="sm" variant="ghost" @click="openCustomSend(row)">自定义发送</NkButton>
+          <NkButton size="sm" variant="ghost" type="danger" @click="confirmDelete(row)">删除</NkButton>
+        </template>
+      </NkTable>
     </div>
 
     <div class="webhook-configs__pagination">
@@ -118,7 +104,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { listConfigs, deleteConfig, updateConfigStatus, testSendConfig, sendWebhook } from '@/api/webhook'
 import type { WebhookConfig } from '@/types/webhook'
-import { NKMessage } from '@nkui/vue'
+import { NKMessage, type NkTableColumn } from '@nkui/vue'
 
 const loading = ref(false)
 const items = ref<WebhookConfig[]>([])
@@ -290,6 +276,17 @@ async function handleDelete() {
 }
 
 onMounted(loadConfigs)
+const columns: NkTableColumn[] = [
+  { key: 'name', title: '名称' },
+  { key: 'type', title: '类型', width: 110 },
+  { key: 'url', title: 'URL' },
+  { key: 'status', title: '状态', width: 90 },
+  { key: 'source', title: '来源', width: 120 },
+  { key: 'tags', title: '标签' },
+  { key: 'counts', title: '发送/失败', width: 110, formatter: (row) => `${row.total_sent}/${row.total_failed}` },
+  { key: 'last_sent_at', title: '最后发送', width: 160, formatter: (row) => formatTime(row.last_sent_at) },
+  { key: 'actions', title: '操作', width: 320 },
+]
 </script>
 
 <style lang="scss" scoped>

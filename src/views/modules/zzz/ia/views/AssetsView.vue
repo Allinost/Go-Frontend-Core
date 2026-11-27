@@ -5,7 +5,7 @@
       <NkButton type="primary" @click="openCreate">新建标的</NkButton>
     </div>
     <div class="ia-assets__filters">
-      <NkInput v-model="filters.keyword" placeholder="代码/名称/发行方" size="sm" style="width: 200px" clearable @keyup.enter="load" />
+      <NkInput v-model="filters.keyword" placeholder="代码/名称/发行方" size="sm" style="width: min(200px, 100%)" clearable @keyup.enter="load" />
       <NkSelect v-model="filters.asset_type" :options="assetTypeOptions" size="sm" clearable placeholder="类型" @change="load" />
       <NkSelect v-model="filters.market" :options="marketOptions" size="sm" clearable placeholder="市场" @change="load" />
       <NkSelect v-model="filters.status" :options="statusOptions" size="sm" clearable placeholder="状态" @change="load" />
@@ -539,6 +539,7 @@ onMounted(load)
   &__resolve-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
+  @include respond-to(sm) { grid-template-columns: repeat(2, 1fr); }
     gap: $nk-spacing-sm $nk-spacing-md;
   }
   &__resolve-item {

@@ -11,7 +11,7 @@
       </div>
       <div class="ia-screen__controls">
         <label>显示数量</label>
-        <NkInput v-model.number="potentialTop" type="number" style="width: 80px" />
+        <NkInput v-model.number="potentialTop" type="number" style="width: min(80px, 100%)" />
         <NkButton @click="loadPotential">刷新</NkButton>
       </div>
       <table class="ia-screen__table">
@@ -55,11 +55,11 @@
       </div>
       <div class="ia-screen__controls">
         <label>显示数量</label>
-        <NkInput v-model.number="qualityTop" type="number" style="width: 80px" />
+        <NkInput v-model.number="qualityTop" type="number" style="width: min(80px, 100%)" />
         <label>最低ROE %</label>
-        <NkInput v-model.number="minRoe" type="number" style="width: 80px" />
+        <NkInput v-model.number="minRoe" type="number" style="width: min(80px, 100%)" />
         <label>最高PE</label>
-        <NkInput v-model.number="maxPe" type="number" style="width: 80px" />
+        <NkInput v-model.number="maxPe" type="number" style="width: min(80px, 100%)" />
         <NkButton @click="loadQuality">刷新</NkButton>
       </div>
       <table class="ia-screen__table">

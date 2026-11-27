@@ -9,7 +9,7 @@
         </div>
       </div>
       <div class="dm-filters" style="margin-bottom: 12px">
-        <NkSelect v-model="filters.category" placeholder="类别" :options="categoryOptions" clearable size="sm" style="width: 140px" />
+        <NkSelect v-model="filters.category" placeholder="类别" :options="categoryOptions" clearable size="sm" style="width: min(140px, 100%)" />
         <NkButton size="sm" @click="search">筛选</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
         <span class="dm-muted">目录型资产（格式 dir）可展开为文件级索引，重复展开自动跳过</span>

@@ -6,7 +6,7 @@
     </div>
     <div class="ia-fees__filters">
       <AccountSelector v-model="filters.account_id" @change="load" />
-      <NkInput v-model="filters.fee_type" placeholder="费用类型" size="sm" style="width: 160px" clearable @keyup.enter="load" />
+      <NkInput v-model="filters.fee_type" placeholder="费用类型" size="sm" style="width: min(160px, 100%)" clearable @keyup.enter="load" />
       <NkInput v-model="filters.start" type="date" size="sm" />
       <NkInput v-model="filters.end" type="date" size="sm" />
       <NkButton size="sm" @click="load">搜索</NkButton>

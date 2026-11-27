@@ -14,7 +14,7 @@
                 v-model="prefixInput"
                 placeholder="输入路径前缀 (如 goodser/images)"
                 size="sm"
-                style="width: 300px"
+                style="width: min(300px, 100%)"
                 @keyup.enter="navigateToPrefix"
               />
               <NkButton size="sm" variant="ghost" @click="navigateToPrefix">浏览</NkButton>
@@ -135,7 +135,7 @@
       </div>
 
       <div class="storage-mgmt__scan-toolbar">
-        <NkInput v-model="scanTargets" placeholder="扫描目标 (如 zzz_goodser_products.image_url，逗号分隔)" size="sm" style="width: 400px" />
+        <NkInput v-model="scanTargets" placeholder="扫描目标 (如 zzz_goodser_products.image_url，逗号分隔)" size="sm" style="width: min(400px, 100%)" />
         <NkButton size="sm" :loading="scanning" @click="handleScan">重新扫描</NkButton>
         <NkButton v-if="scanResult?.orphans?.length" size="sm" type="danger" :loading="cleaning" @click="confirmCleanAll">清理全部孤立文件</NkButton>
       </div>
@@ -235,10 +235,10 @@
       <NkCard class="storage-mgmt__ref-query">
         <template #header>查询引用</template>
         <div class="storage-mgmt__ref-query-form">
-          <NkInput v-model="refQuery.module_name" placeholder="模块名" size="sm" style="width: 150px" />
-          <NkInput v-model="refQuery.object_key" placeholder="对象键" size="sm" style="width: 240px" />
-          <NkInput v-model="refQuery.table_name" placeholder="表名" size="sm" style="width: 180px" />
-          <NkInput v-model="refQuery.record_id" placeholder="记录 ID" size="sm" style="width: 180px" />
+          <NkInput v-model="refQuery.module_name" placeholder="模块名" size="sm" style="width: min(150px, 100%)" />
+          <NkInput v-model="refQuery.object_key" placeholder="对象键" size="sm" style="width: min(240px, 100%)" />
+          <NkInput v-model="refQuery.table_name" placeholder="表名" size="sm" style="width: min(180px, 100%)" />
+          <NkInput v-model="refQuery.record_id" placeholder="记录 ID" size="sm" style="width: min(180px, 100%)" />
           <NkButton size="sm" @click="searchReferences">搜索</NkButton>
         </div>
 
@@ -1347,6 +1347,7 @@ onMounted(loadFiles)
   &__scan-overview {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+  @include respond-to(sm) { grid-template-columns: repeat(2, 1fr); }
     gap: $nk-spacing-lg;
     margin-bottom: $nk-spacing-lg;
   }

@@ -8,9 +8,9 @@
     </div>
 
     <div class="sc-products__filters">
-      <NkSelect v-model="filters.platform" placeholder="平台" :options="platformOptions" clearable size="sm" style="width: 120px" />
-      <NkSelect v-model="filters.enabled" placeholder="状态" :options="enabledOptions" clearable size="sm" style="width: 120px" />
-      <NkInput v-model="filters.keyword" placeholder="名称/URL" size="sm" style="width: 200px" @keyup.enter="loadProducts" />
+      <NkSelect v-model="filters.platform" placeholder="平台" :options="platformOptions" clearable size="sm" style="width: min(120px, 100%)" />
+      <NkSelect v-model="filters.enabled" placeholder="状态" :options="enabledOptions" clearable size="sm" style="width: min(120px, 100%)" />
+      <NkInput v-model="filters.keyword" placeholder="名称/URL" size="sm" style="width: min(200px, 100%)" @keyup.enter="loadProducts" />
       <NkButton size="sm" @click="loadProducts">搜索</NkButton>
       <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
     </div>

@@ -95,7 +95,8 @@ onMounted(load)
   &__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: $nk-spacing-lg; }
   &__title { font-size: $nk-font-size-xl; font-weight: $nk-font-weight-semibold; color: $nk-color-neutral-900; }
   &__filters { display: flex; gap: $nk-spacing-sm; }
-  &__cards { display: grid; grid-template-columns: 1fr 1fr; gap: $nk-spacing-lg; margin-bottom: $nk-spacing-lg; }
+  &__cards { display: grid; grid-template-columns: 1fr 1fr;
+  @include respond-to(sm) { grid-template-columns: 1fr; } gap: $nk-spacing-lg; margin-bottom: $nk-spacing-lg; }
   &__stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: $nk-spacing-md; }
   &__stat { display: flex; flex-direction: column; gap: $nk-spacing-xs; font-size: $nk-font-size-sm; }
   &__by-type { display: flex; flex-direction: column; gap: $nk-spacing-xs; }

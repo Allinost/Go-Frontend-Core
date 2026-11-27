@@ -25,7 +25,7 @@
       </div>
       <div class="settings-row">
         <label class="settings-label">主题</label>
-        <NkSelect v-model="frontendForm.theme" :options="themeOptions" style="width: 180px" />
+        <NkSelect v-model="frontendForm.theme" :options="themeOptions" style="width: min(180px, 100%)" />
       </div>
       <div class="settings-actions">
         <NkButton size="sm" @click="saveFrontend">保存前端设置</NkButton>

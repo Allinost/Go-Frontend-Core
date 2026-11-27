@@ -40,8 +40,8 @@
         <span>标签</span>
       </div>
       <div class="v3pm-form-row">
-        <NkInput v-model="newLabelName" placeholder="标签名称" size="sm" style="width: 160px" />
-        <NkInput v-model="newLabelColor" placeholder="#1677ff" size="sm" style="width: 110px" />
+        <NkInput v-model="newLabelName" placeholder="标签名称" size="sm" style="width: min(160px, 100%)" />
+        <NkInput v-model="newLabelColor" placeholder="#1677ff" size="sm" style="width: min(110px, 100%)" />
         <NkButton size="sm" @click="createProjectLabel">创建标签</NkButton>
       </div>
       <div v-if="projectLabels.length === 0" class="v3pm-muted">暂无标签</div>
@@ -58,8 +58,8 @@
         <div class="v3pm-inline">
           <NkButton size="sm" :variant="taskViewMode === 'list' ? 'solid' : 'ghost'" @click="taskViewMode = 'list'">列表</NkButton>
           <NkButton size="sm" :variant="taskViewMode === 'gantt' ? 'solid' : 'ghost'" @click="taskViewMode = 'gantt'">甘特</NkButton>
-          <NkSelect v-model="filterStatus" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: 130px" @change="loadTasks" />
-          <NkSelect v-model="filterMilestone" :options="milestoneOptions" placeholder="里程碑" clearable size="sm" style="width: 150px" @change="loadTasks" />
+          <NkSelect v-model="filterStatus" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: min(130px, 100%)" @change="loadTasks" />
+          <NkSelect v-model="filterMilestone" :options="milestoneOptions" placeholder="里程碑" clearable size="sm" style="width: min(150px, 100%)" @change="loadTasks" />
           <NkButton size="sm" @click="showTaskForm = !showTaskForm">新建任务</NkButton>
           <NkButton size="sm" variant="ghost" @click="openImport">导入任务</NkButton>
         </div>
@@ -162,8 +162,8 @@
         <div class="v3pm-section">
           <div class="v3pm-section-title">计划日期</div>
           <div class="v3pm-form-row">
-            <NkInput v-model="taskPlan.start_date" placeholder="开始 YYYY-MM-DD" size="sm" style="width: 170px" />
-            <NkInput v-model="taskPlan.due_date" placeholder="截止 YYYY-MM-DD" size="sm" style="width: 170px" />
+            <NkInput v-model="taskPlan.start_date" placeholder="开始 YYYY-MM-DD" size="sm" style="width: min(170px, 100%)" />
+            <NkInput v-model="taskPlan.due_date" placeholder="截止 YYYY-MM-DD" size="sm" style="width: min(170px, 100%)" />
             <NkButton size="sm" @click="saveTaskPlan">保存日期</NkButton>
           </div>
         </div>
@@ -187,8 +187,8 @@
         <div class="v3pm-section">
           <div class="v3pm-section-title">依赖</div>
           <div class="v3pm-form-row">
-            <NkSelect v-model="depForm.depends_on_task_id" :options="dependencyOptions" placeholder="依赖任务" size="sm" style="width: 220px" />
-            <NkSelect v-model="depForm.dep_type" :options="depTypeOptions" size="sm" style="width: 100px" />
+            <NkSelect v-model="depForm.depends_on_task_id" :options="dependencyOptions" placeholder="依赖任务" size="sm" style="width: min(220px, 100%)" />
+            <NkSelect v-model="depForm.dep_type" :options="depTypeOptions" size="sm" style="width: min(100px, 100%)" />
             <NkButton size="sm" @click="saveDependency">添加</NkButton>
           </div>
           <div v-if="deps.length === 0" class="v3pm-muted">暂无依赖</div>
@@ -220,7 +220,7 @@
               :options="availableLabelOptions"
               placeholder="选择标签"
               size="sm"
-              style="width: 180px"
+              style="width: min(180px, 100%)"
               @change="attachLabel"
             />
           </div>
@@ -247,10 +247,10 @@
               :options="assetOptions"
               placeholder="选择项目资产"
               size="sm"
-              style="width: 240px"
+              style="width: min(240px, 100%)"
               filterable
             />
-            <NkSelect v-model="assetForm.relation_type" :options="assetRelationOptions" size="sm" style="width: 120px" />
+            <NkSelect v-model="assetForm.relation_type" :options="assetRelationOptions" size="sm" style="width: min(120px, 100%)" />
             <NkButton size="sm" @click="attachAsset">添加</NkButton>
           </div>
           <div v-if="taskAssets.length === 0" class="v3pm-muted">暂无关联资产</div>

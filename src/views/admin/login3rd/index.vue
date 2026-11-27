@@ -9,7 +9,7 @@
     <!-- Tab: 账号管理 -->
     <div v-show="activeTab === 'accounts'" class="l3-page__tab-content">
       <div class="l3-page__toolbar">
-        <NkSelect v-model="filterPlatform" placeholder="全部平台" :options="platformOptions" clearable style="width: 180px" @change="loadAccounts" />
+        <NkSelect v-model="filterPlatform" placeholder="全部平台" :options="platformOptions" clearable style="width: min(180px, 100%)" @change="loadAccounts" />
         <NkButton size="sm" variant="ghost" @click="loadAccounts">刷新</NkButton>
         <div class="l3-page__spacer" />
         <NkButton size="sm" @click="showCreateDialog">新增账号</NkButton>

@@ -296,6 +296,7 @@ onMounted(() => {
   &__info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  @include respond-to(sm) { grid-template-columns: 1fr; }
     gap: $nk-spacing-lg;
   }
   &__info-item {

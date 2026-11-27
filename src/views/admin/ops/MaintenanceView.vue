@@ -58,7 +58,7 @@
         <div class="maint-form">
           <div class="maint-field">
             <span class="maint-label">维护模式</span>
-            <NkSelect v-model="startForm.mode" :options="modeOptions" style="width: 240px" />
+            <NkSelect v-model="startForm.mode" :options="modeOptions" style="width: min(240px, 100%)" />
           </div>
           <div v-if="startForm.mode !== 'shutdown'" class="maint-field">
             <span class="maint-label">L1→L2 已同步</span>

@@ -10,7 +10,7 @@
           v-if="inventories.length"
           :model-value="inventoryId"
           :options="inventoryOptions"
-          style="width: 200px"
+          style="width: min(200px, 100%)"
           size="sm"
           @update:model-value="emit('update:inventoryId', $event)"
         />
@@ -18,7 +18,7 @@
           v-if="!customRange"
           v-model="statsDays"
           :options="statsDayOptions"
-          style="width: 120px"
+          style="width: min(120px, 100%)"
           size="sm"
         />
         <NkButton size="sm" variant="ghost" @click="toggleCustomRange">

@@ -5,91 +5,83 @@
     </div>
 
     <NkCard class="wh-create__card">
-      <div class="wh-create__form">
+      <NkForm
+        ref="formRef"
+        class="wh-create__form"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit="handleSave"
+      >
         <div class="wh-create__row">
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">名称 <span class="wh-create__required">*</span></label>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="名称" prop="name" required>
             <NkInput v-model="form.name" placeholder="配置名称" />
-          </div>
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">类型 <span class="wh-create__required">*</span></label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="类型" prop="type" required>
             <NkSelect v-model="form.type" :options="typeOptions" placeholder="选择类型" />
-          </div>
+          </NkFormItem>
         </div>
 
-        <div class="wh-create__field">
-          <label class="wh-create__label">Webhook URL <span class="wh-create__required">*</span></label>
+        <NkFormItem class="wh-create__field" label="Webhook URL" prop="url" required>
           <NkInput v-model="form.url" placeholder="https://example.com/webhook" />
-        </div>
+        </NkFormItem>
 
         <div class="wh-create__row">
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">来源</label>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="来源">
             <NkInput v-model="form.source" placeholder="system" />
-          </div>
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">标签</label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="标签" help="多个标签用逗号分隔">
             <NkInput v-model="tagsInput" placeholder="逗号分隔" @blur="applyTags" />
-          </div>
+          </NkFormItem>
         </div>
 
         <div class="wh-create__row">
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">签名密钥</label>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="签名密钥">
             <NkInput v-model="form.signing_key" placeholder="signing_key" type="password" />
-          </div>
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">认证方式</label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="认证方式">
             <NkSelect v-model="form.auth_type" :options="authOptions" placeholder="不启用" clearable />
-          </div>
+          </NkFormItem>
         </div>
 
-        <div v-if="form.auth_type" class="wh-create__field">
-          <label class="wh-create__label">认证值</label>
+        <NkFormItem v-if="form.auth_type" class="wh-create__field" label="认证值" prop="auth_value">
           <NkInput v-model="form.auth_value" placeholder="认证值" type="password" />
-        </div>
+        </NkFormItem>
 
-        <div class="wh-create__field">
-          <label class="wh-create__label">自定义 Headers（JSON）</label>
+        <NkFormItem class="wh-create__field" label="自定义 Headers（JSON）" prop="custom_headers" help='例如 {"X-Custom": "value"}'>
           <NkInput v-model="customHeadersStr" placeholder='{"X-Custom": "value"}' />
-        </div>
+        </NkFormItem>
 
         <div class="wh-create__row">
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">白名单关键字</label>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="白名单关键字" help="多个关键字用逗号分隔">
             <NkInput v-model="whitelistInput" placeholder="逗号分隔" @blur="applyWhitelist" />
-          </div>
-          <div class="wh-create__field wh-create__field--half">
-            <label class="wh-create__label">匹配模式</label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--half" label="匹配模式">
             <NkSelect v-model="form.whitelist_mode" :options="[{label:'任一匹配',value:'any'},{label:'全部匹配',value:'all'}]" />
-          </div>
+          </NkFormItem>
         </div>
 
         <div class="wh-create__row">
-          <div class="wh-create__field wh-create__field--third">
-            <label class="wh-create__label">每分钟上限</label>
+          <NkFormItem class="wh-create__field wh-create__field--third" label="每分钟上限" prop="max_per_minute">
             <NkInput v-model.number="form.max_per_minute" type="number" placeholder="60" />
-          </div>
-          <div class="wh-create__field wh-create__field--third">
-            <label class="wh-create__label">每小时上限</label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--third" label="每小时上限" prop="max_per_hour">
             <NkInput v-model.number="form.max_per_hour" type="number" placeholder="1000" />
-          </div>
-          <div class="wh-create__field wh-create__field--third">
-            <label class="wh-create__label">超时 (ms)</label>
+          </NkFormItem>
+          <NkFormItem class="wh-create__field wh-create__field--third" label="超时 (ms)" prop="timeout_ms">
             <NkInput v-model.number="form.timeout_ms" type="number" placeholder="10000" />
-          </div>
+          </NkFormItem>
         </div>
 
-        <div class="wh-create__field">
-          <label class="wh-create__label">去重窗口（秒，0=不启用）</label>
+        <NkFormItem class="wh-create__field" label="去重窗口（秒）" prop="dedup_window" help="0 表示不启用">
           <NkInput v-model.number="form.dedup_window" type="number" placeholder="0" />
-        </div>
+        </NkFormItem>
 
         <div class="wh-create__actions">
           <NkButton variant="ghost" @click="$router.push('/webhook')">取消</NkButton>
-          <NkButton :loading="saving" :disabled="!form.name || !form.type || !form.url" @click="handleSave">创建</NkButton>
+          <NkButton type="primary" :loading="saving" @click="onSaveClick">创建</NkButton>
         </div>
-      </div>
+      </NkForm>
     </NkCard>
   </div>
 </template>
@@ -98,7 +90,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { createConfig } from '@/api/webhook'
-import { NKMessage } from '@nkui/vue'
+import { NKMessage, NkForm, NkFormItem, type FormRules } from '@nkui/vue'
 
 const router = useRouter()
 
@@ -168,6 +160,27 @@ async function handleSave() {
     saving.value = false
   }
 }
+const formRef = ref<InstanceType<typeof NkForm>>()
+
+const nonNegative = (value: unknown) => Number(value) >= 0 || '不能为负数'
+
+const rules: FormRules = {
+  name: { required: true, message: '请输入配置名称', max: 64 },
+  type: { required: true, message: '请选择类型' },
+  url: {
+    required: true,
+    message: '请输入 Webhook 地址',
+    pattern: /^https?:\/\/\S+$/,
+  },
+  max_per_minute: { validator: nonNegative },
+  max_per_hour: { validator: nonNegative },
+  timeout_ms: { validator: nonNegative },
+  dedup_window: { validator: nonNegative },
+}
+
+async function onSaveClick() {
+  if (await formRef.value?.validate()) handleSave()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -213,6 +226,20 @@ async function handleSave() {
     margin-top: $nk-spacing-xl;
     padding-top: $nk-spacing-lg;
     border-top: 1px solid $nk-color-neutral-200;
+  }
+}
+
+.wh-create {
+  @include respond-to(sm) {
+    &__row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    &__field--half,
+    &__field--third {
+      flex: 1 1 auto;
+    }
   }
 }
 </style>

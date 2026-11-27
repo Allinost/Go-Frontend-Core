@@ -31,8 +31,8 @@
     </div>
 
     <div class="dm-filters">
-      <NkInput v-model="filters.keyword" placeholder="项目名 / 唯一键 / compose 文件" size="sm" style="width: 240px" @keyup.enter="loadProjects" />
-      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: 120px" />
+      <NkInput v-model="filters.keyword" placeholder="项目名 / 唯一键 / compose 文件" size="sm" style="width: min(240px, 100%)" @keyup.enter="loadProjects" />
+      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: min(120px, 100%)" />
       <NkButton size="sm" @click="loadProjects">搜索</NkButton>
       <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
     </div>

@@ -10,8 +10,8 @@
       </div>
 
       <div class="dm-filters" style="margin-bottom: 12px">
-        <NkSelect v-model="filters.status" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: 140px" @change="loadIterations" />
-        <NkInput v-model="filters.keyword" placeholder="名称 / 目标" size="sm" style="width: 240px" @keyup.enter="search" />
+        <NkSelect v-model="filters.status" :options="statusOptions" placeholder="状态" clearable size="sm" style="width: min(140px, 100%)" @change="loadIterations" />
+        <NkInput v-model="filters.keyword" placeholder="名称 / 目标" size="sm" style="width: min(240px, 100%)" @keyup.enter="search" />
         <NkButton size="sm" @click="search">搜索</NkButton>
         <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
       </div>
@@ -43,7 +43,7 @@
               :model-value="it.status"
               :options="statusOptions"
               size="sm"
-              style="width: 110px"
+              style="width: min(110px, 100%)"
               @update:model-value="changeStatus(it, $event)"
             />
             <NkButton size="sm" variant="ghost" @click="openForm(it)">编辑</NkButton>
