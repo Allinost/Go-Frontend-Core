@@ -44,61 +44,45 @@
         </div>
 
         <template v-else>
-          <table class="storage-mgmt__file-table">
-            <thead>
-              <tr>
-                <th style="width: 36px">
-                  <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" />
-                </th>
-                <th>文件名</th>
-                <th style="width: 100px">大小</th>
-                <th style="width: 80px">类型</th>
-                <th style="width: 160px">修改时间</th>
-                <th style="width: 240px">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="dir in dirList" :key="dir" class="storage-mgmt__row--dir">
-                <td></td>
-                <td>
-                  <div class="storage-mgmt__file-cell">
-                    <NkIcon name="folder" size="sm" class="storage-mgmt__file-icon" />
-                    <span class="storage-mgmt__file-link" @click="enterDirByName(dir)">{{ dir }}/</span>
-                  </div>
-                </td>
-                <td>-</td>
-                <td><NkTag size="xs" variant="outline">目录</NkTag></td>
-                <td>-</td>
-                <td><span class="storage-mgmt__dir-hint">点击进入</span></td>
-              </tr>
-              <tr v-for="file in fileList" :key="file.path" :class="{ 'storage-mgmt__row--selected': isSelected(file) }">
-                <td>
-                  <input
-                    type="checkbox"
-                    :checked="isSelected(file)"
-                    @change="toggleSelectFile(file)"
-                  />
-                </td>
-                <td>
-                  <div class="storage-mgmt__file-cell">
-                    <NkIcon name="file" size="sm" class="storage-mgmt__file-icon" />
-                    <span :title="file.name">{{ file.name }}</span>
-                  </div>
-                </td>
-                <td>{{ formatSize(file.size) }}</td>
-                <td>
-                  <NkTag v-if="file.content_type" size="xs" variant="outline">{{ file.content_type.split('/')[1] || file.content_type }}</NkTag>
-                </td>
-                <td>{{ formatDate(file.last_modified) }}</td>
-                <td>
-                  <NkButton size="xs" variant="ghost" @click="showFileInfo(file)">详情</NkButton>
-                  <NkButton size="xs" variant="ghost" @click="copyUrl(file)">复制 URL</NkButton>
-                  <NkButton size="xs" variant="ghost" @click="downloadFileAction(file)">下载</NkButton>
-                  <NkButton size="xs" variant="ghost" type="danger" @click="confirmDeleteFile(file)">删除</NkButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div v-if="dirList.length" class="storage-mgmt__dirs">
+            <button
+              v-for="dir in dirList"
+              :key="dir"
+              type="button"
+              class="storage-mgmt__dir"
+              @click="enterDirByName(dir)"
+            >
+              <NkIcon name="folder" size="sm" />
+              <span>{{ dir }}/</span>
+            </button>
+          </div>
+
+          <NkTable
+            :columns="fileColumns"
+            :data="fileList"
+            row-key="path"
+            selectable
+            responsive
+            :selection="selectedFiles"
+            empty-text="当前目录暂无文件"
+            @update:selection="onFileSelection"
+          >
+            <template #cell-name="{ row }">
+              <div class="storage-mgmt__file-cell">
+                <NkIcon name="file" size="sm" class="storage-mgmt__file-icon" />
+                <span :title="row.name">{{ row.name }}</span>
+              </div>
+            </template>
+            <template #cell-content_type="{ row }">
+              <NkTag v-if="row.content_type" size="xs" variant="outline">{{ row.content_type.split('/')[1] || row.content_type }}</NkTag>
+            </template>
+            <template #cell-actions="{ row }">
+              <NkButton size="xs" variant="ghost" @click="showFileInfo(row)">详情</NkButton>
+              <NkButton size="xs" variant="ghost" @click="copyUrl(row)">复制 URL</NkButton>
+              <NkButton size="xs" variant="ghost" @click="downloadFileAction(row)">下载</NkButton>
+              <NkButton size="xs" variant="ghost" type="danger" @click="confirmDeleteFile(row)">删除</NkButton>
+            </template>
+          </NkTable>
 
           <div class="storage-mgmt__pagination">
             <span class="storage-mgmt__pagination-info">共 {{ totalFiles }} 个文件</span>
@@ -612,7 +596,7 @@ import {
   listScanTargets, createScanTarget, updateScanTarget, deleteScanTarget,
 } from '@/api/scanTargets'
 import type { ScanTarget, ScanTargetListData } from '@/api/scanTargets'
-import { NKMessage } from '@nkui/vue'
+import { NKMessage, type NkTableColumn } from '@nkui/vue'
 
 const activeTab = ref('browser')
 const tabs = [
@@ -1201,6 +1185,17 @@ async function handleDeleteTarget() {
 }
 
 onMounted(loadFiles)
+const fileColumns: NkTableColumn[] = [
+  { key: 'name', title: '文件名' },
+  { key: 'size', title: '大小', width: 100, formatter: (row) => formatSize(row.size) },
+  { key: 'content_type', title: '类型', width: 100 },
+  { key: 'last_modified', title: '修改时间', width: 170, formatter: (row) => formatDate(row.last_modified) },
+  { key: 'actions', title: '操作', width: 300 },
+]
+
+function onFileSelection(rows: RustFSFile[]) {
+  selectedFilesSet.value = new Set(rows.map((r) => r.path))
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1636,4 +1631,31 @@ onMounted(loadFiles)
     font-weight: 600;
   }
 }
-</style>
+
+.storage-mgmt__dirs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.storage-mgmt__dir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid $nk-color-neutral-300;
+  border-radius: 8px;
+  background: $nk-color-neutral-0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  max-width: 100%;
+  word-break: break-all;
+  transition: border-color $nk-duration-fast $nk-easing-ease, color $nk-duration-fast $nk-easing-ease;
+
+  &:hover {
+    border-color: $nk-color-primary-500;
+    color: $nk-color-primary-500;
+  }
+}</style>
