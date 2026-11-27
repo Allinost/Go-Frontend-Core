@@ -265,7 +265,7 @@ onMounted(load)
   color: var(--nk-text-color-secondary, #888);
   font-size: 13px;
 }
-@media (max-width: 1100px) {
+@include respond-to(lg) {
   .v3ins-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

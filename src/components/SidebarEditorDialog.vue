@@ -640,7 +640,7 @@ function onVisibleChange(value: boolean) {
   color: var(--nk-color-on-primary, #fff);
   background: var(--nk-color-primary-500, #3b82f6);
 }
-@media (max-width: 700px) {
+@include respond-to(md) {
   .sn-editor__row {
     flex-wrap: wrap;
   }

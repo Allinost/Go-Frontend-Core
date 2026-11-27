@@ -511,7 +511,7 @@ onMounted(load)
   flex-direction: column;
   gap: 2px;
 }
-@media (max-width: 640px) {
+@include respond-to(sm) {
   .catalogs__header {
     flex-direction: column;
   }

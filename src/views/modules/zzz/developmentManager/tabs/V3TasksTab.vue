@@ -1077,7 +1077,7 @@ onMounted(load)
   padding: 8px 12px;
   border-top: 1px solid var(--nk-border-color, #f0f0f0);
 }
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .v3pm-form-grid {
     grid-template-columns: 1fr 1fr;
   }

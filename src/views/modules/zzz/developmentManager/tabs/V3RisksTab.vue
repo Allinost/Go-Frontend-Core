@@ -473,7 +473,7 @@ onMounted(() => {
   text-align: center;
   margin: auto;
 }
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .risk-matrix {
     grid-template-columns: 64px repeat(3, minmax(120px, 1fr));
     overflow-x: auto;

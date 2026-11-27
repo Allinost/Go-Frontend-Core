@@ -97,3 +97,26 @@ $nk-duration-fast:  150ms;
 $nk-duration-normal: 250ms;
 $nk-duration-slow:  400ms;
 $nk-easing-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+// ---- 统一断点（max-width，桌面优先）：@include respond-to(md) 即 ≤768px ----
+$nk-bp-xs: 480px;
+$nk-bp-sm: 640px;
+$nk-bp-md: 768px;
+$nk-bp-lg: 1024px;
+$nk-bp-xl: 1280px;
+
+@mixin respond-to($bp) {
+  @if $bp == xs {
+    @media (max-width: $nk-bp-xs) { @content; }
+  } @else if $bp == sm {
+    @media (max-width: $nk-bp-sm) { @content; }
+  } @else if $bp == md {
+    @media (max-width: $nk-bp-md) { @content; }
+  } @else if $bp == lg {
+    @media (max-width: $nk-bp-lg) { @content; }
+  } @else if $bp == xl {
+    @media (max-width: $nk-bp-xl) { @content; }
+  } @else {
+    @error "未知断点: #{$bp}";
+  }
+}

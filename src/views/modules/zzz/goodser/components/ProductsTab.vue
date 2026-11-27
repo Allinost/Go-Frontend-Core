@@ -927,7 +927,7 @@ watch(
     }
   }
 
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     &__search-row {
       width: 100%;
 

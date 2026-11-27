@@ -1,12 +1,19 @@
 <template>
   <div class="user-list">
-    <div class="user-list__header">
-      <h2 class="user-list__title">用户管理</h2>
-      <div class="user-list__actions">
-        <NkInput v-model="search" placeholder="搜索用户名/昵称" size="sm" style="width: 240px" @keyup.enter="handleSearch" />
-        <NkButton size="sm" @click="handleSearch">搜索</NkButton>
-      </div>
-    </div>
+    <NkPageHeader title="用户管理" description="管理系统用户的账号、状态与角色" />
+
+    <NkToolbar>
+      <NkInput
+        v-model="search"
+        class="nk-toolbar__field"
+        style="--nk-toolbar-field-width: 240px"
+        placeholder="搜索用户名/昵称"
+        size="sm"
+        clearable
+        @keyup.enter="handleSearch"
+      />
+      <NkButton size="sm" @click="handleSearch">搜索</NkButton>
+    </NkToolbar>
 
     <NkTable :columns="columns" :data="users" :loading="loading" empty-text="暂无用户数据">
       <template #cell-status="{ value }">
@@ -30,6 +37,8 @@
         v-model="currentPage"
         :total="total"
         :page-size="pageSize"
+        :page-size-options="[10, 20, 50, 100]"
+        @update:page-size="pageSize = $event"
         @change="loadUsers"
       />
     </div>
@@ -147,25 +156,6 @@ onMounted(loadUsers)
 
 <style lang="scss" scoped>
 .user-list {
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: $nk-spacing-xl;
-  }
-
-  &__title {
-    font-size: $nk-font-size-xl;
-    font-weight: $nk-font-weight-semibold;
-    color: $nk-color-neutral-900;
-  }
-
-  &__actions {
-    display: flex;
-    gap: $nk-spacing-sm;
-    align-items: center;
-  }
-
   &__muted {
     color: $nk-color-neutral-400;
   }

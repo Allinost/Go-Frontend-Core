@@ -54,17 +54,17 @@
       </div>
     </div>
 
-    <div class="dm-filters">
-      <NkSelect v-model="filters.type" placeholder="项目类型" :options="typeOptions" clearable size="sm" style="width: 150px" />
-      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" style="width: 120px" />
-      <NkInput v-model="filters.keyword" placeholder="名称 / 唯一键 / 简介" size="sm" style="width: 220px" @keyup.enter="search" />
+    <NkToolbar class="dm-filters">
+      <NkSelect v-model="filters.type" placeholder="项目类型" :options="typeOptions" clearable size="sm" class="nk-toolbar__field" style="--nk-toolbar-field-width: 150px" />
+      <NkSelect v-model="filters.status" placeholder="状态" :options="statusOptions" clearable size="sm" class="nk-toolbar__field" style="--nk-toolbar-field-width: 120px" />
+      <NkInput v-model="filters.keyword" placeholder="名称 / 唯一键 / 简介" size="sm" class="nk-toolbar__field" style="--nk-toolbar-field-width: 220px" @keyup.enter="search" />
       <NkButton size="sm" @click="search">搜索</NkButton>
       <NkButton size="sm" variant="ghost" @click="resetFilters">重置</NkButton>
       <label class="dm-muted" style="display: flex; align-items: center; gap: 6px">
         <NkSwitch v-model="filters.deleted" size="sm" />
         仅看已删除
       </label>
-    </div>
+    </NkToolbar>
 
     <div class="dm-card">
       <NkLoading v-if="loading" />

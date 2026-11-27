@@ -484,7 +484,7 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     gap: $nk-spacing-md;
     margin-bottom: $nk-spacing-md;
 
-    @media (max-width: 720px) {
+    @include respond-to(md) {
       grid-template-columns: 1fr;
     }
   }
@@ -506,7 +506,7 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     grid-template-columns: minmax(260px, 1fr) 2fr;
     gap: $nk-spacing-xl;
 
-    @media (max-width: 900px) {
+    @include respond-to(lg) {
       grid-template-columns: 1fr;
       gap: $nk-spacing-md;
     }
@@ -545,7 +545,7 @@ watch([() => props.inventoryId, statsDays], fetchStats, { immediate: true })
     gap: $nk-spacing-lg;
     min-width: 0;
 
-    @media (max-width: 640px) {
+    @include respond-to(sm) {
       grid-template-columns: 1fr;
     }
   }

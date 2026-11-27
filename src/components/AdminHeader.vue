@@ -11,7 +11,7 @@
       >
         <NkIcon name="menu" />
       </NkButton>
-      <NkBreadcrumb v-if="breadcrumbs.length" :items="breadcrumbs" />
+      <NkBreadcrumb v-if="breadcrumbs.length" :items="breadcrumbs" @select="onCrumbSelect" />
     </div>
     <div class="admin-header__right">
       <NkButton
@@ -48,18 +48,41 @@ import SettingsDialog from './SettingsDialog.vue'
 
 const settingsVisible = ref(false)
 
+interface BreadcrumbItem {
+  label: string
+  to?: string
+}
+
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-const breadcrumbs = computed(() => {
-  const items: { label: string; to?: string }[] = []
+// 详情页通过路由 meta.parent 声明上级页面，面包屑展示 "上级 / 当前页"，上级可点击返回
+function findRouteTitle(path: string): string | undefined {
+  const record = router.getRoutes().find((r) => r.path === path)
+  return record?.meta.title as string | undefined
+}
+
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  const parents: BreadcrumbItem[] = []
+  let parentPath = route.meta.parent as string | undefined
+  while (parentPath && parents.length < 3) {
+    const title = findRouteTitle(parentPath)
+    if (title) parents.unshift({ label: title, to: parentPath })
+    const record = router.getRoutes().find((r) => r.path === parentPath)
+    parentPath = record?.meta.parent as string | undefined
+  }
+  const items = [...parents]
   if (route.meta.title) {
     items.push({ label: route.meta.title as string })
   }
   return items
 })
+
+function onCrumbSelect(item: BreadcrumbItem) {
+  if (item.to) router.push(item.to)
+}
 
 const emit = defineEmits<{
   (e: 'toggle-sidebar'): void
@@ -112,7 +135,7 @@ async function handleLogout() {
     display: none;
   }
 
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     padding: 0 $nk-spacing-md;
 
     & &__menu {

@@ -1238,7 +1238,7 @@ watch(
       width: 280px;
     }
 
-    @media (max-width: 640px) {
+    @include respond-to(sm) {
       .nk-input {
         flex: 1;
         width: auto;

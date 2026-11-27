@@ -47,6 +47,7 @@ async function handleLogin(data: { username: string; password: string }) {
 <style lang="scss" scoped>
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;

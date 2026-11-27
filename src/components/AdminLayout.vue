@@ -40,6 +40,7 @@ watch(
 .admin-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   position: relative;
 
@@ -81,7 +82,7 @@ watch(
     transform: translateY(-4px);
   }
 
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     &__content {
       padding: $nk-spacing-md;
     }

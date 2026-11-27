@@ -388,7 +388,7 @@
   }
 
   // ---- Responsive ----
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     &__form-row {
       flex-direction: column;
       gap: $nk-spacing-sm;
@@ -431,7 +431,7 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @include respond-to(xs) {
     &__product-grid,
     &__series-grid,
     &__inventory-grid {

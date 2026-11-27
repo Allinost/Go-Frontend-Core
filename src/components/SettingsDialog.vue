@@ -319,7 +319,7 @@ async function saveBackend() {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 720px) {
+@include respond-to(md) {
   .settings-form {
     grid-template-columns: 1fr;
   }

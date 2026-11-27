@@ -418,7 +418,7 @@ onMounted(load)
   line-height: 1.5;
   margin: 0;
 }
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .host-form-grid {
     grid-template-columns: 1fr;
   }

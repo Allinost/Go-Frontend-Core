@@ -318,7 +318,7 @@ onMounted(loadAll)
   text-align: left;
   white-space: nowrap;
 }
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .maint-grid {
     grid-template-columns: 1fr;
   }

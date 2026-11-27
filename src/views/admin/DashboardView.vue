@@ -2,7 +2,13 @@
   <div class="dashboard">
     <h2 class="dashboard__title">仪表盘</h2>
 
-    <NkLoading v-if="loading" />
+    <NkRow v-if="loading" :gutter="[16, 16]" class="dashboard__nav">
+      <NkCol v-for="n in 4" :key="n" :xs="24" :sm="12" :md="8" :lg="6">
+        <NkCard>
+          <NkSkeleton variant="paragraph" :rows="3" />
+        </NkCard>
+      </NkCol>
+    </NkRow>
     <div v-else>
       <NkRow v-if="services.length > 0" class="dashboard__nav" :gutter="[16, 16]" align="stretch">
         <NkCol

@@ -499,7 +499,7 @@ onMounted(loadAll)
   color: var(--nk-text-color-secondary, #888);
   white-space: nowrap;
 }
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .cc-layout {
     grid-template-columns: 1fr;
   }

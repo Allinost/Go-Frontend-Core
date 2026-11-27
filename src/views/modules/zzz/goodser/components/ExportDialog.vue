@@ -1041,7 +1041,7 @@ function statusTagType(status: ExportJob['status']): 'success' | 'danger' | 'inf
     gap: $nk-spacing-sm;
   }
 
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     grid-template-columns: 1fr;
 
     &__pane--wide {

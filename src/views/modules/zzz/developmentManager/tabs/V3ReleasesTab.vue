@@ -471,12 +471,12 @@ onMounted(() => {
   font-size: 11px;
   color: var(--nk-text-color-secondary, #888);
 }
-@media (max-width: 1000px) {
+@include respond-to(lg) {
   .release-calendar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 600px) {
+@include respond-to(sm) {
   .release-calendar {
     grid-template-columns: 1fr;
   }

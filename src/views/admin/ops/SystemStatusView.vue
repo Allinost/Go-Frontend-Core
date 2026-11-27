@@ -325,7 +325,7 @@ onMounted(loadAll)
   flex-wrap: wrap;
   gap: 6px;
 }
-@media (max-width: 1100px) {
+@include respond-to(lg) {
   .sys-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -333,7 +333,7 @@ onMounted(loadAll)
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 700px) {
+@include respond-to(md) {
   .sys-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -343,7 +343,7 @@ onMounted(loadAll)
     word-break: break-all;
   }
 }
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .sys-cards {
     grid-template-columns: 1fr;
   }

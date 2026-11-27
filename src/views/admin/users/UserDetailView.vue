@@ -14,56 +14,65 @@
       </div>
 
       <div v-else-if="user" class="user-detail__form">
-        <div class="user-detail__field">
-          <label>用户名</label>
-          <span>{{ user.username }}</span>
-        </div>
-        <div class="user-detail__field">
-          <label>昵称</label>
-          <NkInput v-model="form.nickname" placeholder="请输入昵称" />
-        </div>
-        <div class="user-detail__field">
-          <label>邮箱</label>
-          <NkInput v-model="form.email" placeholder="请输入邮箱" />
-        </div>
-        <div class="user-detail__field">
-          <label>手机号</label>
-          <NkInput v-model="form.phone" placeholder="请输入手机号" />
-        </div>
-        <div class="user-detail__field">
-          <label>状态</label>
-          <NkTag
-            v-if="user.status"
-            :type="user.status === 'active' ? 'success' : user.status === 'inactive' ? 'warning' : 'danger'"
-          >
-            {{ statusLabel(user.status) }}
-          </NkTag>
-          <span v-else>-</span>
-        </div>
-        <div class="user-detail__field">
-          <label>角色</label>
-          <div class="user-detail__roles">
-            <NkTag v-for="role in user.roles || []" :key="role" type="info" style="margin-right: 4px">
-              {{ role }}
+        <div class="user-detail__readonly">
+          <div class="user-detail__field">
+            <span class="user-detail__label">用户名</span>
+            <span>{{ user.username }}</span>
+          </div>
+          <div class="user-detail__field">
+            <span class="user-detail__label">状态</span>
+            <NkTag
+              v-if="user.status"
+              :type="user.status === 'active' ? 'success' : user.status === 'inactive' ? 'warning' : 'danger'"
+            >
+              {{ statusLabel(user.status) }}
             </NkTag>
-            <span v-if="!user.roles?.length" class="user-detail__no-role">-</span>
-            <NkButton v-if="isAdmin" size="sm" variant="ghost" @click="showRoleDialog = true">分配角色</NkButton>
+            <span v-else>-</span>
+          </div>
+          <div class="user-detail__field">
+            <span class="user-detail__label">角色</span>
+            <div class="user-detail__roles">
+              <NkTag v-for="role in user.roles || []" :key="role" type="info">
+                {{ role }}
+              </NkTag>
+              <span v-if="!user.roles?.length" class="user-detail__no-role">-</span>
+              <NkButton v-if="isAdmin" size="sm" variant="ghost" @click="showRoleDialog = true">分配角色</NkButton>
+            </div>
+          </div>
+          <div class="user-detail__field">
+            <span class="user-detail__label">创建时间</span>
+            <span>{{ formatDate(user.created_at) }}</span>
+          </div>
+          <div class="user-detail__field">
+            <span class="user-detail__label">更新时间</span>
+            <span>{{ formatDate(user.updated_at) }}</span>
           </div>
         </div>
-        <div class="user-detail__field">
-          <label>创建时间</label>
-          <span>{{ formatDate(user.created_at) }}</span>
-        </div>
-        <div class="user-detail__field">
-          <label>更新时间</label>
-          <span>{{ formatDate(user.updated_at) }}</span>
-        </div>
 
-        <div class="user-detail__actions">
-          <NkButton :loading="saving" @click="handleSave">保存修改</NkButton>
-        </div>
-      </div>
-    </NkCard>
+        <NkForm
+          ref="formRef"
+          class="user-detail__editable"
+          :model="form"
+          :rules="rules"
+          label-position="left"
+          label-width="96px"
+          @submit="handleSave"
+        >
+          <NkFormItem label="昵称" prop="nickname">
+            <NkInput v-model="form.nickname" placeholder="请输入昵称" />
+          </NkFormItem>
+          <NkFormItem label="邮箱" prop="email">
+            <NkInput v-model="form.email" type="text" placeholder="请输入邮箱" />
+          </NkFormItem>
+          <NkFormItem label="手机号" prop="phone">
+            <NkInput v-model="form.phone" placeholder="请输入手机号" />
+          </NkFormItem>
+
+          <div class="user-detail__actions">
+            <NkButton type="primary" :loading="saving" @click="onSaveClick">保存修改</NkButton>
+          </div>
+        </NkForm>
+      </div>    </NkCard>
 
     <NkDialog v-model:visible="showRoleDialog" title="分配角色" :width="360">
       <NkSelect
@@ -85,7 +94,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getUser, updateUser } from '@/api/auth'
 import { assignRole } from '@/api/role'
 import { useAuthStore } from '@/stores/auth'
-import { NKMessage } from '@nkui/vue'
+import { NKMessage, NkForm, NkFormItem, type FormRules } from '@nkui/vue'
 import type { UserInfo } from '@/types/api'
 
 const route = useRoute()
@@ -104,6 +113,18 @@ const form = reactive({
   email: '',
   phone: '',
 })
+
+const formRef = ref<InstanceType<typeof NkForm>>()
+
+const rules: FormRules = {
+  nickname: { max: 32, message: '昵称不能超过 32 个字符' },
+  email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' },
+  phone: { pattern: /^[0-9+\-\s]{6,20}$/, message: '手机号格式不正确' },
+}
+
+async function onSaveClick() {
+  if (await formRef.value?.validate()) handleSave()
+}
 
 async function loadUser() {
   loading.value = true
@@ -190,6 +211,8 @@ onMounted(loadUser)
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: $nk-spacing-sm;
+
     h2 {
       font-size: $nk-font-size-lg;
       font-weight: $nk-font-weight-semibold;
@@ -205,23 +228,36 @@ onMounted(loadUser)
   &__form {
     display: flex;
     flex-direction: column;
-    gap: $nk-spacing-lg;
+    gap: $nk-spacing-xl;
+  }
+
+  &__readonly {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $nk-spacing-lg $nk-spacing-xl;
+
+    @include respond-to(sm) {
+      grid-template-columns: 1fr;
+    }
   }
 
   &__field {
     display: flex;
     flex-direction: column;
     gap: $nk-spacing-xs;
+    min-width: 0;
+    word-break: break-all;
+  }
 
-    label {
-      font-size: $nk-font-size-sm;
-      font-weight: $nk-font-weight-medium;
-      color: $nk-color-neutral-600;
-    }
+  &__label {
+    font-size: $nk-font-size-sm;
+    font-weight: $nk-font-weight-medium;
+    color: $nk-color-neutral-500;
   }
 
   &__roles {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: $nk-spacing-xs;
   }
@@ -230,10 +266,15 @@ onMounted(loadUser)
     color: $nk-color-neutral-400;
   }
 
-  &__actions {
-    margin-top: $nk-spacing-lg;
+  &__editable {
     padding-top: $nk-spacing-lg;
     border-top: 1px solid $nk-color-neutral-200;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: $nk-spacing-sm;
   }
 }
 </style>

@@ -40,7 +40,7 @@ const routes: RouteRecordRaw[] = [
         path: 'users/login3rd/remote/:id',
         name: 'Login3rdRemote',
         component: () => import('@/views/admin/login3rd/RemoteLoginView.vue'),
-        meta: { title: '远程登录' },
+        meta: { title: '远程登录', parent: '/users/login3rd' },
       },
       {
         path: 'users/:id',
@@ -52,7 +52,7 @@ const routes: RouteRecordRaw[] = [
         path: 'modules/crypto',
         name: 'Crypto',
         component: () => import('@/views/admin/crypto/index.vue'),
-        meta: { title: '加密工具' },
+        meta: { title: '加密工具', parent: '/users' },
       },
       {
         path: 'roles',
@@ -94,19 +94,19 @@ const routes: RouteRecordRaw[] = [
         path: 'modules/zzz/shopchecker/products/create',
         name: 'ShopCheckerCreate',
         component: () => import('@/views/modules/zzz/shopchecker/ProductCreateView.vue'),
-        meta: { title: '创建商品' },
+        meta: { title: '创建商品', parent: '/modules/zzz/shopchecker/products' },
       },
       {
         path: 'modules/zzz/shopchecker/products/:id',
         name: 'ShopCheckerDetail',
         component: () => import('@/views/modules/zzz/shopchecker/ProductDetailView.vue'),
-        meta: { title: '商品详情' },
+        meta: { title: '商品详情', parent: '/modules/zzz/shopchecker/products' },
       },
       {
         path: 'modules/zzz/shopchecker/products/:id/edit',
         name: 'ShopCheckerEdit',
         component: () => import('@/views/modules/zzz/shopchecker/ProductEditView.vue'),
-        meta: { title: '编辑商品' },
+        meta: { title: '编辑商品', parent: '/modules/zzz/shopchecker/products' },
       },
       {
         path: 'modules/zzz/developmentmanager',
@@ -118,7 +118,7 @@ const routes: RouteRecordRaw[] = [
         path: 'modules/zzz/developmentmanager/:id',
         name: 'DevelopmentManagerDetail',
         component: () => import('@/views/modules/zzz/developmentManager/ProjectDetailView.vue'),
-        meta: { title: '项目详情' },
+        meta: { title: '项目详情', parent: '/modules/zzz/developmentmanager' },
       },
       {
         path: 'modules/zzz/containers',
@@ -184,19 +184,19 @@ const routes: RouteRecordRaw[] = [
         path: 'webhook/create',
         name: 'WebhookConfigCreate',
         component: () => import('@/views/admin/webhook/ConfigCreateView.vue'),
-        meta: { title: '创建 Webhook 配置' },
+        meta: { title: '创建 Webhook 配置', parent: '/webhook' },
       },
       {
         path: 'webhook/:id',
         name: 'WebhookConfigDetail',
         component: () => import('@/views/admin/webhook/ConfigDetailView.vue'),
-        meta: { title: 'Webhook 配置详情' },
+        meta: { title: 'Webhook 配置详情', parent: '/webhook' },
       },
       {
         path: 'webhook/:id/edit',
         name: 'WebhookConfigEdit',
         component: () => import('@/views/admin/webhook/ConfigEditView.vue'),
-        meta: { title: '编辑 Webhook 配置' },
+        meta: { title: '编辑 Webhook 配置', parent: '/webhook' },
       },
       {
         path: ':pathMatch(.*)*',

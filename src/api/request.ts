@@ -44,6 +44,17 @@ function onRefreshFailed(err: unknown) {
 // 登录/注册/刷新本身返回 401 时不走刷新与整页跳转，由调用方展示服务端错误文案
 const AUTH_PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/refresh']
 
+// 服务端未返回 message 时的兜底文案（优先使用服务端 message）
+const HTTP_STATUS_MESSAGES: Record<number, string> = {
+  403: '没有权限执行此操作',
+  404: '请求的资源不存在',
+  413: '上传内容超过大小限制',
+  500: '服务器内部错误，请稍后重试',
+  502: '后端服务暂不可用，请稍后重试',
+  503: '后端服务暂不可用，请稍后重试',
+  504: '后端服务响应超时，请稍后重试',
+}
+
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     const data = response.data
@@ -96,7 +107,16 @@ request.interceptors.response.use(
     }
     // 后端在非 2xx 时仍返回统一结构 { code, message }，优先透出服务端文案，
     // 避免前端只显示 "Request failed with status code 502"。
+    if (!error.response) {
+      const message = error.code === 'ECONNABORTED'
+        ? '请求超时，请稍后重试'
+        : '网络连接失败，请检查网络或后端地址配置'
+      return Promise.reject(new Error(message))
+    }
     const serverMessage = error.response?.data?.message
+    if (!serverMessage && error.response.status in HTTP_STATUS_MESSAGES) {
+      return Promise.reject(new Error(HTTP_STATUS_MESSAGES[error.response.status]))
+    }
     if (serverMessage) {
       const wrapped = new Error(serverMessage) as Error & { response?: unknown; config?: unknown }
       wrapped.response = error.response

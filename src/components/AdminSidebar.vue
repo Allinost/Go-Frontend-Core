@@ -87,6 +87,7 @@
         class="admin-sidebar__item admin-sidebar__item--footer"
         :class="{ 'admin-sidebar__item--collapsed': collapsed }"
         :title="collapsed ? '折叠侧边栏' : undefined"
+        data-desktop-only="true"
         @click="toggle"
       >
         <NkIcon :name="collapsed ? 'arrow-right' : 'arrow-left'" size="sm" />
@@ -191,6 +192,7 @@ function groupExpanded(group: SidebarGroupConfig) {
 .admin-sidebar {
   width: 232px;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     linear-gradient(180deg, color-mix(in srgb, $nk-color-neutral-0 92%, $nk-color-primary-50), $nk-color-neutral-0 42%);
   border-right: 1px solid color-mix(in srgb, $nk-color-neutral-300 50%, transparent);
@@ -456,7 +458,7 @@ function groupExpanded(group: SidebarGroupConfig) {
     box-shadow: 0 0 0 3px color-mix(in srgb, $nk-color-primary-500 16%, transparent);
   }
 
-  @media (max-width: 768px) {
+  @include respond-to(md) {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -475,7 +477,7 @@ function groupExpanded(group: SidebarGroupConfig) {
       transform: translateX(0);
     }
 
-    &__footer {
+    &__footer [data-desktop-only] {
       display: none;
     }
   }

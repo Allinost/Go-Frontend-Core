@@ -315,7 +315,7 @@
   color: #15803d;
 }
 
-@media (max-width: 900px) {
+@include respond-to(lg) {
   .dm-split {
     grid-template-columns: 1fr;
   }

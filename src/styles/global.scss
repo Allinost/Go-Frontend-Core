@@ -29,7 +29,7 @@ a {
 }
 
 // ---- Responsive dialogs (narrow screens use a bottom sheet) ----
-@media (max-width: 768px) {
+@include respond-to(md) {
   .nk-dialog__overlay {
     align-items: flex-end !important;
   }
@@ -58,7 +58,7 @@ a {
   }
 }
 
-@media (max-width: 480px) {
+@include respond-to(xs) {
   .nk-dialog__header,
   .nk-dialog__footer {
     padding-left: $nk-spacing-md !important;
@@ -78,5 +78,31 @@ a {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+// ---- 触屏：放大可点击区域（推荐 ≥40px） ----
+@media (pointer: coarse) {
+  .nk-button {
+    min-height: 40px;
+  }
+
+  .admin-sidebar__item,
+  .admin-sidebar__group-header {
+    min-height: 40px;
+  }
+
+  .nk-input__inner {
+    min-height: 40px;
+  }
+}
+
+// ---- 小屏：未迁移到 NkTable 的原生表格横向滚动，避免撑破页面 ----
+@include respond-to(md) {
+  .admin-layout__content table:not(.nk-table__inner) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
